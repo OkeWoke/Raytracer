@@ -30,9 +30,9 @@ int main()
     //Initialisation
     cout << "Starting..." << endl;
 
-    int H_RES = 500;
-    int V_RES = 500;
-    double N = 1; //distance between eye and screen
+    int H_RES = 1000;
+    int V_RES = 1000;
+    double N = 5; //distance between eye and screen
     double H = 0.5;
     double V = 0.5;
 
@@ -45,10 +45,12 @@ int main()
     ImageArray img(H_RES, V_RES);
 
     //Object and light creation
-    Sphere sp1(Vector(0, 0, 80), 20, Color(0,128,0), Color(0,255,0), Color(255,255,255), 20);
-    Light l1(Vector(0, 30,30), Color(1,1,1),Color(1,1,1),Color(1,1,1));
+    Sphere sp1(Vector(0, -30, 500), 20, Color(0,128,0), Color(0,255,0), Color(255,255,255), 20);
+    Sphere sp2(Vector(0, 25, 600), 20, Color(128,0,128), Color(128,0,128), Color(255,255,255), 50);
+    Light l1(Vector(0, -200, 0), Color(1,1,1),Color(1,1,1),Color(1,1,1));
 
     objects.push_back(&sp1);
+    objects.push_back(&sp2);
     lights.push_back(l1);
 
     //casting initial rays
@@ -111,16 +113,19 @@ Color shade(const Hit& hit, int reflection_count)
         c = c + (hit.obj->ambient * lights[i].ambient);
 
         Vector s = lights[i].position - p;
-
-        if(s.dot(n)> 0 )
+        Hit shadow = intersect(p,s);
+        if(shadow.obj == NULL || shadow.t <0 || shadow.t >1)
         {
-        //diffuse
-        c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));
+            if(s.dot(n)> 0 )
+            {
+                //diffuse
+                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));
 
-        //specular
-        Vector h = normalise(normalise(s) + normalise(v));
-        double val = h.dot(n)/ (h.abs() * n.abs());
-        c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);
+                //specular
+                Vector h = normalise(normalise(s) + normalise(v));
+                double val = h.dot(n)/ (h.abs() * n.abs());
+                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);
+            }
         }
     }
 
