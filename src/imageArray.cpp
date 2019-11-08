@@ -62,7 +62,7 @@ double ImageArray::findMax()
 void ImageArray::normalise()
 {   //this function will scale all pixel values between 0 and max_val, loss of information/quality occurs.
     double max_pixel_val = findMax();
-
+    std::cout << max_pixel_val << std::endl;
     for (int y = 0; y < HEIGHT; ++y)//normalising the value
     {
         for (int x = 0; x < WIDTH; ++x)

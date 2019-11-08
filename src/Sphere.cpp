@@ -5,7 +5,7 @@ Sphere::Sphere(): GObject()
     //
 }
 
-Sphere::Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess): GObject()
+Sphere::Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess, double reflectivity): GObject()
 {
     ambient = a;
     diffuse = d;
@@ -13,6 +13,7 @@ Sphere::Sphere(Vector pos, double radius, Color a, Color d, Color s, double shin
     this->radius = radius;
     position = pos;
     this->shininess = shininess;
+    this->reflectivity = reflectivity;
 }
 
 double Sphere::intersect(Vector src, Vector d)

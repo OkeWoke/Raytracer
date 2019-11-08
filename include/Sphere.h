@@ -6,7 +6,7 @@ class Sphere: public GObject
 {
     public:
         Sphere();
-        Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess);
+        Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess, double reflectivity);
         double intersect(Vector src, Vector d);
         Vector normal(Vector p);
     private:

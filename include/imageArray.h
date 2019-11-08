@@ -6,7 +6,7 @@
 #include <ctime>
 #include <cmath>
 #include "Color.h"
-
+#include<iostream>
 class ImageArray //A class that handles a 2D array of ints.
 {
     private:

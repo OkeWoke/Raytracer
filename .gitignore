@@ -4,3 +4,4 @@ RayTracer.cbp
 RayTracer.depend
 RayTracer.layout
 *.dll
+renders/*

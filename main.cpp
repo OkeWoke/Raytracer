@@ -7,7 +7,8 @@
 #include "GObject.h"
 #include <math.h>
 #include "Light.h"
-
+#include <string>
+#include "Plane.h"
 using namespace std;
 
 struct Hit
@@ -21,7 +22,7 @@ struct Hit
 void draw(ImageArray img, string filename);
 Hit intersect(Vector src, Vector ray_dir);
 Color shade(const Hit& hit, int reflection_count);
-
+void cast_rays(int H_RES, int V_RES, double N, double H, double V, Vector eye, Vector u, Vector v, Vector n, ImageArray& img);
 vector<GObject*> objects;
 vector<Light> lights;
 
@@ -32,11 +33,11 @@ int main()
 
     int H_RES = 1000;
     int V_RES = 1000;
-    double N = 5; //distance between eye and screen
+    double N = 3; //distance between eye and screen
     double H = 0.5;
     double V = 0.5;
 
-    Vector eye = Vector(0,0,-50);//eye is at the center.
+    Vector eye = Vector(0,40,-100);//eye is at the center.
 
     Vector u = Vector(1, 0, 0);//horizontal perp;
     Vector v = Vector(0, 1, 0);//vertical perp;
@@ -45,15 +46,32 @@ int main()
     ImageArray img(H_RES, V_RES);
 
     //Object and light creation
-    Sphere sp1(Vector(0, -30, 500), 20, Color(0,128,0), Color(0,255,0), Color(255,255,255), 20);
-    Sphere sp2(Vector(0, 25, 600), 20, Color(128,0,128), Color(128,0,128), Color(255,255,255), 50);
-    Light l1(Vector(0, -200, 0), Color(1,1,1),Color(1,1,1),Color(1,1,1));
+    Sphere sp1(Vector(0, -20, 500), 20, Color(0,128,0), Color(0,255,0), Color(255,255,255), 200, 1);
+    Sphere sp2(Vector(0, 25, 550), 20, Color(128,0,128), Color(128,0,128), Color(255,255,255), 200, 1);
+    Plane p1(Vector(0,-50,0), Vector(0,1,0), 0, 0, Color(128,0,0), Color(255,0,0), Color(255,255,255),200, 0.4);
+    Light l1(Vector(0, 0, 450), Color(1,1,1),Color(1,1,1),Color(1,1,1));
 
     objects.push_back(&sp1);
     objects.push_back(&sp2);
+    objects.push_back(&p1);
     lights.push_back(l1);
-
+    for (unsigned int i = 0; i<100; i++)
+    {
+        cast_rays(H_RES, V_RES, N, H, V, eye, u, v, n , img);
+        //save image
+        draw(img, "test"+to_string(i)+".png");
+        img.clearArray();
+        sp1.position.y+=1;
+    }
     //casting initial rays
+
+    cout << "Finished!" << endl;
+    getch();
+    return 0;
+}
+
+void cast_rays(int H_RES, int V_RES, double N, double H, double V, Vector eye, Vector u, Vector v, Vector n, ImageArray& img)
+{
     for(int x = 0; x < H_RES; x++)
     {
         for(int y = 0; y < V_RES; y++)
@@ -64,16 +82,11 @@ int main()
             img.pixelMatrix[x][y] = c;
         }
     }
-
-    //save image
-    draw(img, "test.png");
-    cout << "Finished!" << endl;
-    getch();
-    return 0;
 }
 
-
 Hit intersect(Vector src, Vector ray_dir)
+//Takes a source point and ray direction, checks if it intersects any object
+//returns hit struct which contains 'meta data' about the interection.
 {
     Hit hit;
     hit.src = src;
@@ -97,6 +110,8 @@ Hit intersect(Vector src, Vector ray_dir)
 
 Color shade(const Hit& hit, int reflection_count)
 {
+    int max_reflections = 5;
+    int min_reflectivity = 0.3;
     if(hit.obj == NULL)
     {
         return Color(0,0,0);
@@ -113,6 +128,7 @@ Color shade(const Hit& hit, int reflection_count)
         c = c + (hit.obj->ambient * lights[i].ambient);
 
         Vector s = lights[i].position - p;
+        Vector h = normalise(normalise(s) + normalise(v));
         Hit shadow = intersect(p,s);
         if(shadow.obj == NULL || shadow.t <0 || shadow.t >1)
         {
@@ -122,11 +138,20 @@ Color shade(const Hit& hit, int reflection_count)
                 c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));
 
                 //specular
-                Vector h = normalise(normalise(s) + normalise(v));
+
                 double val = h.dot(n)/ (h.abs() * n.abs());
                 c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);
             }
+            if(reflection_count < max_reflections && hit.obj->reflectivity>=min_reflectivity)
+            {
+                Hit reflection = intersect(p, hit.ray_dir-n*2*hit.ray_dir.dot(n));
+                Color reflec_color = shade(reflection,reflection_count+1);
+
+                c = c +hit.obj->reflectivity * reflec_color;
+            }
         }
+
+
     }
 
     return c;
@@ -134,18 +159,18 @@ Color shade(const Hit& hit, int reflection_count)
 
 void draw(ImageArray img, string filename)
 {
-    img.normalise();
+    //img.normalise();
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
     for (int y = 0; y < img.HEIGHT; ++y)
     {
         for (int x = 0; x < img.WIDTH; ++x)
         {
-            Color c = img.pixelMatrix[x][y];
+            Color c = 255*img.pixelMatrix[x][y]/700;
             image[y][x] = png::rgb_pixel((int)c.r, (int)c.g,(int) c.b);
         }
     }
 
-    image.write(filename);
+    image.write("renders/"+filename);
 }
 
