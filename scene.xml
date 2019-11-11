@@ -3,6 +3,7 @@
      H_RES and V_RES are horizontal and vertical pixel resolution
      fl is the focal length of the camera, smaller number means wider fov.
 -->
+<Config threads="4" max_reflections="4"/>
 <Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="2">
     <position x="0" y="0" z="0"/><!-- Camera position -->
     

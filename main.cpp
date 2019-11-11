@@ -9,6 +9,8 @@
 #include <chrono>
 #include <iomanip>
 #include <ctime>
+#include <thread>
+#include <functional>
 
 #include "Vector.h"
 #include "imageArray.h"
@@ -29,15 +31,23 @@ struct Hit
     GObject* obj;
 };
 
-void draw(ImageArray img, string filename);
-Hit intersect(Vector src, Vector ray_dir);
+struct Config
+{
+    int threads_to_use;
+    int max_reflections;
+};
+
+void draw(ImageArray& img, string filename);
+Hit intersect(const Vector& src, const Vector& ray_dir);
 Color shade(const Hit& hit, int reflection_count);
-void cast_rays(Camera& camera, ImageArray& img);
+void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
 void deserialize(string filename);
+void cast_rays_multithread(const Camera& cam, const ImageArray& img);
 
 vector<GObject*> objects;
 vector<Light> lights;
 Camera cam;
+Config config;
 
 int main()
 {
@@ -51,17 +61,22 @@ int main()
     Vector u = Vector(1, 0, 0);//horizontal perp;
     Vector v = Vector(0, 1, 0);//vertical perp;
     Vector n = Vector(0, 0, -1);// Looking into Z dir
-    cam = Camera(H_RES,V_RES,N,H,V,u,v,n,eye);
+    //cam = Camera(H_RES,V_RES,N,H,V,u,v,n,eye);
 
-    cout<<"Loading scene from xml..." << endl;
+    cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
     cout<<"Loading complete" << endl;
 
     ImageArray img(cam.H_RES, cam.V_RES);
 
-    cout << "Starting initial ray cast..." << endl;
+
+    cout << "Starting initial ray cast on "<< config.threads_to_use << " threads..."<< endl;
     auto start = chrono::steady_clock::now();
-    cast_rays(cam, img);
+    cast_rays_multithread(cam,img);
+    auto ray_end = chrono::steady_clock::now();
+    cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+
+    cout <<"Saving image..." <<endl;
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     ostringstream filename;
@@ -76,18 +91,34 @@ int main()
 
     cout << "Finished!" << endl;
     auto end = chrono::steady_clock::now();
-    cout << "Completed in: "<<chrono::duration_cast<chrono::seconds>(end - start).count()<< " (s)"<<endl;
+    cout << "Completed in: "<<(end - ray_end )/chrono::milliseconds(1)<< " (ms)"<<endl;
     //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
     img.deleteArray();
     getch();
     return 0;
 }
 
-void cast_rays(Camera& cam, ImageArray& img)
+void cast_rays_multithread(const Camera& cam, const ImageArray& img)
+{
+    int rows_per_thread = cam.V_RES/config.threads_to_use;
+    int remainder = cam.V_RES%config.threads_to_use;
+    thread thread_array[config.threads_to_use] ;
+
+    for(int i=0;i<config.threads_to_use-1;i++){
+        thread_array[i] = thread(cast_rays, ref(cam), ref(img), i*rows_per_thread,(i+1)*rows_per_thread);
+    }
+    thread_array[config.threads_to_use-1] = thread(cast_rays, ref(cam), ref(img), (int)rows_per_thread*(config.threads_to_use-1), (int)(rows_per_thread*config.threads_to_use)+remainder);
+
+    for(int i=0;i<config.threads_to_use;i++){
+        thread_array[i].join();
+    }
+}
+
+void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end)
 {
     for(int x = 0; x < cam.H_RES; x++)
     {
-        for(int y = 0; y < cam.V_RES; y++)
+        for(int y = row_start; y < row_end; y++)
         {
             Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y/(cam.V_RES-1)) -1)*cam.v;
             Hit hit = intersect(cam.pos, ray_dir);
@@ -97,7 +128,7 @@ void cast_rays(Camera& cam, ImageArray& img)
     }
 }
 
-Hit intersect(Vector src, Vector ray_dir)
+Hit intersect(const Vector& src, const Vector& ray_dir)
 //Takes a source point and ray direction, checks if it intersects any object
 //returns hit struct which contains 'meta data' about the interection.
 {
@@ -123,7 +154,7 @@ Hit intersect(Vector src, Vector ray_dir)
 
 Color shade(const Hit& hit, int reflection_count)
 {
-    int max_reflections = 4;
+
     int min_reflectivity = 0.3;
 
     if(hit.obj == NULL)
@@ -158,7 +189,7 @@ Color shade(const Hit& hit, int reflection_count)
         }
 
         //we can have reflections even if the object is visible but in shadow.
-        if(reflection_count < max_reflections && hit.obj->reflectivity>=min_reflectivity)
+        if(reflection_count < config.max_reflections && hit.obj->reflectivity>=min_reflectivity)
         {
             Hit reflection = intersect(p, hit.ray_dir-n*2*hit.ray_dir.dot(n));
             Color reflec_color = shade(reflection,reflection_count+1);
@@ -170,7 +201,7 @@ Color shade(const Hit& hit, int reflection_count)
     return c;
 }
 
-void draw(ImageArray img, string filename)
+void draw(ImageArray& img, string filename)
 {
     img.normalise();
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
@@ -188,9 +219,15 @@ void draw(ImageArray img, string filename)
 }
 
 void deserialize(string filename)
+//Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
     xml.Load(filename);
+    xml.FindElem();
+    config.threads_to_use = stoi(xml.GetAttrib("threads"));
+    if (config.threads_to_use < 1){config.threads_to_use=1;}
+    config.max_reflections = stoi(xml.GetAttrib("max_reflections"));
+
     while(xml.FindElem())
     {
         string element = xml.GetTagName();
