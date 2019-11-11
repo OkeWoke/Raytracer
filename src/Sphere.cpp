@@ -54,3 +54,26 @@ Vector Sphere::normal(Vector p)
 {
     return normalise(p-position);
 }
+
+void Sphere::deserialize(std::string strSubDoc)
+{
+    CMarkup xml(strSubDoc);
+
+    xml.FindElem();
+    radius = std::stod(xml.GetAttrib("radius"));
+    shininess = std::stod(xml.GetAttrib("shininess"));
+    reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    xml.IntoElem();
+
+    xml.FindElem("position");
+    Vector::deserialize(xml.GetSubDoc(), position);
+
+    xml.FindElem("ambient");
+    Color::deserialize(xml.GetSubDoc(), ambient);
+
+    xml.FindElem("diffuse");
+    Color::deserialize(xml.GetSubDoc(), diffuse);
+
+    xml.FindElem("specular");
+    Color::deserialize(xml.GetSubDoc(), specular);
+}

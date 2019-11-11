@@ -1,5 +1,5 @@
 #include "imageArray.h"
-
+#include <string>
 ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height)
 {
     histogram = new int[MAX_VAL];

@@ -13,7 +13,9 @@ class ImageArray //A class that handles a 2D array of ints.
         const int MAX_VAL = 255;
         int *histogram;
         void updateHistogram();
-         double findMax();
+        double findMax();
+
+
 
     public:
         const int WIDTH;
@@ -21,8 +23,10 @@ class ImageArray //A class that handles a 2D array of ints.
 
         Color **pixelMatrix;
         ImageArray(int width, int height);
-        void clearArray();
+
         void deleteArray();
+        void clearArray();
+        //
         void normalise();
 
 };

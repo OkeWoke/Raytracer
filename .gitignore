@@ -5,3 +5,6 @@ RayTracer.depend
 RayTracer.layout
 *.dll
 renders/*
+ffmpeg.exe
+include/Markup.h
+src/Markup.cpp

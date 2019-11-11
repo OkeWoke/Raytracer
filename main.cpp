@@ -1,14 +1,24 @@
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
+#include <math.h>
+#include <string>
+#include <png.hpp>
+#include <conio.h>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
+
 #include "Vector.h"
 #include "imageArray.h"
-#include "conio.h"
-#include <png.hpp>
 #include "Sphere.h"
 #include "GObject.h"
-#include <math.h>
 #include "Light.h"
-#include <string>
 #include "Plane.h"
+#include "Camera.h"
+#include "Markup.h"
+
 using namespace std;
 
 struct Hit
@@ -22,62 +32,65 @@ struct Hit
 void draw(ImageArray img, string filename);
 Hit intersect(Vector src, Vector ray_dir);
 Color shade(const Hit& hit, int reflection_count);
-void cast_rays(int H_RES, int V_RES, double N, double H, double V, Vector eye, Vector u, Vector v, Vector n, ImageArray& img);
+void cast_rays(Camera& camera, ImageArray& img);
+void deserialize(string filename);
+
 vector<GObject*> objects;
 vector<Light> lights;
+Camera cam;
 
 int main()
 {
     //Initialisation
-    cout << "Starting..." << endl;
-
     int H_RES = 1000;
     int V_RES = 1000;
-    double N = 3; //distance between eye and screen
+    double N = 0.2; //distance between eye and screen
     double H = 0.5;
     double V = 0.5;
-
-    Vector eye = Vector(0,40,-100);//eye is at the center.
-
+    Vector eye = Vector(0,40,450);//eye is at the center.
     Vector u = Vector(1, 0, 0);//horizontal perp;
     Vector v = Vector(0, 1, 0);//vertical perp;
     Vector n = Vector(0, 0, -1);// Looking into Z dir
+    cam = Camera(H_RES,V_RES,N,H,V,u,v,n,eye);
 
-    ImageArray img(H_RES, V_RES);
+    cout<<"Loading scene from xml..." << endl;
+    deserialize("scene.xml");
+    cout<<"Loading complete" << endl;
 
-    //Object and light creation
-    Sphere sp1(Vector(0, -20, 500), 20, Color(0,128,0), Color(0,255,0), Color(255,255,255), 200, 1);
-    Sphere sp2(Vector(0, 25, 550), 20, Color(128,0,128), Color(128,0,128), Color(255,255,255), 200, 1);
-    Plane p1(Vector(0,-50,0), Vector(0,1,0), 0, 0, Color(128,0,0), Color(255,0,0), Color(255,255,255),200, 0.4);
-    Light l1(Vector(0, 0, 450), Color(1,1,1),Color(1,1,1),Color(1,1,1));
+    ImageArray img(cam.H_RES, cam.V_RES);
 
-    objects.push_back(&sp1);
-    objects.push_back(&sp2);
-    objects.push_back(&p1);
-    lights.push_back(l1);
-    for (unsigned int i = 0; i<100; i++)
-    {
-        cast_rays(H_RES, V_RES, N, H, V, eye, u, v, n , img);
-        //save image
-        draw(img, "test"+to_string(i)+".png");
-        img.clearArray();
-        sp1.position.y+=1;
-    }
-    //casting initial rays
+    cout << "Starting initial ray cast..." << endl;
+    auto start = chrono::steady_clock::now();
+    cast_rays(cam, img);
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    ostringstream filename;
+    filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+    draw(img, filename.str());
+    img.clearArray();
+
+    /* Animation codes
+    ostringstream filename;
+    filename << "render" << setfill('0') <<setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+    */
 
     cout << "Finished!" << endl;
+    auto end = chrono::steady_clock::now();
+    cout << "Completed in: "<<chrono::duration_cast<chrono::seconds>(end - start).count()<< " (s)"<<endl;
+    //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
+    img.deleteArray();
     getch();
     return 0;
 }
 
-void cast_rays(int H_RES, int V_RES, double N, double H, double V, Vector eye, Vector u, Vector v, Vector n, ImageArray& img)
+void cast_rays(Camera& cam, ImageArray& img)
 {
-    for(int x = 0; x < H_RES; x++)
+    for(int x = 0; x < cam.H_RES; x++)
     {
-        for(int y = 0; y < V_RES; y++)
+        for(int y = 0; y < cam.V_RES; y++)
         {
-            Vector ray_dir = -N*n + H*(((double)2*x/(H_RES-1)) -1)*u + V*(((double)2*y/(V_RES-1)) -1)*v;
-            Hit hit = intersect(eye, ray_dir);
+            Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y/(cam.V_RES-1)) -1)*cam.v;
+            Hit hit = intersect(cam.pos, ray_dir);
             Color c = shade(hit, 0);
             img.pixelMatrix[x][y] = c;
         }
@@ -110,8 +123,9 @@ Hit intersect(Vector src, Vector ray_dir)
 
 Color shade(const Hit& hit, int reflection_count)
 {
-    int max_reflections = 5;
+    int max_reflections = 4;
     int min_reflectivity = 0.3;
+
     if(hit.obj == NULL)
     {
         return Color(0,0,0);
@@ -135,23 +149,22 @@ Color shade(const Hit& hit, int reflection_count)
             if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));
+                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));//(s.abs()*s.abs());
 
                 //specular
-
                 double val = h.dot(n)/ (h.abs() * n.abs());
-                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);
-            }
-            if(reflection_count < max_reflections && hit.obj->reflectivity>=min_reflectivity)
-            {
-                Hit reflection = intersect(p, hit.ray_dir-n*2*hit.ray_dir.dot(n));
-                Color reflec_color = shade(reflection,reflection_count+1);
-
-                c = c +hit.obj->reflectivity * reflec_color;
+                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);//(s.abs()*s.abs());
             }
         }
 
+        //we can have reflections even if the object is visible but in shadow.
+        if(reflection_count < max_reflections && hit.obj->reflectivity>=min_reflectivity)
+        {
+            Hit reflection = intersect(p, hit.ray_dir-n*2*hit.ray_dir.dot(n));
+            Color reflec_color = shade(reflection,reflection_count+1);
 
+            c = c +hit.obj->reflectivity * reflec_color;
+        }
     }
 
     return c;
@@ -159,14 +172,14 @@ Color shade(const Hit& hit, int reflection_count)
 
 void draw(ImageArray img, string filename)
 {
-    //img.normalise();
+    img.normalise();
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
     for (int y = 0; y < img.HEIGHT; ++y)
     {
         for (int x = 0; x < img.WIDTH; ++x)
         {
-            Color c = 255*img.pixelMatrix[x][y]/700;
+            Color c = img.pixelMatrix[x][y];
             image[y][x] = png::rgb_pixel((int)c.r, (int)c.g,(int) c.b);
         }
     }
@@ -174,3 +187,34 @@ void draw(ImageArray img, string filename)
     image.write("renders/"+filename);
 }
 
+void deserialize(string filename)
+{
+    CMarkup xml;
+    xml.Load(filename);
+    while(xml.FindElem())
+    {
+        string element = xml.GetTagName();
+        if(element == "Sphere")
+        {
+            Sphere* sp = new Sphere();
+            sp->deserialize(xml.GetSubDoc());
+            objects.push_back(sp);
+        }
+        else if(element == "Plane")
+        {
+            Plane* pl = new Plane();
+            pl->deserialize(xml.GetSubDoc());
+            objects.push_back(pl);
+        }
+        else if(element=="Camera")
+        {
+            Camera::deserialize(xml.GetSubDoc(),cam);
+        }
+        else if(element=="Light")
+        {
+            Light l = Light();
+            l.deserialize(xml.GetSubDoc());
+            lights.push_back(l);
+        }
+    }
+}

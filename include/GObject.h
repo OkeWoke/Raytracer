@@ -17,9 +17,8 @@ class GObject
 
         virtual double intersect(Vector src, Vector d) = 0;
         virtual Vector normal(Vector p) = 0;
-    protected:
-
-    private:
+        //virtual std::string Serialize();
+        //virtual void Deserialize(std::string strSubDoc);
 };
 
 #endif // GOBJECT_H

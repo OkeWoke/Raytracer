@@ -3,6 +3,7 @@
 #include<string>
 #include <sstream>
 #include <math.h>
+#include "Markup.h"
 class Vector
 {
     public:
@@ -20,13 +21,12 @@ class Vector
         double dot (Vector V) const;
 
         std::string to_string() const;
+
         double x;
         double y;
         double z;
-    protected:
 
-    private:
-
+        static void deserialize(std::string sub, Vector& vec);
 };
 
 bool operator==(const Vector& LHS, const Vector& RHS);

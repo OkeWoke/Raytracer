@@ -1,0 +1,79 @@
+<!-- Example XML -->
+<!-- Camera, w and h is the 'sensor' dimensions.
+     H_RES and V_RES are horizontal and vertical pixel resolution
+     fl is the focal length of the camera, smaller number means wider fov.
+-->
+<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="2">
+    <position x="0" y="0" z="0"/><!-- Camera position -->
+    
+    <!-- The following 3 vectors define camera rotation and pointing direction, if you change these values odd things may happen-->
+    <u x="1" y="0" z="0"/> <!-- vertical camera dir -->
+    <v x="0" y="1" z="0"/> <!-- Horizontal camera dir -->
+    <n x="0" y="0" z="-1"/> <!-- Camera looks in this vector dir -->
+</Camera>
+
+<Light>
+    <position x="0" y="0" z="450"/>
+    <ambient r="1" g="1" b="1"/>
+    <diffuse r="1" g="1" b="1"/>
+    <specular r="1" g="1" b="1"/>
+</Light>
+
+<Sphere radius="20" shininess="200" reflectivity="1">
+    <position x="0" y="-20" z="500"/>
+    <ambient r="0" g="128" b="0"/>
+    <diffuse r="0" g="255" b="0"/>
+    <specular r="255" g="255" b="255"/>
+</Sphere>
+
+<Sphere radius="20" shininess="200" reflectivity="1">
+    <position x="0" y="25" z="550"/>
+    <ambient r="128" g="0" b="128"/>
+    <diffuse r="128" g="0" b="128"/>
+    <specular r="255" g="255" b="255"/>
+</Sphere>
+
+<!-- Bottom Plane-->
+<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    <normal x="0" y="1" z="0" />
+    <position x="0" y="-50" z="0"/>
+    <ambient r="128" g="0" b="0"/>
+    <diffuse r="255" g="0" b="0"/>
+    <specular r="255" g="255" b="255"/>
+</Plane>
+
+<!-- Top Plane-->
+<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    <normal x="0" y="-1" z="0" />
+    <position x="0" y="60" z="0"/>
+    <ambient r="0" g="0" b="128"/>
+    <diffuse r="0" g="0" b="255"/>
+    <specular r="255" g="255" b="255"/>
+</Plane>
+
+<!-- Right plane-->
+<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    <normal x="-1" y="0" z="0" />
+    <position x="30" y="0" z="0"/>
+    <ambient r="0" g="0" b="0"/>
+    <diffuse r="30" g="30" b="30"/>
+    <specular r="255" g="255" b="255"/>
+</Plane>
+
+<!-- Left plane-->
+<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    <normal x="1" y="0" z="0" />
+    <position x="-30" y="0" z="0"/>
+    <ambient r="128" g="128" b="0"/>
+    <diffuse r="255" g="255" b="0"/>
+    <specular r="255" g="255" b="255"/>
+</Plane>
+
+<!-- Back Plane -->
+<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    <normal x="0" y="0" z="1" />
+    <position x="30" y="0" z="600"/>
+    <ambient r="128" g="128" b="128"/>
+    <diffuse r="255" g="255" b="255"/>
+    <specular r="255" g="255" b="255"/>
+</Plane>

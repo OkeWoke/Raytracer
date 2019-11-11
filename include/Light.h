@@ -12,7 +12,7 @@ class Light
         Color ambient;
         Color diffuse;
         Color specular;
-
+        void deserialize(std::string strSubDoc);
     protected:
 
     private:
