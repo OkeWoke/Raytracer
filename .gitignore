@@ -8,3 +8,4 @@ renders/*
 ffmpeg.exe
 include/Markup.h
 src/Markup.cpp
+include/CImg.h

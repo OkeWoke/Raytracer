@@ -34,7 +34,7 @@ double Plane::intersect(Vector src, Vector d)
 Vector Plane::normal(Vector p)
 //every point p on plane has same normal.
 {
-    return n;
+    return normalise(n);
 }
 
 void Plane::deserialize(std::string strSubDoc)

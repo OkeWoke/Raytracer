@@ -21,8 +21,10 @@
 #include "Camera.h"
 #include "Markup.h"
 
-using namespace std;
+#include "CImg.h"
 
+using namespace std;
+using namespace cimg_library;
 struct Hit
 {
     Vector src;
@@ -52,23 +54,11 @@ Config config;
 int main()
 {
     //Initialisation
-    int H_RES = 1000;
-    int V_RES = 1000;
-    double N = 0.2; //distance between eye and screen
-    double H = 0.5;
-    double V = 0.5;
-    Vector eye = Vector(0,40,450);//eye is at the center.
-    Vector u = Vector(1, 0, 0);//horizontal perp;
-    Vector v = Vector(0, 1, 0);//vertical perp;
-    Vector n = Vector(0, 0, -1);// Looking into Z dir
-    //cam = Camera(H_RES,V_RES,N,H,V,u,v,n,eye);
-
     cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
     cout<<"Loading complete" << endl;
 
     ImageArray img(cam.H_RES, cam.V_RES);
-
 
     cout << "Starting initial ray cast on "<< config.threads_to_use << " threads..."<< endl;
     auto start = chrono::steady_clock::now();
@@ -76,26 +66,55 @@ int main()
     auto ray_end = chrono::steady_clock::now();
     cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
 
-    cout <<"Saving image..." <<endl;
+
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     ostringstream filename;
     filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+
+
+    CImg<float> image(cam.H_RES, cam.V_RES,1,3,0);
+    CImgDisplay display(image, "Raytracer!");
+    while (!display.is_closed())
+    {
+        auto start = chrono::steady_clock::now();
+        //display.wait();
+
+        for (int y = 0; y < img.HEIGHT; ++y)
+        {
+            for (int x = 0; x < img.WIDTH; ++x)
+            {
+                image(x,y,0) = img.pixelMatrix[x][y].r;
+                image(x,y,1) = img.pixelMatrix[x][y].g;
+                image(x,y,2) = img.pixelMatrix[x][y].b;
+            }
+        }
+
+        auto ray_end = chrono::steady_clock::now();
+        cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+        image.display(display);
+        lights.clear();
+        objects.clear();
+        deserialize("scene.xml");
+        img.clearArray();
+        cast_rays_multithread(cam, img);
+    }
+
+    cast_rays_multithread(cam, img);
     draw(img, filename.str());
     img.clearArray();
+    cout << "Finished!" << endl;
+    auto end = chrono::steady_clock::now();
+    cout << "Completed in: "<<(end - ray_end )/chrono::milliseconds(1)<< " (ms)"<<endl;
+    img.deleteArray();
+    getch();
+    return 0;
 
     /* Animation codes
     ostringstream filename;
     filename << "render" << setfill('0') <<setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+      //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
     */
-
-    cout << "Finished!" << endl;
-    auto end = chrono::steady_clock::now();
-    cout << "Completed in: "<<(end - ray_end )/chrono::milliseconds(1)<< " (ms)"<<endl;
-    //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
-    img.deleteArray();
-    getch();
-    return 0;
 }
 
 void cast_rays_multithread(const Camera& cam, const ImageArray& img)
@@ -162,39 +181,41 @@ Color shade(const Hit& hit, int reflection_count)
         return Color(0,0,0);
     }
 
-    Vector p = hit.src + hit.t*hit.ray_dir; //hit point
+    Vector p = hit.src + hit.t * hit.ray_dir; //hit point
     Vector n = hit.obj->normal(p);
     Vector v = hit.src - p; //vector from point to viewer
     Color c = Color(0, 0, 0);
 
     for(unsigned int i = 0; i < lights.size(); i++)
     {
-        //ambient
-        c = c + (hit.obj->ambient * lights[i].ambient);
-
         Vector s = lights[i].position - p;
         Vector h = normalise(normalise(s) + normalise(v));
+        double div_factor = sqrt(0.1*s.abs());
+
+        //ambient
+        c = c + (hit.obj->ambient * lights[i].ambient);//div;
+
         Hit shadow = intersect(p,s);
-        if(shadow.obj == NULL || shadow.t <0 || shadow.t >1)
+        if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
         {
             if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n)));//(s.abs()*s.abs());
+                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n))) / div_factor;
 
                 //specular
-                double val = h.dot(n)/ (h.abs() * n.abs());
-                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess);//(s.abs()*s.abs());
+                double val = h.dot(n) / h.abs();
+                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess) / div_factor;
             }
         }
 
         //we can have reflections even if the object is visible but in shadow.
         if(reflection_count < config.max_reflections && hit.obj->reflectivity>=min_reflectivity)
         {
-            Hit reflection = intersect(p, hit.ray_dir-n*2*hit.ray_dir.dot(n));
-            Color reflec_color = shade(reflection,reflection_count+1);
+            Hit reflection = intersect(p, hit.ray_dir - n * 2  *hit.ray_dir.dot(n));
+            Color reflec_color = shade(reflection, reflection_count+1);
 
-            c = c +hit.obj->reflectivity * reflec_color;
+            c = c + hit.obj->reflectivity * reflec_color;
         }
     }
 
@@ -243,11 +264,11 @@ void deserialize(string filename)
             pl->deserialize(xml.GetSubDoc());
             objects.push_back(pl);
         }
-        else if(element=="Camera")
+        else if(element == "Camera")
         {
             Camera::deserialize(xml.GetSubDoc(),cam);
         }
-        else if(element=="Light")
+        else if(element == "Light")
         {
             Light l = Light();
             l.deserialize(xml.GetSubDoc());
