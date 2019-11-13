@@ -26,7 +26,7 @@ double Plane::intersect(Vector src, Vector d)
     }else
     {
         //std::cout <<"plane hit" <<std::endl;
-        double t = (position.abs()-src.dot(n))/(d.dot(n));
+        double t = (position-src).dot(n)/(d.dot(n));
         return t;
     }
 }
