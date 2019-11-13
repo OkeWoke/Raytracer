@@ -45,6 +45,6 @@ void Color::deserialize(std::string sub, Color& color)
     CMarkup xml(sub);
     xml.FindElem();
     color.r = std::stod(xml.GetAttrib("r"));
-    color.g = std::stod(xml.GetAttrib("b"));
-    color.b = std::stod(xml.GetAttrib("g"));
+    color.g = std::stod(xml.GetAttrib("g"));
+    color.b = std::stod(xml.GetAttrib("b"));
 }
