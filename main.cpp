@@ -17,6 +17,7 @@
 #include "Light.h"
 #include "Utility.h"
 #include "Vector.h"
+#include "Matrix.h"
 #include "imageArray.h"
 
 #include "GObjects/Sphere.h"
@@ -61,6 +62,10 @@ Config config;
 int main()
 {
     Mesh* mesh = obj_reader("example_obj.obj");
+    Matrix mat(1,2,3,4, 5,6,7,8 ,7,0,1,0, 0,0,0,1);
+    cout << mat.to_string() <<endl;
+    Matrix mat2 = mat.inverse();
+    cout << mat2.to_string() <<endl;
     /*
     //Initialisation
     cout<<"Loading scene from scene.xml..." << endl;
