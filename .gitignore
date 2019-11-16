@@ -6,6 +6,6 @@ RayTracer.layout
 *.dll
 renders/*
 ffmpeg.exe
-include/Markup.h
-src/Markup.cpp
-include/CImg.h
+include/ext/Markup.h
+src/ext/Markup.cpp
+include/ext/CImg.h

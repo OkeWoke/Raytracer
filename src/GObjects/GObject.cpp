@@ -1,4 +1,4 @@
-#include "GObject.h"
+#include "GObjects/GObject.h"
 
 GObject::GObject()
 {

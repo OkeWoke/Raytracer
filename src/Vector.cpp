@@ -125,6 +125,12 @@ Vector normalise(const Vector& vec)
 {
     return (vec/vec.abs());
 }
+
+Vector Vector::cross(const Vector& vec)
+{
+    return Vector(this->y*vec.z - this->z*vec.y, this->z*vec.x - this->x*vec.z, this->x*vec.y - this->y*vec.x);
+}
+
 std::string Vector::to_string() const
 {
 	std::ostringstream oss;

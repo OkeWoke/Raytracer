@@ -11,17 +11,22 @@
 #include <ctime>
 #include <thread>
 #include <functional>
+#include <fstream>
 
+#include "Camera.h"
+#include "Light.h"
+#include "Utility.h"
 #include "Vector.h"
 #include "imageArray.h"
-#include "Sphere.h"
-#include "GObject.h"
-#include "Light.h"
-#include "Plane.h"
-#include "Camera.h"
-#include "Markup.h"
 
-#include "CImg.h"
+#include "GObjects/Sphere.h"
+#include "GObjects/GObject.h"
+#include "GObjects/Plane.h"
+#include "GObjects/Triangle.h"
+#include "GObjects/Mesh.h"
+
+#include "ext/Markup.h"
+#include "ext/CImg.h"
 
 using namespace std;
 using namespace cimg_library;
@@ -46,6 +51,7 @@ Color shade(const Hit& hit, int reflection_count);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
 void deserialize(string filename);
 void cast_rays_multithread(const Camera& cam, const ImageArray& img);
+Mesh* obj_reader(string filename);
 
 vector<GObject*> objects;
 vector<Light> lights;
@@ -54,6 +60,8 @@ Config config;
 
 int main()
 {
+    Mesh* mesh = obj_reader("example_obj.obj");
+    /*
     //Initialisation
     cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
@@ -285,4 +293,64 @@ void deserialize(string filename)
             lights.push_back(l);
         }
     }
+}
+
+Mesh* obj_reader(string filename)
+{
+    //assume .obj is triangulated
+    vector<Triangle*> triangles;
+    vector<Vector> v;
+    vector<Vector> vt;
+    vector<Vector> vn;
+
+    ifstream file(filename);
+    //file.open();
+    if(!file)
+    {
+        cout << "Unable to open .obj file" << endl;
+        return nullptr;
+    }
+
+    string line;
+    while(getline(file, line))
+    {
+        double x, y, z;
+
+        try
+        {
+            istringstream iss(line.substr(2,36));
+            if (line.substr(0,2) == "v ")
+            {
+                iss >> x >> y >> z;
+                v.push_back(Vector(x,y,z));
+            }else if (line.substr(0,2) == "vt")
+            {
+                iss >> x >> y >> z;
+                vt.push_back(Vector(x,y,z));
+            }else if (line.substr(0,2) == "vn")
+            {
+                iss >> x >> y >> z;
+                vn.push_back(Vector(x,y,z));
+            }else if (line.substr(0,2) == "f ")
+            {
+                auto vec_stoi = [](const vector<string>& vec )
+                {
+                    return vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
+                };
+
+                //this vector should be length 3...
+                vector<string> face_points = Utility::split(line.substr(2,36)," ");
+                vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
+                vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
+                vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
+                Triangle* tri = new Triangle(v[i0[0]-1], v[i1[0]-1], v[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
+                triangles.push_back(tri);
+            }
+        }catch(out_of_range)
+        {
+            return nullptr;
+        }
+    }
+    Mesh* mesh = new Mesh(triangles, Vector(0,0,0));
+    return mesh;
 }

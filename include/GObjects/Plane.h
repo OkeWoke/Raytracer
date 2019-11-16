@@ -1,8 +1,8 @@
 #ifndef PLANE_H
 #define PLANE_H
-#include "GObject.h"
+#include "GObjects/GObject.h"
 #include <String>
-#include "Markup.h"
+#include "ext/Markup.h"
 class Plane: public GObject
 {
     public:
