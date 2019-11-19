@@ -1,7 +1,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 #include <string>
-#include "Markup.h"
+#include "ext/Markup.h"
 
 class Color
 {

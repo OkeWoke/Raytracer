@@ -3,7 +3,7 @@
 #include<string>
 #include <sstream>
 #include <math.h>
-#include "Markup.h"
+#include "ext/Markup.h"
 class Vector
 {
     public:
@@ -27,6 +27,8 @@ class Vector
         double z;
 
         static void deserialize(std::string sub, Vector& vec);
+
+        Vector cross(const Vector& vec);
 };
 
 bool operator==(const Vector& LHS, const Vector& RHS);
@@ -37,4 +39,5 @@ Vector operator*(double LHS, const Vector& RHS);
 Vector operator/ (const Vector& LHS, double RHS);
 
 Vector normalise(const Vector& vec);
+
 #endif // VECTOR_H

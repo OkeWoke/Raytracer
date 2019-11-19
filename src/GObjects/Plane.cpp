@@ -1,4 +1,4 @@
-#include "Plane.h"
+#include "GObjects/Plane.h"
 #include <iostream>
 Plane::Plane(): GObject()
 {
@@ -26,7 +26,7 @@ double Plane::intersect(Vector src, Vector d)
     }else
     {
         //std::cout <<"plane hit" <<std::endl;
-        double t = (position.abs()-src.dot(n))/(d.dot(n));
+        double t = (position-src).dot(n)/(d.dot(n));
         return t;
     }
 }
@@ -34,7 +34,7 @@ double Plane::intersect(Vector src, Vector d)
 Vector Plane::normal(Vector p)
 //every point p on plane has same normal.
 {
-    return n;
+    return normalise(n);
 }
 
 void Plane::deserialize(std::string strSubDoc)

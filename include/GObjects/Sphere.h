@@ -1,7 +1,7 @@
 #ifndef SPHERE_H
 #define SPHERE_H
-#include "GObject.h"
-#include "Markup.h"
+#include "GObjects/GObject.h"
+#include "ext/Markup.h"
 #include <string>
 #include <iostream>
 class Sphere: public GObject
