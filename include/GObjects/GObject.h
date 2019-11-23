@@ -7,18 +7,17 @@
 class GObject
 {
     public:
-        GObject();
-        Color ambient;
-        Color diffuse;
-        Color specular;
+        Color color;
         Vector position;
         double shininess;
         double reflectivity;
 
-        virtual double intersect(Vector src, Vector d) = 0;
-        virtual Vector normal(Vector p) = 0;
-        //virtual std::string Serialize();
-        //virtual void Deserialize(std::string strSubDoc);
+        GObject();
+        GObject(Vector position): position(position){};
+        GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
+
+        virtual double intersect(const Vector& src, const Vector& d) = 0;
+        virtual Vector normal(const Vector& p) = 0;
 };
 
 #endif // GOBJECT_H

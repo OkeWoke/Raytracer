@@ -1,5 +1,5 @@
 #include "GObjects/Triangle.h"
-
+#include<iostream>
 Triangle::Triangle(): GObject()
 {
     //ctor
@@ -18,10 +18,15 @@ vn3(vn3)
 {
     Vector AB = v1-v2;
     Vector AC = v3-v2;
-    n = normalise(AB.cross(AC));
+    n = normalise(AB.cross(AC)); //face normal
+
+    position = Vector(0,0,0);
+    color = Color(200,0,0);
+    this->shininess = 200;
+    this->reflectivity = 0.6;
 }
 
-double Triangle::intersect(Vector src, Vector d)
+double Triangle::intersect(const Vector& src, const Vector& d)
 {
     if (d.dot(n) != 0)
     {
@@ -36,6 +41,7 @@ double Triangle::intersect(Vector src, Vector d)
             if ((a>0 && b>0 && c>0) || (a<0 && b <0 && c < 0))
             {
                 //intersection within triangle
+                //std::cout << "triangle hit succesfully" << std::endl;
                 return t;
             }
         }
@@ -44,10 +50,10 @@ double Triangle::intersect(Vector src, Vector d)
      //intersection with plane
 }
 
-Vector Triangle::normal(Vector p)
+Vector Triangle::normal(const Vector& p)
 {
     //placeholders
-    return n;
+    return -1*n;
 }
 
 std::string Triangle::to_string()

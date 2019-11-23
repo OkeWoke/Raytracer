@@ -2,19 +2,14 @@
 
 Light::Light():
 position(Vector()),
-ambient(Color()),
-diffuse(Color()),
-specular(Color())
+color(Color())
 {
-
 }
 
-Light::Light(Vector pos, Color a, Color d, Color s)
+Light::Light(Vector pos, Color c):
+position(pos),
+color(c)
 {
-    position = pos;
-    ambient = a;
-    diffuse = d;
-    specular = s;
 }
 
 void Light::deserialize(std::string strSubDoc)
@@ -27,13 +22,7 @@ void Light::deserialize(std::string strSubDoc)
     xml.FindElem("position");
     Vector::deserialize(xml.GetSubDoc(), position);
 
-    xml.FindElem("ambient");
-    Color::deserialize(xml.GetSubDoc(), ambient);
-
-    xml.FindElem("diffuse");
-    Color::deserialize(xml.GetSubDoc(), diffuse);
-
-    xml.FindElem("specular");
-    Color::deserialize(xml.GetSubDoc(), specular);
+    xml.FindElem("color");
+    Color::deserialize(xml.GetSubDoc(), color);
 }
 

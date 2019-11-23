@@ -8,11 +8,13 @@ class Sphere: public GObject
 {
     public:
         Sphere();
-        Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess, double reflectivity);
-        double intersect(Vector src, Vector d);
-        Vector normal(Vector p);
+        Sphere(Vector c, double radius);
+        Sphere(Vector pos, double radius, Color c, double shininess, double reflectivity);
+        double intersect(const Vector& src, const Vector& d);
+        Vector normal(const Vector& p);
 
         void deserialize(std::string strSubDoc);
+
     private:
         double radius;
 };

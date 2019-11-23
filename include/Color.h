@@ -13,18 +13,12 @@ class Color
         double b;
 
         static void deserialize(std::string sub, Color& color);
-
-    protected:
-
-    private:
 };
-
 
 Color operator+(const Color& LHS, const Color& RHS);
 Color operator*(const Color& LHS, const Color& RHS);
 Color operator*(const Color& LHS, double s);
 Color operator*(double s, const Color& RHS);
 Color operator/(const Color& LHS, double RHS);
-
 
 #endif // COLOR_H

@@ -61,12 +61,6 @@ Config config;
 
 int main()
 {
-    Mesh* mesh = obj_reader("example_obj.obj");
-    Matrix mat(1,2,3,4, 5,6,7,8 ,7,0,1,0, 0,0,0,1);
-    cout << mat.to_string() <<endl;
-    Matrix mat2 = mat.inverse();
-    cout << mat2.to_string() <<endl;
-    /*
     //Initialisation
     cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
@@ -116,13 +110,32 @@ int main()
         cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
         image.display(display);
         lights.clear();
+        for (auto p : objects)
+        {
+            delete p;
+        }
         objects.clear();
         deserialize("scene.xml");
+
         img.clearArray();
         cast_rays_multithread(cam, img);
+
     }
 
+    objects.clear();
+    deserialize("scene.xml");
+
+    img.clearArray();
+
+    //Mesh* mesh = obj_reader("andypants-nurse.obj");//D:\\Programming\\Raytracer
+   // if(mesh != nullptr){objects.push_back(mesh);}
     cast_rays_multithread(cam, img);
+    for (auto p : objects)
+    {
+            delete p;
+    }
+
+    objects.clear();
     draw(img, filename.str());
     img.clearArray();
     cout << "Finished!" << endl;
@@ -181,12 +194,14 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 
     for(unsigned int i = 0; i < objects.size(); i++)
     {
-        double t = objects[i]->intersect(src,ray_dir);
+        //shitty work around for now until accelerated structures
+
+        double t = objects[i]->intersect(src, ray_dir);
 
         if(t>0.0001 && (hit.obj==NULL || t<hit.t))//if hit is viisible and new hit is closer than previous
         {
             hit.t = t;
-            hit.obj = objects[i];
+            hit.obj = objects[i]; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
         }
     }
 
@@ -195,7 +210,6 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 
 Color shade(const Hit& hit, int reflection_count)
 {
-
     int min_reflectivity = 0.3;
 
     if(hit.obj == NULL)
@@ -215,7 +229,7 @@ Color shade(const Hit& hit, int reflection_count)
         double div_factor = s.abs();
 
         //ambient
-        c = c + (hit.obj->ambient * lights[i].ambient);//div;
+        //c = c + (hit.obj->color * lights[i].color);//div;
 
         Hit shadow = intersect(p,s);
         if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
@@ -223,11 +237,11 @@ Color shade(const Hit& hit, int reflection_count)
             if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->diffuse * lights[i].diffuse * ((normalise(s).dot(n))) / div_factor;
+                c = c + hit.obj->color * lights[i].color * ((normalise(s).dot(n))) / div_factor;
 
                 //specular
                 double val = h.dot(n) / h.abs();
-                c = c + hit.obj->specular * lights[i].specular * pow(val, hit.obj->shininess) / div_factor;
+                c = c + Color(255,255,255) * lights[i].color * pow(val, hit.obj->shininess) / div_factor;
             }
         }
 
@@ -246,6 +260,7 @@ Color shade(const Hit& hit, int reflection_count)
 
 void draw(ImageArray& img, string filename)
 {
+    img.gammaCorrection();
     img.normalise();
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
@@ -266,11 +281,15 @@ void deserialize(string filename)
 {
     CMarkup xml;
     xml.Load(filename);
-    xml.FindElem();
+
+    xml.FindElem(); //config
     config.threads_to_use = stoi(xml.GetAttrib("threads"));
     if (config.threads_to_use < 1){config.threads_to_use=1;}
     config.max_reflections = stoi(xml.GetAttrib("max_reflections"));
     config.stretch = xml.GetAttrib("stretch");
+
+    xml.FindElem(); //camera
+    Camera::deserialize(xml.GetSubDoc(),cam);
 
     while(xml.FindElem())
     {
@@ -287,15 +306,17 @@ void deserialize(string filename)
             pl->deserialize(xml.GetSubDoc());
             objects.push_back(pl);
         }
-        else if(element == "Camera")
-        {
-            Camera::deserialize(xml.GetSubDoc(),cam);
-        }
         else if(element == "Light")
         {
             Light l = Light();
             l.deserialize(xml.GetSubDoc());
             lights.push_back(l);
+        }
+        else if(element == "Mesh")
+        {
+            string filename = xml.GetAttrib("filename");
+            Mesh* m = obj_reader(filename);
+            objects.push_back(m);
         }
     }
 }
@@ -308,8 +329,8 @@ Mesh* obj_reader(string filename)
     vector<Vector> vt;
     vector<Vector> vn;
 
-    ifstream file(filename);
-    //file.open();
+    ifstream file;
+    file.open(filename);
     if(!file)
     {
         cout << "Unable to open .obj file" << endl;
@@ -320,7 +341,7 @@ Mesh* obj_reader(string filename)
     while(getline(file, line))
     {
         double x, y, z;
-
+        if(line.length() < 3){continue;}
         try
         {
             istringstream iss(line.substr(2,36));
@@ -338,13 +359,16 @@ Mesh* obj_reader(string filename)
                 vn.push_back(Vector(x,y,z));
             }else if (line.substr(0,2) == "f ")
             {
+                //cout << line <<endl;
                 auto vec_stoi = [](const vector<string>& vec )
                 {
+
                     return vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
                 };
 
+
                 //this vector should be length 3...
-                vector<string> face_points = Utility::split(line.substr(2,36)," ");
+                vector<string> face_points = Utility::split(line.substr(2,100)," ");
                 vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
                 vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
                 vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
@@ -353,9 +377,10 @@ Mesh* obj_reader(string filename)
             }
         }catch(out_of_range)
         {
+            cout << "Error reading .obj file!" << endl;
             return nullptr;
         }
     }
-    Mesh* mesh = new Mesh(triangles, Vector(0,0,0));
-    return mesh;
+    cout << "Triangle count: " << triangles.size() << endl;
+    return new Mesh(triangles, Vector(0,0,0));
 }
