@@ -2,22 +2,10 @@
 
 Camera::Camera()
 {
-    //ctor
+    double tmp[4][4] = {{0,-1,0,0},{1,0,0,0},{0,0,1,0},{0,0,0,1}};
+    mat = Matrix(tmp);
 }
 
-Camera::Camera(int H_RES, int V_RES, double N, double H, double V, Vector& u, Vector &v, Vector& n, Vector& eye):
-H_RES(H_RES),
-V_RES(V_RES),
-N(N),
-H(H),
-V(V),
-u(u),
-v(v),
-n(n),
-pos(eye)
-{
-
-}
 
 void Camera::deserialize(std::string sub, Camera& cam)
 {
@@ -35,12 +23,22 @@ void Camera::deserialize(std::string sub, Camera& cam)
     xml.FindElem("position");
     Vector::deserialize(xml.GetSubDoc(), cam.pos);
 
-    xml.FindElem("u");
-    Vector::deserialize(xml.GetSubDoc(), cam.u);
+    xml.FindElem("x_rot");
 
-    xml.FindElem("v");
-    Vector::deserialize(xml.GetSubDoc(), cam.v);
+    Matrix tmp = cam.mat; //make sure its a carbon copy, not a reference.
+    tmp = tmp * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
+    //Vector::deserialize(xml.GetSubDoc(), cam.u);
 
-    xml.FindElem("n");
-    Vector::deserialize(xml.GetSubDoc(), cam.n);
+    xml.FindElem("y_rot");
+    tmp = tmp * Matrix::rot_y(std::stod(xml.GetAttrib("angle")));
+    //Vector::deserialize(xml.GetSubDoc(), cam.v);
+
+    xml.FindElem("z_rot");
+    tmp = tmp * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
+    //Vector::deserialize(xml.GetSubDoc(), cam.n);
+
+    tmp = tmp * Matrix::translate(cam.pos);
+    cam.n = Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]);
+    cam.u = Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]);
+    cam.v = Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]);
 }

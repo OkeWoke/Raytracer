@@ -51,3 +51,8 @@ void Plane::deserialize(std::string strSubDoc)
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
 }
+
+Plane* Plane::get_obj()
+{
+    return this;
+}

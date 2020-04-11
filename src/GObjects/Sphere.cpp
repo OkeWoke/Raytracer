@@ -22,7 +22,8 @@ double Sphere::intersect(const Vector& src, const Vector& d)
     double c = cen.dot(cen) - (radius*radius);
 
     double disc = (b*b)-(4*a*c);
-    if(disc > 0)
+
+    if(disc >= 0)
     {
         double t_1;
         if (b>0)
