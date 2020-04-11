@@ -7,9 +7,9 @@ class Plane: public GObject
 {
     public:
         Plane();
-        Plane(Vector pos, Vector n, double l, double w, Color a, Color d, Color s, double shininess, double reflectivity);
-        Vector normal(Vector p);
-        double intersect(Vector src, Vector d);
+        Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity);
+        Vector normal(const Vector& p);
+        double intersect(const Vector& src, const Vector& d);
         void deserialize(std::string strSubDoc);
 
     private:

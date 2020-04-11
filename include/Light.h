@@ -6,16 +6,12 @@ class Light
 {
     public:
         Light();
-        Light(Vector pos, Color a, Color d, Color s);
+        Light(Vector pos, Color c);
 
         Vector position;
-        Color ambient;
-        Color diffuse;
-        Color specular;
-        void deserialize(std::string strSubDoc);
-    protected:
+        Color color;
 
-    private:
+        void deserialize(std::string strSubDoc);
 };
 
 #endif // LIGHT_H

@@ -135,6 +135,7 @@ Matrix Matrix::inverse()
     return Matrix(aug);
 }
 
+
 std::string Matrix::to_string()
 {
     std::ostringstream oss;
@@ -175,6 +176,18 @@ Matrix Matrix::rot_z(double theta)
     double s = sin(theta);
     double c = cos(theta);
     return Matrix(c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+}
+
+Vector Matrix::mult_vec(Vector& lhs, double w)
+//transform a 3 dim vec with 4th homogenous coordinate w
+{
+    return Vector(
+                  a * lhs.x + b * lhs.y + c * lhs.z + d * w,
+                  e * lhs.x + f * lhs.y + g * lhs.z + h * w,
+                  i * lhs.x + j * lhs.y + k * lhs.z + l * w
+                  );
+
+                 // m * lhs.x + n * lhs.y + o * lhs.z + p * w
 }
 
 Matrix operator* (const Matrix& L, const Matrix& R)

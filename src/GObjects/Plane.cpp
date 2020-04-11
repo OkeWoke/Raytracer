@@ -1,37 +1,31 @@
 #include "GObjects/Plane.h"
 #include <iostream>
+
 Plane::Plane(): GObject()
 {
-//
 }
 
-Plane::Plane(Vector pos, Vector n, double l, double w, Color a, Color d, Color s, double shininess, double reflectivity): GObject()
+Plane::Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity): GObject(c, pos, shininess, reflectivity),
+n(normalise(n)),
+w(w),
+l(l)
 {
-    ambient = a;
-    diffuse = d;
-    specular = s;
-    this->n = normalise(n);
-    position = pos;
-    this->shininess = shininess;
-    this->reflectivity = reflectivity;
-    this->w = w;
-    this->l = l;
 }
 
-double Plane::intersect(Vector src, Vector d)
+double Plane::intersect(const Vector& src, const Vector& d)
 {
-    if (d.dot(n)==0)
+    double tmp = d.dot(n);
+    if (tmp==0)
     {
         return -1;
     }else
     {
-        //std::cout <<"plane hit" <<std::endl;
-        double t = (position-src).dot(n)/(d.dot(n));
+        double t = (position-src).dot(n)/(tmp);
         return t;
     }
 }
 
-Vector Plane::normal(Vector p)
+Vector Plane::normal(const Vector& p)
 //every point p on plane has same normal.
 {
     return normalise(n);
@@ -54,12 +48,11 @@ void Plane::deserialize(std::string strSubDoc)
     xml.FindElem("position");
     Vector::deserialize(xml.GetSubDoc(), position);
 
-    xml.FindElem("ambient");
-    Color::deserialize(xml.GetSubDoc(), ambient);
+    xml.FindElem("color");
+    Color::deserialize(xml.GetSubDoc(), color);
+}
 
-    xml.FindElem("diffuse");
-    Color::deserialize(xml.GetSubDoc(), diffuse);
-
-    xml.FindElem("specular");
-    Color::deserialize(xml.GetSubDoc(), specular);
+Plane* Plane::get_obj()
+{
+    return this;
 }

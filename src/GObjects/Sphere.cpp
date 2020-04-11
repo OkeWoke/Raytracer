@@ -2,29 +2,28 @@
 
 Sphere::Sphere(): GObject()
 {
-    //
 }
 
-Sphere::Sphere(Vector pos, double radius, Color a, Color d, Color s, double shininess, double reflectivity): GObject()
+Sphere::Sphere(Vector pos, double radius): GObject(position),
+radius(radius)
 {
-    ambient = a;
-    diffuse = d;
-    specular = s;
-    this->radius = radius;
-    position = pos;
-    this->shininess = shininess;
-    this->reflectivity = reflectivity;
 }
 
-double Sphere::intersect(Vector src, Vector d)
+Sphere::Sphere(Vector pos, double radius, Color c, double shininess, double reflectivity): GObject(c, pos, shininess, reflectivity),
+radius(radius)
 {
-    src-=position;
+}
+
+double Sphere::intersect(const Vector& src, const Vector& d)
+{
+    Vector cen = src-position;
     double a = d.dot(d);
-    double b = 2*d.dot(src);
-    double c = src.dot(src) - (radius*radius);
+    double b = 2*d.dot(cen);
+    double c = cen.dot(cen) - (radius*radius);
 
     double disc = (b*b)-(4*a*c);
-    if(disc > 0)
+
+    if(disc >= 0)
     {
         double t_1;
         if (b>0)
@@ -43,14 +42,13 @@ double Sphere::intersect(Vector src, Vector d)
         {
             return t_2;
         }
-
     }else
     {
         return -1;
     }
 }
 
-Vector Sphere::normal(Vector p)
+Vector Sphere::normal(const Vector& p)
 {
     return normalise(p-position);
 }
@@ -68,12 +66,6 @@ void Sphere::deserialize(std::string strSubDoc)
     xml.FindElem("position");
     Vector::deserialize(xml.GetSubDoc(), position);
 
-    xml.FindElem("ambient");
-    Color::deserialize(xml.GetSubDoc(), ambient);
-
-    xml.FindElem("diffuse");
-    Color::deserialize(xml.GetSubDoc(), diffuse);
-
-    xml.FindElem("specular");
-    Color::deserialize(xml.GetSubDoc(), specular);
+    xml.FindElem("color");
+    Color::deserialize(xml.GetSubDoc(), color);
 }
