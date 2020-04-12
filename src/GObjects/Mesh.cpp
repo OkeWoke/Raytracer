@@ -3,6 +3,7 @@
 Mesh::Mesh()
 {
     //ctor
+    this->bounding_sphere = Sphere(center, 5);
 }
 
 Mesh::Mesh(std::string filename)
@@ -13,7 +14,7 @@ Mesh::Mesh(std::string filename)
 
     for(int i =0;i<6;i++)
     {
-        limits[i] =NULL;
+        //limits[i] =NULL;
     }
 
     this->bounding_sphere = Sphere(center, 5); //to be removed with BVH
@@ -32,7 +33,7 @@ double Mesh::intersect(const Vector& src, const  Vector& d)
 //to be overwritten
 {
 
-    //if(bounding_sphere.intersect(src, d) != -1)
+    if(bounding_sphere.intersect(src, d) != -1)
     {
 
         int triangle_hit_index;

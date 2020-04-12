@@ -191,17 +191,17 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     hit.ray_dir= ray_dir;
     hit.t=-1;
     hit.obj = NULL;
-
+    Vector ray_dir_norm = ray_dir/ray_dir.abs();
     for(unsigned int i = 0; i < objects.size(); i++)
     {
         //shitty work around for now until accelerated structures
 
-        double t = objects[i]->intersect(src, ray_dir);
+        double t = objects[i]->intersect(src, ray_dir_norm);
 
-        if(t>0.0001 && (hit.obj==NULL || t<hit.t))//if hit is viisible and new hit is closer than previous
+        if(t>0.01 && (hit.obj==NULL || (t/ray_dir.abs())<hit.t))//if hit is viisible and new hit is closer than previous
         {
-            hit.t = t;
-            hit.obj = objects[i]; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
+            hit.t = t/ray_dir.abs();
+            hit.obj = objects[i]->get_obj(); //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
         }
     }
 
@@ -234,7 +234,7 @@ Color shade(const Hit& hit, int reflection_count)
         Hit shadow = intersect(p,s);
         if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
         {
-            if(s.dot(n)> 0 )
+            //if(s.dot(n)> 0 )
             {
                 //diffuse
                 c = c + hit.obj->color * lights[i].color * ((normalise(s).dot(n))) / div_factor;
@@ -314,73 +314,10 @@ void deserialize(string filename)
         }
         else if(element == "Mesh")
         {
-            string filename = xml.GetAttrib("filename");
-            Mesh* m = obj_reader(filename);
+
+            Mesh* m = new Mesh();
+            m->deserialize(xml.GetSubDoc());
             objects.push_back(m);
         }
     }
-}
-
-Mesh* obj_reader(string filename)
-{
-    //assume .obj is triangulated
-    vector<Triangle*> triangles;
-    vector<Vector> v;
-    vector<Vector> vt;
-    vector<Vector> vn;
-
-    ifstream file;
-    file.open(filename);
-    if(!file)
-    {
-        cout << "Unable to open .obj file" << endl;
-        return nullptr;
-    }
-
-    string line;
-    while(getline(file, line))
-    {
-        double x, y, z;
-        if(line.length() < 3){continue;}
-        try
-        {
-            istringstream iss(line.substr(2,36));
-            if (line.substr(0,2) == "v ")
-            {
-                iss >> x >> y >> z;
-                v.push_back(Vector(x,y,z));
-            }else if (line.substr(0,2) == "vt")
-            {
-                iss >> x >> y >> z;
-                vt.push_back(Vector(x,y,z));
-            }else if (line.substr(0,2) == "vn")
-            {
-                iss >> x >> y >> z;
-                vn.push_back(Vector(x,y,z));
-            }else if (line.substr(0,2) == "f ")
-            {
-                //cout << line <<endl;
-                auto vec_stoi = [](const vector<string>& vec )
-                {
-
-                    return vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
-                };
-
-
-                //this vector should be length 3...
-                vector<string> face_points = Utility::split(line.substr(2,100)," ");
-                vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
-                vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
-                vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
-                Triangle* tri = new Triangle(v[i0[0]-1], v[i1[0]-1], v[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
-                triangles.push_back(tri);
-            }
-        }catch(out_of_range)
-        {
-            cout << "Error reading .obj file!" << endl;
-            return nullptr;
-        }
-    }
-    cout << "Triangle count: " << triangles.size() << endl;
-    return new Mesh(triangles, Vector(0,0,0));
 }

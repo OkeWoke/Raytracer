@@ -3,6 +3,7 @@
 #include "GObjects/GObject.h"
 #include <String>
 #include "ext/Markup.h"
+
 class Plane: public GObject
 {
     public:
@@ -12,6 +13,7 @@ class Plane: public GObject
         double intersect(const Vector& src, const Vector& d);
         void deserialize(std::string strSubDoc);
 
+        Plane* get_obj();
     private:
         Vector n;
         double l;

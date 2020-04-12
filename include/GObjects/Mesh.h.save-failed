@@ -1,0 +1,38 @@
+#include "GObjects/GObject.h"
+#include "GObjects/Triangle.h"
+#include <vector>
+#include<limits>
+#include "Matrix.h"
+#include "Sphere.h"
+#include <sstream>
+#include <fstream>
+#include "Utility.h"
+#ifndef MESH_H
+#define MESH_H
+
+
+class Mesh : public GObject
+{
+    public:
+        Mesh();
+        ~Mesh();
+        Mesh(std::string filename);
+
+        double intersect(const Vector& src, const  Vector& d);
+        Vector normal(const Vector& p);
+        Vector center;
+
+        std::vector<Triangle*> triangles;
+
+        double limits[6];
+
+        void deserialize(std::string strSubDoc);
+
+    private:
+        void obj_reader(std::string filename);
+        Matrix trans_mat;
+        GObject* tri;
+
+};
+
+#endif // MESH_H

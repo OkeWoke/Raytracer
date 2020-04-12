@@ -1,8 +1,11 @@
-#ifndef CAMERA_H
-#define CAMERA_H
 #include "Vector.h"
 #include "ext/Markup.h"
+#include "Matrix.h"
 #include <string>
+
+#ifndef CAMERA_H
+#define CAMERA_H
+
 class Camera
 {
     public:
@@ -11,7 +14,7 @@ class Camera
         int H_RES, V_RES;
         double N, H, V;
         Vector u,v,n,pos;
-
+        Matrix mat;
         static void deserialize(std::string sub, Camera& cam);
 };
 
