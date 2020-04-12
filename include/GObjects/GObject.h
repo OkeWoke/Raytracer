@@ -6,6 +6,9 @@
 
 class GObject
 {
+
+
+
     public:
         Color color;
         Vector position;
@@ -16,9 +19,27 @@ class GObject
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
 
-        GObject* get_obj();
-        virtual double intersect(const Vector& src, const Vector& d) = 0;
+        struct intersection
+        {
+            GObject* obj_ref;
+            double t;
+
+            intersection()
+            {
+                obj_ref = nullptr;
+                t = -1;
+            };
+
+            ~intersection()
+            {
+                obj_ref = nullptr;
+            }
+        };
+        virtual intersection intersect(const Vector& src, const Vector& d) = 0;
         virtual Vector normal(const Vector& p) = 0;
+
+
+
 };
 
 #endif // GOBJECT_H

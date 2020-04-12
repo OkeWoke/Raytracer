@@ -10,7 +10,7 @@ class Sphere: public GObject
         Sphere();
         Sphere(Vector c, double radius);
         Sphere(Vector pos, double radius, Color c, double shininess, double reflectivity);
-        double intersect(const Vector& src, const Vector& d);
+        intersection intersect(const Vector& src, const Vector& d);
         Vector normal(const Vector& p);
 
         void deserialize(std::string strSubDoc);

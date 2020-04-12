@@ -12,17 +12,16 @@ l(l)
 {
 }
 
-double Plane::intersect(const Vector& src, const Vector& d)
+GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
 {
+    intersection inter;
     double tmp = d.dot(n);
-    if (tmp==0)
+    if (tmp!=0)
     {
-        return -1;
-    }else
-    {
-        double t = (position-src).dot(n)/(tmp);
-        return t;
+        inter.t = (position-src).dot(n)/(tmp);
+        inter.obj_ref = this;
     }
+    return inter;
 }
 
 Vector Plane::normal(const Vector& p)

@@ -37,6 +37,11 @@ struct Hit
     Vector ray_dir;
     double t;
     GObject* obj;
+
+    ~Hit()
+    {
+        obj = nullptr;
+    }
 };
 
 struct Config
@@ -61,6 +66,7 @@ Config config;
 
 int main()
 {
+    int theta = 0;
     //Initialisation
     cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
@@ -85,8 +91,9 @@ int main()
     CImgDisplay display(image, "Raytracer!");
     while (!display.is_closed())
     {
-        auto start = chrono::steady_clock::now();
+
         //display.wait();
+        auto start = chrono::steady_clock::now();
         if(config.stretch == "norm")
         {
             img.normalise();
@@ -106,19 +113,30 @@ int main()
             }
         }
 
-        auto ray_end = chrono::steady_clock::now();
-        cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+
         image.display(display);
+        auto render_end = chrono::steady_clock::now();
+        cout << "REnder completed in: "<<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+
         lights.clear();
         for (auto p : objects)
         {
             delete p;
         }
         objects.clear();
-        deserialize("scene.xml");
-
         img.clearArray();
+
+
+        deserialize("scene.xml");
+        //modify camera here
+        Matrix cam_mat = cam.mat;
+        cam_mat = cam_mat *Matrix::rot_y(-6.3) * Matrix::rot_x(theta) * Matrix::translate(cam.pos);
+        cam.update_camera(cam_mat);
+        theta = theta + 1;
+        start = chrono::steady_clock::now();
         cast_rays_multithread(cam, img);
+        auto ray_end = chrono::steady_clock::now();
+        cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
 
     }
 
@@ -127,8 +145,6 @@ int main()
 
     img.clearArray();
 
-    //Mesh* mesh = obj_reader("andypants-nurse.obj");//D:\\Programming\\Raytracer
-   // if(mesh != nullptr){objects.push_back(mesh);}
     cast_rays_multithread(cam, img);
     for (auto p : objects)
     {
@@ -190,18 +206,17 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     hit.src = src;
     hit.ray_dir= ray_dir;
     hit.t=-1;
-    hit.obj = NULL;
+    hit.obj = nullptr;
     Vector ray_dir_norm = ray_dir/ray_dir.abs();
     for(unsigned int i = 0; i < objects.size(); i++)
     {
         //shitty work around for now until accelerated structures
+        GObject::intersection inter  = objects[i]->intersect(src, ray_dir_norm);
 
-        double t = objects[i]->intersect(src, ray_dir_norm);
-
-        if(t>0.01 && (hit.obj==NULL || (t/ray_dir.abs())<hit.t))//if hit is viisible and new hit is closer than previous
+        if(inter.t > 0.000001 && (hit.obj == nullptr || (inter.t / ray_dir.abs()) < hit.t))//if hit is viisible and new hit is closer than previous
         {
-            hit.t = t/ray_dir.abs();
-            hit.obj = objects[i]->get_obj(); //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
+            hit.t = inter.t / ray_dir.abs();
+            hit.obj = inter.obj_ref; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
         }
     }
 
@@ -231,13 +246,13 @@ Color shade(const Hit& hit, int reflection_count)
         //ambient
         //c = c + (hit.obj->color * lights[i].color);//div;
 
-        Hit shadow = intersect(p,s);
-        if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
+        //Hit shadow = intersect(p,s);
+        //if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
         {
             //if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->color * lights[i].color * ((normalise(s).dot(n))) / div_factor;
+                c = c + hit.obj->color * lights[i].color * ((normalise(s).dot(n)))/ div_factor;
 
                 //specular
                 double val = h.dot(n) / h.abs();

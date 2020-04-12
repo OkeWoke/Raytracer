@@ -42,3 +42,10 @@ void Camera::deserialize(std::string sub, Camera& cam)
     cam.u = Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]);
     cam.v = Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]);
 }
+
+void Camera::update_camera(Matrix& tmp)
+{
+    this->n = Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]);
+    this->u = Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]);
+    this->v = Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]);
+}

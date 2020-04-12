@@ -29,11 +29,12 @@ Mesh::~Mesh()
     triangles.clear();
 }
 
-double Mesh::intersect(const Vector& src, const  Vector& d)
+GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 //to be overwritten
 {
 
-    if(bounding_sphere.intersect(src, d) != -1)
+    intersection inter;
+    if(bounding_sphere.intersect(src, d).t != -1)
     {
 
         int triangle_hit_index;
@@ -42,24 +43,22 @@ double Mesh::intersect(const Vector& src, const  Vector& d)
         double closest_t = std::numeric_limits<double>::max();
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
+            intersection tri_inter_tmp = triangles[i]->intersect(src, d);
 
-            double tmp = triangles[i]->intersect(src, d);
-            if(tmp > 0 && tmp < closest_t)
+            if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
             {
-                closest_t = tmp;
+                closest_t = tri_inter_tmp.t;
                 triangle_hit_index = i;
-                //
-                //std::cout << "Mesh hit, trignale found " << tmp << std::endl;
             } //finds closest triangle to intersect
         }
         if (closest_t < std::numeric_limits<double>::max())
         {
-            tri = triangles[triangle_hit_index];
-            return closest_t;
+            inter.obj_ref = triangles[triangle_hit_index];
+            inter.t = closest_t;
         }
     }
 
-    return -1;
+    return inter;
 }
 
 Vector Mesh::normal(const Vector& p)

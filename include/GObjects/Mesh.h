@@ -19,7 +19,7 @@ class Mesh : public GObject
         Mesh(std::string filename);
         //Mesh(std::vector<Triangle*> triangles, Vector center);
 
-        double intersect(const Vector& src, const  Vector& d);
+        intersection intersect(const Vector& src, const  Vector& d);
         Vector normal(const Vector& p);
         Vector center;
 

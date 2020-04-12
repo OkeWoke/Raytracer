@@ -27,8 +27,9 @@ vn3(vn3)
     //com = p1 + p2 + p3
 }
 
-double Triangle::intersect(const Vector& src, const Vector& d)
+GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
+    intersection inter;
     //std::cout<<"A" <<std::endl;
     if (d.dot(n) != 0)
     {
@@ -42,17 +43,18 @@ double Triangle::intersect(const Vector& src, const Vector& d)
         {
             //intersection within triangle
             //std::cout << "triangle hit succesfully" << std::endl;
-            return t;
+            inter.t = t;
+            inter.obj_ref = this;
         }
-
     }
-    return -1;
+    return inter;
      //intersection with plane
 }
 
 Vector Triangle::normal(const Vector& p)
 {
     //placeholders
+
     return n;
 }
 

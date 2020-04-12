@@ -14,8 +14,10 @@ radius(radius)
 {
 }
 
-double Sphere::intersect(const Vector& src, const Vector& d)
+GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 {
+    intersection inter;
+
     Vector cen = src-position;
     double a = d.dot(d);
     double b = 2*d.dot(cen);
@@ -37,15 +39,15 @@ double Sphere::intersect(const Vector& src, const Vector& d)
 
         if (t_1 < t_2)
         {
-            return t_1;
+            inter.t = t_1;
         }else
         {
-            return t_2;
+            inter.t = t_2;
         }
-    }else
-    {
-        return -1;
+        inter.obj_ref = this;
     }
+
+    return inter;
 }
 
 Vector Sphere::normal(const Vector& p)

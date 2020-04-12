@@ -16,6 +16,8 @@ class Camera
         Vector u,v,n,pos;
         Matrix mat;
         static void deserialize(std::string sub, Camera& cam);
+
+        void update_camera(Matrix& tmp);
 };
 
 #endif // CAMERA_H
