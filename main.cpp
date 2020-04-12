@@ -113,7 +113,6 @@ int main()
             }
         }
 
-
         image.display(display);
         auto render_end = chrono::steady_clock::now();
         cout << "REnder completed in: "<<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
@@ -123,16 +122,16 @@ int main()
         {
             delete p;
         }
+
         objects.clear();
         img.clearArray();
 
-
         deserialize("scene.xml");
         //modify camera here
-        Matrix cam_mat = cam.mat;
-        cam_mat = cam_mat *Matrix::rot_y(-6.3) * Matrix::rot_x(theta) * Matrix::translate(cam.pos);
-        cam.update_camera(cam_mat);
-        theta = theta + 1;
+        //Matrix cam_mat = cam.mat;
+        //cam_mat = cam_mat *Matrix::rot_y(-6.3) * Matrix::rot_x(theta) * Matrix::translate(cam.pos);
+        //cam.update_camera(cam_mat);
+        //theta = theta + 1;
         start = chrono::steady_clock::now();
         cast_rays_multithread(cam, img);
         auto ray_end = chrono::steady_clock::now();
@@ -239,31 +238,32 @@ Color shade(const Hit& hit, int reflection_count)
 
     for(unsigned int i = 0; i < lights.size(); i++)
     {
-        Vector s = lights[i].position - p;
+        Vector s = normalise(lights[i].position - p);
         Vector h = normalise(normalise(s) + normalise(v));
         double div_factor = s.abs();
 
         //ambient
         //c = c + (hit.obj->color * lights[i].color);//div;
 
-        //Hit shadow = intersect(p,s);
-        //if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
+        Hit shadow = intersect(p+0.001*s,s); //0.001 offset to avoid collision withself
+        if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
         {
-            //if(s.dot(n)> 0 )
+            if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->color * lights[i].color * ((normalise(s).dot(n)))/ div_factor;
+                c = c + hit.obj->color * lights[i].color * s.dot(n) / div_factor;
 
                 //specular
                 double val = h.dot(n) / h.abs();
-                c = c + Color(255,255,255) * lights[i].color * pow(val, hit.obj->shininess) / div_factor;
+                c = c + Color(255, 255, 255) * lights[i].color * pow(val, hit.obj->shininess) / div_factor;
             }
         }
 
         //we can have reflections even if the object is visible but in shadow.
         if(reflection_count < config.max_reflections && hit.obj->reflectivity>=min_reflectivity)
         {
-            Hit reflection = intersect(p, hit.ray_dir - n * 2  *hit.ray_dir.dot(n));
+            Vector reflec_ray = normalise(hit.ray_dir - n * 2  *hit.ray_dir.dot(n));
+            Hit reflection = intersect(p+0.001*reflec_ray, reflec_ray);//0.001 offset to avoid collision withself
             Color reflec_color = shade(reflection, reflection_count+1);
 
             c = c + hit.obj->reflectivity * reflec_color;
