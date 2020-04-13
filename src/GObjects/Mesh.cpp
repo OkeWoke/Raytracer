@@ -44,9 +44,10 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
             intersection tri_inter_tmp = triangles[i]->intersect(src, d);
-
+            __sync_fetch_and_add(&numRayTrianglesTests, 1);
             if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
             {
+                __sync_fetch_and_add(&numRayTrianglesIsect, 1);
                 closest_t = tri_inter_tmp.t;
                 triangle_hit_index = i;
             } //finds closest triangle to intersect
@@ -72,7 +73,6 @@ void Mesh::deserialize(std::string strSubDoc)
 
     xml.FindElem();
     std::string filename = xml.GetAttrib("filename");
-    obj_reader(filename);
 
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
@@ -83,6 +83,8 @@ void Mesh::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
+
+    obj_reader(filename);//must be called last here.
 }
 
 void Mesh::obj_reader(std::string filename)
@@ -137,6 +139,10 @@ void Mesh::obj_reader(std::string filename)
                 std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
                 std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
                 Triangle* tri = new Triangle(v[i0[0]-1], v[i1[0]-1], v[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
+                tri->position = Vector(0,0,0);
+                tri->color = color;
+                tri->shininess = shininess;
+                tri->reflectivity = reflectivity;
                 triangles.push_back(tri);
             }
         }catch(out_of_range)

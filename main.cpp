@@ -64,9 +64,14 @@ vector<Light> lights;
 Camera cam;
 Config config;
 
+
+
+uint64_t numPrimaryRays = 0;
+uint64_t numRayTrianglesTests = 0;
+uint64_t numRayTrianglesIsect = 0;
+
 int main()
 {
-    int theta = 0;
     //Initialisation
     cout<<"Loading scene from scene.xml..." << endl;
     deserialize("scene.xml");
@@ -74,26 +79,36 @@ int main()
 
     ImageArray img(cam.H_RES, cam.V_RES);
 
-    cout << "Starting initial ray cast on "<< config.threads_to_use << " threads..."<< endl;
-    auto start = chrono::steady_clock::now();
-    cast_rays_multithread(cam,img);
-    auto ray_end = chrono::steady_clock::now();
-    cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-
-
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     ostringstream filename;
     filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
 
-
     CImg<float> image(cam.H_RES, cam.V_RES,1,3,0);
     CImgDisplay display(image, "Raytracer!");
+
+    int orw = 20;
     while (!display.is_closed())
     {
 
-        //display.wait();
+        numPrimaryRays = 0;
+        numRayTrianglesTests = 0;
+        numRayTrianglesIsect = 0;
+
+        deserialize("scene.xml");
+
         auto start = chrono::steady_clock::now();
+        cast_rays_multithread(cam, img);
+        auto ray_end = chrono::steady_clock::now();
+
+        cout << "Casting completed in: "<< setw(orw) << (ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+        cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
+        cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
+        cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
+        cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
+
+        //display.wait();
+        start = chrono::steady_clock::now();
         if(config.stretch == "norm")
         {
             img.normalise();
@@ -114,9 +129,10 @@ int main()
         }
 
         image.display(display);
-        auto render_end = chrono::steady_clock::now();
-        cout << "REnder completed in: "<<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
 
+        auto render_end = chrono::steady_clock::now();
+        cout << "Image display completed in: "<< setw(orw-7) <<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+        cout << "----------------------------------------\n\n\n\n" << endl;
         lights.clear();
         for (auto p : objects)
         {
@@ -125,18 +141,6 @@ int main()
 
         objects.clear();
         img.clearArray();
-
-        deserialize("scene.xml");
-        //modify camera here
-        //Matrix cam_mat = cam.mat;
-        //cam_mat = cam_mat *Matrix::rot_y(-6.3) * Matrix::rot_x(theta) * Matrix::translate(cam.pos);
-        //cam.update_camera(cam_mat);
-        //theta = theta + 1;
-        start = chrono::steady_clock::now();
-        cast_rays_multithread(cam, img);
-        auto ray_end = chrono::steady_clock::now();
-        cout << "Casting completed in: "<<(ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-
     }
 
     objects.clear();
@@ -154,8 +158,7 @@ int main()
     draw(img, filename.str());
     img.clearArray();
     cout << "Finished!" << endl;
-    auto end = chrono::steady_clock::now();
-    cout << "Completed in: "<<(end - ray_end )/chrono::milliseconds(1)<< " (ms)"<<endl;
+
     img.deleteArray();
     getch();
     return 0;
@@ -189,6 +192,7 @@ void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_
     {
         for(int y = row_start; y < row_end; y++)
         {
+            __sync_fetch_and_add(&numPrimaryRays, 1);
             Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y/(cam.V_RES-1)) -1)*cam.v;
             Hit hit = intersect(cam.pos, ray_dir);
             Color c = shade(hit, 0);

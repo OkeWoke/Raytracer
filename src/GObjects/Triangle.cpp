@@ -20,10 +20,7 @@ vn3(vn3)
     Vector AC = v3-v1;
     n = normalise(AB.cross(AC)); //face normal
     //std::cout << "Triangle Normal Vec: " << n.to_string() << std::endl;
-    position = Vector(0,0,0);
-    color = Color(200,0,0);
-    this->shininess = 200;
-    this->reflectivity = 0.6;
+
     //com = p1 + p2 + p3
 }
 
