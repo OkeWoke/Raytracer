@@ -1,5 +1,6 @@
 #include "Vector.h"
 #include<iostream>
+
 Vector::Vector():
 x(0),
 y(0),

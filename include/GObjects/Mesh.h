@@ -1,5 +1,3 @@
-#include "GObjects/GObject.h"
-#include "GObjects/Triangle.h"
 #include <vector>
 #include<limits>
 #include <sstream>
@@ -8,9 +6,14 @@
 #include "Sphere.h"
 #include "Utility.h"
 
+#include "GObjects/GObject.h"
+#include "GObjects/Triangle.h"
+
+
 #ifndef MESH_H
 #define MESH_H
 
+#include "BoundVolume.h"
 class Mesh : public GObject
 {
     public:
@@ -24,12 +27,15 @@ class Mesh : public GObject
         Vector center;
 
         std::vector<Triangle*> triangles;
-
+        std::vector<Vector> vertices;
         Sphere bounding_sphere;
         void obj_reader(std::string filename);
         void deserialize(std::string strSubDoc);
 
         Mesh* get_obj();
+
+        BoundVolume* bv;
+
     private:
         Matrix trans_mat;
         GObject* tri;

@@ -1,5 +1,6 @@
 #include "GObjects/Mesh.h"
 #include<iostream>
+
 Mesh::Mesh()
 {
     //ctor
@@ -18,6 +19,7 @@ Mesh::Mesh(std::string filename)
     }
 
     this->bounding_sphere = Sphere(center, 5); //to be removed with BVH
+
 }
 
 Mesh::~Mesh()
@@ -32,32 +34,40 @@ Mesh::~Mesh()
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 //to be overwritten
 {
-
     intersection inter;
-    if(bounding_sphere.intersect(src, d).t != -1)
+    intersection bv_inter = bv->intersect(src, d);
+    //return bv_inter;
+    if (bv_inter.t != -1)
     {
 
-        int triangle_hit_index;
-        //std::cout << "Mesh bounding sphere hit" << std::endl;
 
-        double closest_t = std::numeric_limits<double>::max();
-        for(unsigned int i = 0; i < triangles.size(); i++)
+        if(bounding_sphere.intersect(src, d).t != -1)
         {
-            intersection tri_inter_tmp = triangles[i]->intersect(src, d);
-            __sync_fetch_and_add(&numRayTrianglesTests, 1);
-            if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
+
+            int triangle_hit_index;
+            //std::cout << "Mesh bounding sphere hit" << std::endl;
+
+            double closest_t = std::numeric_limits<double>::max();
+            for(unsigned int i = 0; i < triangles.size(); i++)
             {
-                __sync_fetch_and_add(&numRayTrianglesIsect, 1);
-                closest_t = tri_inter_tmp.t;
-                triangle_hit_index = i;
-            } //finds closest triangle to intersect
-        }
-        if (closest_t < std::numeric_limits<double>::max())
-        {
-            inter.obj_ref = triangles[triangle_hit_index];
-            inter.t = closest_t;
+                intersection tri_inter_tmp = triangles[i]->intersect(src, d);
+                __sync_fetch_and_add(&numRayTrianglesTests, 1);
+                if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
+                {
+                    __sync_fetch_and_add(&numRayTrianglesIsect, 1);
+                    closest_t = tri_inter_tmp.t;
+                    triangle_hit_index = i;
+                } //finds closest triangle to intersect
+            }
+            if (closest_t < std::numeric_limits<double>::max())
+            {
+                inter.obj_ref = triangles[triangle_hit_index];
+                inter.t = closest_t;
+                inter.n = triangles[triangle_hit_index]->normal(Vector(0,0,0));
+            }
         }
     }
+
 
     return inter;
 }
@@ -92,7 +102,7 @@ void Mesh::obj_reader(std::string filename)
 //loads triangles vector up
 {
     //assume .obj is triangulated
-    std::vector<Vector> v;
+    //std::vector<Vector> v;
     std::vector<Vector> vt;
     std::vector<Vector> vn;
 
@@ -115,7 +125,7 @@ void Mesh::obj_reader(std::string filename)
             if (line.substr(0,2) == "v ")
             {
                 iss >> x >> y >> z;
-                v.push_back(Vector(x,y,z));
+                vertices.push_back(Vector(x,y,z));
             }else if (line.substr(0,2) == "vt")
             {
                 iss >> x >> y >> z;
@@ -138,7 +148,7 @@ void Mesh::obj_reader(std::string filename)
                 std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
                 std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
                 std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
-                Triangle* tri = new Triangle(v[i0[0]-1], v[i1[0]-1], v[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
+                Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
                 tri->position = Vector(0,0,0);
                 tri->color = color;
                 tri->shininess = shininess;
@@ -152,6 +162,7 @@ void Mesh::obj_reader(std::string filename)
         }
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
+    bv = BoundVolume::compute_bound_volume(this->vertices);
 }
 
 Mesh* Mesh::get_obj()

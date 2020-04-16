@@ -35,6 +35,7 @@ struct Hit
 {
     Vector src;
     Vector ray_dir;
+    Vector n;
     double t;
     GObject* obj;
 
@@ -88,6 +89,15 @@ int main()
     CImgDisplay display(image, "Raytracer!");
 
     int orw = 20;
+    lights.clear();
+    for (auto p : objects)
+    {
+        delete p;
+    }
+
+    objects.clear();
+    img.clearArray();
+
     while (!display.is_closed())
     {
 
@@ -151,7 +161,7 @@ int main()
     cast_rays_multithread(cam, img);
     for (auto p : objects)
     {
-            delete p;
+        delete p;
     }
 
     objects.clear();
@@ -210,6 +220,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     hit.ray_dir= ray_dir;
     hit.t=-1;
     hit.obj = nullptr;
+
     Vector ray_dir_norm = ray_dir/ray_dir.abs();
     for(unsigned int i = 0; i < objects.size(); i++)
     {
@@ -220,6 +231,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
         {
             hit.t = inter.t / ray_dir.abs();
             hit.obj = inter.obj_ref; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
+            hit.n = inter.n;
         }
     }
 
@@ -230,13 +242,13 @@ Color shade(const Hit& hit, int reflection_count)
 {
     int min_reflectivity = 0.3;
 
-    if(hit.obj == NULL)
+    if(hit.obj == nullptr)
     {
-        return Color(0,0,0);
+        //return Color(0,0,0);
     }
 
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
-    Vector n = hit.obj->normal(p);
+    Vector n = hit.n; //hit.obj->normal(p);
     Vector v = hit.src - p; //vector from point to viewer
     Color c = Color(0, 0, 0);
 

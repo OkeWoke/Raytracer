@@ -1,9 +1,11 @@
-#ifndef SPHERE_H
-#define SPHERE_H
 #include "GObjects/GObject.h"
 #include "ext/Markup.h"
 #include <string>
 #include <iostream>
+
+#ifndef SPHERE_H
+#define SPHERE_H
+
 class Sphere: public GObject
 {
     public:

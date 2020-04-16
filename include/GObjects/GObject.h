@@ -1,3 +1,5 @@
+
+
 #ifndef GOBJECT_H
 #define GOBJECT_H
 
@@ -23,6 +25,7 @@ class GObject
         {
             GObject* obj_ref;
             double t;
+            Vector n;
 
             intersection()
             {

@@ -1,8 +1,10 @@
-#ifndef TRIANGLE_H
-#define TRIANGLE_H
 #include "GObjects/GObject.h"
 #include <sstream>
 #include <string>
+
+#ifndef TRIANGLE_H
+#define TRIANGLE_H
+
 
 class Triangle: public GObject
 {
