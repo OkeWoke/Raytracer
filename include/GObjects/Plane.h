@@ -9,11 +9,9 @@ class Plane: public GObject
     public:
         Plane();
         Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity);
-        Vector normal(const Vector& p);
         intersection intersect(const Vector& src, const Vector& d);
         void deserialize(std::string strSubDoc);
 
-        Plane* get_obj();
     private:
         Vector n;
         double l;

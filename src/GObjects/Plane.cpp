@@ -15,20 +15,17 @@ l(l)
 GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
 {
     intersection inter;
+    inter.obj_ref =nullptr;
     double tmp = d.dot(n);
     if (tmp!=0)
     {
         inter.t = (position-src).dot(n)/(tmp);
         inter.obj_ref = this;
+        inter.n = n;
     }
     return inter;
 }
 
-Vector Plane::normal(const Vector& p)
-//every point p on plane has same normal.
-{
-    return normalise(n);
-}
 
 void Plane::deserialize(std::string strSubDoc)
 {
@@ -49,9 +46,4 @@ void Plane::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
-}
-
-Plane* Plane::get_obj()
-{
-    return this;
 }

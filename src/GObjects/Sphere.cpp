@@ -45,14 +45,10 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
             inter.t = t_2;
         }
         inter.obj_ref = this;
+        inter.n = normalise(src+inter.t*d-position);
     }
 
     return inter;
-}
-
-Vector Sphere::normal(const Vector& p)
-{
-    return normalise(p-position);
 }
 
 void Sphere::deserialize(std::string strSubDoc)

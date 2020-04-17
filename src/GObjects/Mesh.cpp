@@ -3,78 +3,58 @@
 
 Mesh::Mesh()
 {
-    //ctor
-    this->bounding_sphere = Sphere(center, 5);
+
 }
 
 Mesh::Mesh(std::string filename)
 {
-    //loads in vertices/triangles
-    //sets limits
     obj_reader(filename);
-
-    for(int i =0;i<6;i++)
-    {
-        //limits[i] =NULL;
-    }
-
-    this->bounding_sphere = Sphere(center, 5); //to be removed with BVH
-
 }
 
 Mesh::~Mesh()
 {
     for (auto p : triangles)
     {
-     delete p;
+        delete p;
     }
+
     triangles.clear();
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
-//to be overwritten
 {
     intersection inter;
     intersection bv_inter = bv->intersect(src, d);
-    //return bv_inter;
+
     if (bv_inter.t != -1)
     {
 
+        int triangle_hit_index;
 
-        if(bounding_sphere.intersect(src, d).t != -1)
+        double closest_t = std::numeric_limits<double>::max();
+        for(unsigned int i = 0; i < triangles.size(); i++)
         {
+            intersection tri_inter_tmp = triangles[i]->intersect(src, d);
+            __sync_fetch_and_add(&numRayTrianglesTests, 1);
 
-            int triangle_hit_index;
-            //std::cout << "Mesh bounding sphere hit" << std::endl;
+            if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
+            {
+                __sync_fetch_and_add(&numRayTrianglesIsect, 1);
+                closest_t = tri_inter_tmp.t;
+                triangle_hit_index = i;
+                inter.n = tri_inter_tmp.n;
+            } //finds closest triangle to intersect
+        }
 
-            double closest_t = std::numeric_limits<double>::max();
-            for(unsigned int i = 0; i < triangles.size(); i++)
-            {
-                intersection tri_inter_tmp = triangles[i]->intersect(src, d);
-                __sync_fetch_and_add(&numRayTrianglesTests, 1);
-                if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
-                {
-                    __sync_fetch_and_add(&numRayTrianglesIsect, 1);
-                    closest_t = tri_inter_tmp.t;
-                    triangle_hit_index = i;
-                } //finds closest triangle to intersect
-            }
-            if (closest_t < std::numeric_limits<double>::max())
-            {
-                inter.obj_ref = triangles[triangle_hit_index];
-                inter.t = closest_t;
-                inter.n = triangles[triangle_hit_index]->normal(Vector(0,0,0));
-            }
+        if (closest_t < std::numeric_limits<double>::max())
+        {
+            inter.obj_ref = triangles[triangle_hit_index];
+            inter.t = closest_t;
         }
     }
 
 
     return inter;
-}
-
-Vector Mesh::normal(const Vector& p)
-{
-    return tri->normal(p);
 }
 
 void Mesh::deserialize(std::string strSubDoc)
@@ -101,8 +81,6 @@ void Mesh::obj_reader(std::string filename)
 //takes string file name of .obj file that is triangulated.
 //loads triangles vector up
 {
-    //assume .obj is triangulated
-    //std::vector<Vector> v;
     std::vector<Vector> vt;
     std::vector<Vector> vn;
 
@@ -136,7 +114,6 @@ void Mesh::obj_reader(std::string filename)
                 vn.push_back(Vector(x,y,z));
             }else if (line.substr(0,2) == "f ")
             {
-                //cout << line <<endl;
                 auto vec_stoi = [](const std::vector<std::string>& vec )
                 {
 
@@ -155,6 +132,7 @@ void Mesh::obj_reader(std::string filename)
                 tri->reflectivity = reflectivity;
                 triangles.push_back(tri);
             }
+
         }catch(out_of_range)
         {
             std::cout << "Error reading .obj file!" << std::endl;
@@ -163,9 +141,4 @@ void Mesh::obj_reader(std::string filename)
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
     bv = BoundVolume::compute_bound_volume(this->vertices);
-}
-
-Mesh* Mesh::get_obj()
-{
-    return this;
 }

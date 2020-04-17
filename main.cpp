@@ -65,8 +65,6 @@ vector<Light> lights;
 Camera cam;
 Config config;
 
-
-
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
@@ -242,9 +240,9 @@ Color shade(const Hit& hit, int reflection_count)
 {
     int min_reflectivity = 0.3;
 
-    if(hit.obj == nullptr)
+    if(hit.obj == nullptr || hit.t == -1)
     {
-        //return Color(0,0,0);
+        return Color(0,0,0);
     }
 
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
@@ -259,7 +257,7 @@ Color shade(const Hit& hit, int reflection_count)
         double div_factor = s.abs();
 
         //ambient
-        //c = c + (hit.obj->color * lights[i].color);//div;
+        c = c + (hit.obj->color * lights[i].color)/(255);//div;
 
         Hit shadow = intersect(p+0.001*s,s); //0.001 offset to avoid collision withself
         if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)

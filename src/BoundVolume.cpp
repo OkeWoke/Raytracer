@@ -1,19 +1,16 @@
 #include "BoundVolume.h"
 
-
 const Vector BoundVolume::plane_normals[7]= {Vector(1,0,0), Vector(0,1,0), Vector(0,0,1), Vector(sqrt(3)/3,sqrt(3)/3,sqrt(3)/3), Vector(-sqrt(3)/3,sqrt(3)/3,sqrt(3)/3), Vector(-sqrt(3)/3,-sqrt(3)/3,sqrt(3)/3), Vector(sqrt(3)/3,-sqrt(3)/3,sqrt(3)/3)};
 
 BoundVolume::BoundVolume()
 {
-    //could be bad to define this in the constructor...
-
-
 }
 
 BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
 {
     BoundVolume* bv = new BoundVolume();
     bv->color = Color(0,255,0);
+
     for(int i=0; i < 7; i++)
     {
         double d_min = std::numeric_limits<double>::max();
@@ -56,10 +53,9 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
         double d_val_min = d_min_vals[i];
         double d_val_max = d_max_vals[i];
 
-
-
         double t_near = (d_val_min - src_dot_N)/d_dot_N;
         double t_far = (d_val_max - src_dot_N)/d_dot_N;
+
         if (d_dot_N < 0 )
         {
             std::swap(t_near, t_far);
@@ -74,14 +70,10 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
         if(largest_t_near> smallest_t_far) return inter;
 
     }
+
     inter.t = largest_t_near;
     inter.n = this->plane_normals[plane_index];
     inter.obj_ref = this;
 
     return inter;
-}
-
-Vector BoundVolume::normal(const Vector& p)
-{
-    return Vector(0,0,0);
 }

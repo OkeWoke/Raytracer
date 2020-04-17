@@ -20,19 +20,15 @@ class Mesh : public GObject
         Mesh();
         ~Mesh();
         Mesh(std::string filename);
-        //Mesh(std::vector<Triangle*> triangles, Vector center);
 
         intersection intersect(const Vector& src, const  Vector& d);
-        Vector normal(const Vector& p);
         Vector center;
 
         std::vector<Triangle*> triangles;
         std::vector<Vector> vertices;
-        Sphere bounding_sphere;
+
         void obj_reader(std::string filename);
         void deserialize(std::string strSubDoc);
-
-        Mesh* get_obj();
 
         BoundVolume* bv;
 

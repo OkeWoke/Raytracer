@@ -38,11 +38,8 @@ class GObject
                 obj_ref = nullptr;
             }
         };
+
         virtual intersection intersect(const Vector& src, const Vector& d) = 0;
-        virtual Vector normal(const Vector& p) = 0;
-
-
-
 };
 
 #endif // GOBJECT_H

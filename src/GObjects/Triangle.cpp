@@ -1,5 +1,6 @@
 #include "GObjects/Triangle.h"
 #include<iostream>
+
 Triangle::Triangle(): GObject()
 {
     //ctor
@@ -16,43 +17,40 @@ vn1(vn1),
 vn2(vn2),
 vn3(vn3)
 {
-    Vector AB = v2-v1;
-    Vector AC = v3-v1;
-    n = normalise(AB.cross(AC)); //face normal
-    //std::cout << "Triangle Normal Vec: " << n.to_string() << std::endl;
-
-    //com = p1 + p2 + p3
+    AB = v2-v1;
+    AC = v3-v1;
+    n = AB.cross(AC);
+    area = n.dot(n);
+    n = normalise(n);
 }
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
     intersection inter;
-    //std::cout<<"A" <<std::endl;
-    if (d.dot(n) != 0)
+    double d_dot_n = d.dot(n);
+
+    if (d_dot_n  <0) //normal is pointing outward and not perpendicular to incoming ray
     {
-        double t = -(src-v1).dot(n)/(d.dot(n));
+        double t = -(src-v1).dot(n)/d_dot_n;
+
         //interesection with plane
         Vector p = src+t*d;
-        double a = ((v2-v1).cross(p-v1)).dot(n);
-        double b = ((v3-v2).cross(p-v2)).dot(n);
-        double c = ((v1-v3).cross(p-v3)).dot(n);
-        if ((a>=0 && b>=0 && c>=0) || (a<0 && b <0 && c < 0))
+        double bary_u = ((AB).cross(p-v1)).dot(n);
+        double bary_v = ((v3-v2).cross(p-v2)).dot(n);
+        double c = ((-1*AC).cross(p-v3)).dot(n);
+        if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
         {
             //intersection within triangle
-            //std::cout << "triangle hit succesfully" << std::endl;
+            bary_u/=area;
+            bary_v/=area;
+
+            inter.n =normalise(vn1*bary_v + vn2*(1 - bary_u - bary_v) + vn3*bary_u);
             inter.t = t;
             inter.obj_ref = this;
         }
     }
+
     return inter;
-     //intersection with plane
-}
-
-Vector Triangle::normal(const Vector& p)
-{
-    //placeholders
-
-    return n;
 }
 
 std::string Triangle::to_string()
