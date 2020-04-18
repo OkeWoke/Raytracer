@@ -1,7 +1,6 @@
 #include "GObjects/Triangle.h"
 #include<iostream>
-
-Triangle::Triangle(): GObject()
+Triangle::Triangle(): GObject()//constructor no longer supported
 {
     //ctor
 }
@@ -21,7 +20,45 @@ vn3(vn3)
     AC = v3-v1;
     n = AB.cross(AC);
     area = n.dot(n);
-    n = normalise(n);
+}
+
+GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, const png::image< png::rgb_pixel >& texture)
+{
+    intersection inter;
+    double d_dot_n = d.dot(n);
+
+    if (d_dot_n  <0) //normal is pointing outward and not perpendicular to incoming ray
+    {
+        double t = -(src-v1).dot(n)/d_dot_n;
+
+        //interesection with plane
+        Vector p = src+t*d;
+        double bary_u = ((AB).cross(p-v1)).dot(n);
+        double bary_v = ((v3-v2).cross(p-v2)).dot(n);
+        double c = ((-1*AC).cross(p-v3)).dot(n);
+        if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
+        {
+            //intersection within triangle
+            bary_u/=area;
+            bary_v/=area;
+            double bary_w = 1 - bary_u - bary_v;
+            inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
+            inter.t = t;
+            inter.obj_ref = this;
+            Vector tc =  ((bary_v*vt1 + bary_w*vt2 + bary_u*vt3));
+            double t_x = fmod(tc.x,1);
+            double t_y = fmod(tc.y, 1);
+            if (t_x<0){t_x++;}
+            if (t_y<0){t_y++;}
+
+            t_x  = int((texture.get_width()-1)*t_x);
+            t_y = int((texture.get_height()-1)*t_y);
+            png::rgb_pixel pix = texture[t_x][t_y];
+            inter.color = Color(pix.red, pix.green, pix.blue);
+        }
+    }
+
+    return inter;
 }
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
@@ -43,8 +80,8 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             //intersection within triangle
             bary_u/=area;
             bary_v/=area;
-
-            inter.n =normalise(vn1*bary_v + vn2*(1 - bary_u - bary_v) + vn3*bary_u);
+            double bary_w = 1 - bary_u - bary_v;
+            inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
             inter.t = t;
             inter.obj_ref = this;
         }
@@ -60,7 +97,7 @@ std::string Triangle::to_string()
 	return oss.str();
 }
 
-void Triangle::deserialize(std::string strSubDoc)
+void Triangle::deserialize(std::string strSubDoc)//old method no longer working
 {
     CMarkup xml(strSubDoc);
 
@@ -81,7 +118,7 @@ void Triangle::deserialize(std::string strSubDoc)
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
 
-    Vector AB = v2-v1;
-    Vector AC = v3-v1;
+    AB = v2-v1;
+    AC = v3-v1;
     n = normalise(AB.cross(AC));
 }

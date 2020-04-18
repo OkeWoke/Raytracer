@@ -26,11 +26,9 @@ class GObject
             GObject* obj_ref;
             double t;
             Vector n;
-
-            intersection()
+            Color color;
+            intersection():obj_ref(nullptr), t(-1),color(Color(-1,-1,-1))
             {
-                obj_ref = nullptr;
-                t = -1;
             };
 
             ~intersection()

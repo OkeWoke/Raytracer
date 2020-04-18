@@ -1,8 +1,8 @@
 #include "Matrix.h"
 
-Matrix::Matrix()
+Matrix::Matrix() : Matrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
-    //ctor
+
 }
 
 Matrix::Matrix(double a, double b, double c, double d, double e, double f, double g, double h, double i, double j, double k, double l, double m, double n, double o, double p):
@@ -178,7 +178,7 @@ Matrix Matrix::rot_z(double theta)
     return Matrix(c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
-Vector Matrix::mult_vec(Vector& lhs, double w)
+Vector Matrix::mult_vec(Vector lhs, double w)
 //transform a 3 dim vec with 4th homogenous coordinate w
 {
     return Vector(
@@ -186,14 +186,12 @@ Vector Matrix::mult_vec(Vector& lhs, double w)
                   e * lhs.x + f * lhs.y + g * lhs.z + h * w,
                   i * lhs.x + j * lhs.y + k * lhs.z + l * w
                   );
-
-                 // m * lhs.x + n * lhs.y + o * lhs.z + p * w
 }
 
 Matrix operator* (const Matrix& L, const Matrix& R)
 {
     double elems[16];
-    //this method is apparently faster than iterating over a 2d array.
+    //this method is apparently faster than iterating over a 2d array so yes I typed this all out.
     elems[0] = L.a * R.a + L.b * R.e + L.c * R.i + L.d * R.m;
     elems[1] = L.a * R.b + L.b * R.f + L.c * R.j + L.d * R.n;
     elems[2] = L.a * R.c + L.b * R.g + L.c * R.k + L.d * R.o;

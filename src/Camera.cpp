@@ -27,15 +27,12 @@ void Camera::deserialize(std::string sub, Camera& cam)
 
     Matrix tmp = cam.mat; //make sure its a carbon copy, not a reference.
     tmp = tmp * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
-    //Vector::deserialize(xml.GetSubDoc(), cam.u);
 
     xml.FindElem("y_rot");
     tmp = tmp * Matrix::rot_y(std::stod(xml.GetAttrib("angle")));
-    //Vector::deserialize(xml.GetSubDoc(), cam.v);
 
     xml.FindElem("z_rot");
     tmp = tmp * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
-    //Vector::deserialize(xml.GetSubDoc(), cam.n);
 
     tmp = tmp * Matrix::translate(cam.pos);
     cam.n = Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]);

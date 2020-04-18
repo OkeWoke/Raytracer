@@ -38,6 +38,7 @@ struct Hit
     Vector n;
     double t;
     GObject* obj;
+    Color color;
 
     ~Hit()
     {
@@ -227,8 +228,16 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 
         if(inter.t > 0.000001 && (hit.obj == nullptr || (inter.t / ray_dir.abs()) < hit.t))//if hit is viisible and new hit is closer than previous
         {
+            //yes the below is pretty shit, why do two so simillar structs exist....
             hit.t = inter.t / ray_dir.abs();
             hit.obj = inter.obj_ref; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
+            if (inter.color.r == -1)
+            {
+                hit.color = inter.obj_ref->color;
+            }else
+            {
+                hit.color = inter.color;
+            }
             hit.n = inter.n;
         }
     }
@@ -257,7 +266,7 @@ Color shade(const Hit& hit, int reflection_count)
         double div_factor = s.abs();
 
         //ambient
-        c = c + (hit.obj->color * lights[i].color)/(255);//div;
+        c = c + (hit.color * lights[i].color)/(255);//div;
 
         Hit shadow = intersect(p+0.001*s,s); //0.001 offset to avoid collision withself
         if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
@@ -265,7 +274,7 @@ Color shade(const Hit& hit, int reflection_count)
             if(s.dot(n)> 0 )
             {
                 //diffuse
-                c = c + hit.obj->color * lights[i].color * s.dot(n) / div_factor;
+                c = c + hit.color * lights[i].color * s.dot(n) / div_factor;
 
                 //specular
                 double val = h.dot(n) / h.abs();

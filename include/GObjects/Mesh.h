@@ -2,6 +2,8 @@
 #include<limits>
 #include <sstream>
 #include<fstream>
+#include <png.hpp>
+
 #include "Matrix.h"
 #include "Sphere.h"
 #include "Utility.h"
@@ -33,8 +35,9 @@ class Mesh : public GObject
         BoundVolume* bv;
 
     private:
-        Matrix trans_mat;
+        Matrix mat;
         GObject* tri;
+        png::image< png::rgb_pixel> texture;
 
 };
 
