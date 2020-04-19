@@ -12,6 +12,8 @@
 #include <thread>
 #include <functional>
 #include <fstream>
+#include <future>
+
 
 #include "Camera.h"
 #include "Light.h"
@@ -59,6 +61,7 @@ Color shade(const Hit& hit, int reflection_count);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
 void deserialize(string filename);
 void cast_rays_multithread(const Camera& cam, const ImageArray& img);
+void cast_rays_multithread_2(const Camera& cam, const ImageArray& img);
 Mesh* obj_reader(string filename);
 
 vector<GObject*> objects;
@@ -181,32 +184,36 @@ int main()
 
 void cast_rays_multithread(const Camera& cam, const ImageArray& img)
 {
-    int rows_per_thread = cam.V_RES/config.threads_to_use;
-    int remainder = cam.V_RES%config.threads_to_use;
-    thread thread_array[config.threads_to_use] ;
-
-    for(int i=0;i<config.threads_to_use-1;i++){
-        thread_array[i] = thread(cast_rays, ref(cam), ref(img), i*rows_per_thread,(i+1)*rows_per_thread);
-    }
-    thread_array[config.threads_to_use-1] = thread(cast_rays, ref(cam), ref(img), (int)rows_per_thread*(config.threads_to_use-1), (int)(rows_per_thread*config.threads_to_use)+remainder);
-
-    for(int i=0;i<config.threads_to_use;i++){
-        thread_array[i].join();
-    }
-}
-
-void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end)
-{
-    for(int x = 0; x < cam.H_RES; x++)
+    int total_pixels = cam.V_RES*cam.H_RES;
+    int cores_to_use = config.threads_to_use;//global
+    //uint64_t pixel_count = 0;
+    volatile atomic<size_t> pixel_count(0);
+    vector<future<void>> future_vector;
+    for (int i = 0; i<cores_to_use; i++ )
     {
-        for(int y = row_start; y < row_end; y++)
-        {
-            __sync_fetch_and_add(&numPrimaryRays, 1);
-            Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y/(cam.V_RES-1)) -1)*cam.v;
-            Hit hit = intersect(cam.pos, ray_dir);
-            Color c = shade(hit, 0);
-            img.pixelMatrix[x][y] = c;
-        }
+
+        future_vector.emplace_back(
+            async(launch::async, [=,&cam, &img, &pixel_count]()
+            {
+                while(true)
+                {
+                    int x_index = pixel_count++;//pixel_count;
+                    //__sync_fetch_and_add(&pixel_count, 1);//not sure if this will lead to non atomic behaviour with above line...
+
+                    if (x_index >=total_pixels)
+                    {
+                        break;
+                    }
+
+
+                    int y_index = x_index / cam.H_RES;
+                    x_index = x_index%cam.H_RES;
+                    Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x_index/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y_index/(cam.V_RES-1)) -1)*cam.v;
+                    Hit hit = intersect(cam.pos, ray_dir);
+                    Color c = shade(hit, 0);
+                    img.pixelMatrix[x_index][y_index] = c;
+                }
+            }));
     }
 }
 
