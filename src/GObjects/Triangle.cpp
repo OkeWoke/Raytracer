@@ -53,7 +53,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, co
 
             t_x  = int((texture.get_width()-1)*t_x);
             t_y = int((texture.get_height()-1)*t_y);
-            png::rgb_pixel pix = texture[t_x][t_y];
+            png::rgb_pixel pix = texture[t_y][t_x];
             inter.color = Color(pix.red, pix.green, pix.blue);
         }
     }

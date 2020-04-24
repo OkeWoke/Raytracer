@@ -178,6 +178,11 @@ Matrix Matrix::rot_z(double theta)
     return Matrix(c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
+Matrix Matrix::scale(double factor)
+{
+    return Matrix(factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor);
+}
+
 Vector Matrix::mult_vec(Vector lhs, double w)
 //transform a 3 dim vec with 4th homogenous coordinate w
 {

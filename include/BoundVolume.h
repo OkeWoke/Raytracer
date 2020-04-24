@@ -19,6 +19,7 @@ class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane
 
         static const Vector plane_normals[7];
         static BoundVolume* compute_bound_volume(std::vector<Vector>& vertices);
+        static BoundVolume* compute_bound_volume(std::vector<BoundVolume*> volumes);
 
 };
 

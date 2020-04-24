@@ -20,6 +20,8 @@ class Matrix
         static Matrix rot_x(double theta);
         static Matrix rot_y(double theta);
         static Matrix rot_z(double theta);
+        static Matrix scale(double factor);
+
 
         //computations
         Vector mult_vec(Vector lhs, double w);

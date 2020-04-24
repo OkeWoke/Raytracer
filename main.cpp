@@ -273,7 +273,7 @@ Color shade(const Hit& hit, int reflection_count)
         double div_factor = s.abs();
 
         //ambient
-        c = c + (hit.color * lights[i].color)/(255);//div;
+        //c = c + (hit.color * lights[i].color)/(255);//div;
 
         Hit shadow = intersect(p+0.001*s,s); //0.001 offset to avoid collision withself
         if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)

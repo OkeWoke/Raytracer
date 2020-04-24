@@ -1,25 +1,28 @@
 # Raytracer
 
 ![Example image of raytraced sphere](https://github.com/OkeWoke/Raytracer/blob/master/example_raytrace.png)
+![Example image of raytraced Mesh](https://github.com/OkeWoke/Raytracer/blob/master/example_raytrace2.jpg)
 
-This is a raytracer I initially started over a couple days. 
+This is a raytracer I initially started over a couple days and have continued adding features and improving it as a learning project in commputer graphics
 
 ## Features
 
-Supports sphere, plane and triangle primitives.
+Supports sphere, plane primitives.
 
 A .obj file reader that can read triangular meshes.
 
-XML configuration ( used for scene creation too)
+XML configuration for iamge processing, core count and scene description.
 
 Uses some form of phong illumination for shading, ambient, diffuse, specular. (reflections but no refraction yet!)
+Smooth shading is done for meshes using interpolation of vertex normals.
+Meshes can also be textured!
 
 Looping render display window, allowing for changes in the xml to be reflected asap.
 
-Naive multithreading (distributes render image by rows of pixels to each thread)
+Well distributed multithreading, each thread works on a pixel at a time, and works on the next available pixel when finished.
 
-Naive intersection (currently each intial ray is checked against every object in the object vector, mesh objects have a single bounding sphere)
-
+Naive intersection (currently each intial ray is checked against every object in the object vector, mesh objects have a bounding volume)
+BVH soon
 
 
 ## Dependancies
@@ -29,4 +32,4 @@ CMarkup is used for deserializing xml that contains config and scene information
 
 CImg is used for a simple automatically updating display of the render.
 
-Zlib, libpng and png++ are used to save the render into a png format.
+Zlib, libpng and png++ are used to save the render into a png format, and read texture images.

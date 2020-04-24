@@ -83,6 +83,9 @@ void Mesh::deserialize(std::string strSubDoc)
     xml.FindElem("z_rot");
     mat = mat * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
 
+    xml.FindElem("scale");
+    mat = mat * Matrix::scale(std::stod(xml.GetAttrib("factor")));
+
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
 
@@ -101,7 +104,13 @@ void Mesh::obj_reader(std::string filename)
     std::vector<Vector> vn;
 
     std::ifstream file;
-    file.open(filename);
+    try
+    {
+        file.open(filename);
+    }catch(std::system_error)
+    {
+        std::cout<<"Error reading file" << std::endl;
+    }
     if(!file)
     {
         std::cout << "Unable to open .obj file" << std::endl;
