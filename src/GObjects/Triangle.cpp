@@ -20,6 +20,7 @@ vn3(vn3)
     AC = v3-v1;
     n = AB.cross(AC);
     area = n.dot(n);
+    position = (p1+p2+p3)/3;
 }
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, const png::image< png::rgb_pixel >& texture)

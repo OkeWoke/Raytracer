@@ -238,6 +238,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
             //yes the below is pretty shit, why do two so simillar structs exist....
             hit.t = inter.t / ray_dir.abs();
             hit.obj = inter.obj_ref; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
+
             if (inter.color.r == -1)
             {
                 hit.color = inter.obj_ref->color;
@@ -268,15 +269,17 @@ Color shade(const Hit& hit, int reflection_count)
 
     for(unsigned int i = 0; i < lights.size(); i++)
     {
-        Vector s = normalise(lights[i].position - p);
+        Vector s = lights[i].position - p;
+        double light_to_p_dist = s.abs();
+         s = normalise(s);
         Vector h = normalise(normalise(s) + normalise(v));
         double div_factor = s.abs();
 
         //ambient
         //c = c + (hit.color * lights[i].color)/(255);//div;
 
-        Hit shadow = intersect(p+0.001*s,s); //0.001 offset to avoid collision withself
-        if(shadow.obj == NULL || shadow.t < 0 || shadow.t > 1)
+        Hit shadow = intersect(p,s); //0.001 offset to avoid collision withself //+0.001*s
+        if(shadow.obj == nullptr || shadow.t < 0 || shadow.t > light_to_p_dist)//light_to_p_dist)
         {
             if(s.dot(n)> 0 )
             {

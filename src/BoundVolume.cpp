@@ -42,7 +42,38 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes
 //compute a BV around a collection of several BV...
 {
     //since all bv share the same vectors, I guess we just compare d_max and d-min vals or soemthing? and get the most bounding of em all? yee
+    // out of all max values
+    BoundVolume* new_bv = new BoundVolume();
+    new_bv->color = Color(0,255,0);
 
+    //maximum
+    for(int i=0; i<7; i++)
+    {
+        double d_min = std::numeric_limits<double>::max();
+        double d_max = std::numeric_limits<double>::min();
+
+        for (auto bv: volumes)
+        {
+
+            double d_min_tmp = bv->d_min_vals[i];
+            double d_max_tmp = bv->d_max_vals[i];
+
+            if (d_min_tmp < d_min)
+            {
+                d_min = d_min_tmp;
+            }
+
+            if (d_max_tmp > d_max)
+            {
+                d_max = d_max_tmp;
+            }
+        }
+
+        new_bv->d_min_vals[i] = d_min;
+        new_bv->d_max_vals[i] = d_max;
+    }
+
+    return new_bv;
 }
 
 GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)

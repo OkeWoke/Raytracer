@@ -10,7 +10,7 @@
 
 #include "GObjects/GObject.h"
 #include "GObjects/Triangle.h"
-
+#include "BoundVolumeHierarchy.h"
 
 #ifndef MESH_H
 #define MESH_H
@@ -33,6 +33,7 @@ class Mesh : public GObject
         void deserialize(std::string strSubDoc);
 
         BoundVolume* bv;
+        BoundVolumeHierarchy* bvh;
 
     private:
         Matrix mat;

@@ -23,6 +23,9 @@ Mesh::~Mesh()
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
+
+    intersection inter = bvh->intersect(src, d);
+    /*
     intersection inter;
     intersection bv_inter = bv->intersect(src, d);
 
@@ -54,7 +57,7 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
             //inter.color = tri_inter_tmp.color;
         }
     }
-
+    */
 
     return inter;
 }
@@ -167,4 +170,10 @@ void Mesh::obj_reader(std::string filename)
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
     bv = BoundVolume::compute_bound_volume(this->vertices);
+    bvh = new BoundVolumeHierarchy(bv);
+    for (auto tri: triangles)
+    {
+        bvh->insert_triangle(*tri,0);
+    }
+    auto aaa = bvh->build_BVH();
 }
