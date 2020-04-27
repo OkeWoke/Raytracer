@@ -4,3 +4,8 @@ GObject::GObject()
 {
     //ctor
 }
+
+GObject::~GObject()
+{
+    //virtual dtor
+}

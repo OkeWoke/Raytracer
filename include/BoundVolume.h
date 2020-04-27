@@ -11,6 +11,7 @@ class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane
 {
     public:
         BoundVolume();
+        ~BoundVolume();
 
         intersection intersect(const Vector& src, const Vector& d);
 

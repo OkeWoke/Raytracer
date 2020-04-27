@@ -90,7 +90,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
             inter.t = t;
             inter.obj_ref = this;
-            inter.color = Color(255,0,0);
+            //inter.color = Color(255,0,0);
         }
     }
 

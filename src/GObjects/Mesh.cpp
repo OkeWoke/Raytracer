@@ -13,18 +13,21 @@ Mesh::Mesh(std::string filename) //old constructor no longer supported
 
 Mesh::~Mesh()
 {
+    vertices.clear();
     for (auto p : triangles)
     {
         delete p;
     }
 
     triangles.clear();
+    bvh->~BoundVolumeHierarchy();
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
 
-    intersection inter = bvh->intersect(src, d);
+    intersection inter = bvh->intersect(src, d, 0);
+    inter.color = this->color;
     /*
     intersection inter;
     intersection bv_inter = bv->intersect(src, d);

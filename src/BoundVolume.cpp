@@ -6,6 +6,11 @@ BoundVolume::BoundVolume()
 {
 }
 
+BoundVolume::~BoundVolume()
+{
+
+}
+
 BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
 {
     BoundVolume* bv = new BoundVolume();

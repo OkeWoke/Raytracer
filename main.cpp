@@ -148,6 +148,7 @@ int main()
         lights.clear();
         for (auto p : objects)
         {
+
             delete p;
         }
 
@@ -163,6 +164,7 @@ int main()
     cast_rays_multithread(cam, img);
     for (auto p : objects)
     {
+
         delete p;
     }
 

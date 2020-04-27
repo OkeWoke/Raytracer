@@ -20,8 +20,8 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv, Vector center)
         diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
         diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
         diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
-        std::cout<<diameter.to_string() <<std::endl;
-        std::cout<<center.to_string() << std::endl;
+        //std::cout<<diameter.to_string() <<std::endl;
+        //std::cout<<center.to_string() << std::endl;
     }
 
     for (int i=0;i<8;i++)
@@ -42,6 +42,11 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
+    /*for (auto p : triangles)
+    {
+        delete p;
+    }*/
+    triangles.clear();
     for (auto p : children)
     {
         delete p;
@@ -163,7 +168,7 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
     return this->bv;
 }
 
-GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d)
+GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth)
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
 {
     GObject::intersection bv_inter = GObject::intersection();
@@ -174,6 +179,10 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     }
 
     bv_inter = bv->intersect(src,d);
+    if (depth >= 11)
+    {
+        //return bv_inter;
+    }
     GObject::intersection best_inter = GObject::intersection();
     if(bv_inter.obj_ref != nullptr)
     //we have an intersection...
@@ -204,7 +213,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
             {
                 if (children[i] != nullptr)
                 {
-                    GObject::intersection tmp = children[i]->intersect(src, d);
+                    GObject::intersection tmp = children[i]->intersect(src, d, depth+1);
                     if(tmp.obj_ref != nullptr)
                     {
                         if (tmp.t < min_t)

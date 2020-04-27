@@ -18,6 +18,7 @@ class GObject
         double reflectivity;
 
         GObject();
+        virtual ~GObject();
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
 
