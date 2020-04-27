@@ -11,16 +11,16 @@ class BoundVolumeHierarchy
 {
     public:
         BoundVolumeHierarchy();
-        BoundVolumeHierarchy(BoundVolume* bv);
+        BoundVolumeHierarchy(BoundVolume* bv,  Vector center);
         BoundVolumeHierarchy(Vector& diameter, Vector& center);
         virtual ~BoundVolumeHierarchy();
 
         BoundVolumeHierarchy* children[8];
         std::vector<Triangle*> triangles;
 
-        BoundVolume* bv;
+        BoundVolume* bv = nullptr;
 
-        void insert_triangle(Triangle& tri, int depth);
+        void insert_triangle(Triangle* tri, int depth);
         BoundVolume* build_BVH();
         GObject::intersection intersect(const Vector& src, const Vector& d);
 
@@ -31,7 +31,7 @@ class BoundVolumeHierarchy
     protected:
 
     private:
-        int MAX_DEPTH= 15;
+        int MAX_DEPTH= 16;
         bool is_leaf = true;
 };
 

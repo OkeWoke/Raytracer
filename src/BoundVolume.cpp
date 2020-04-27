@@ -29,6 +29,8 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
             {
                 d_min = d;
             }
+
+
         }
 
         bv->d_min_vals[i] = d_min;

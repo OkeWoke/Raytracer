@@ -38,11 +38,11 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
             intersection tri_inter_tmp = triangles[i]->intersect(src, d, texture);
-            __sync_fetch_and_add(&numRayTrianglesTests, 1);
+
 
             if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
             {
-                __sync_fetch_and_add(&numRayTrianglesIsect, 1);
+
                 closest_t = tri_inter_tmp.t;
                 triangle_hit_index = i;
                 inter.n = tri_inter_tmp.n;
@@ -57,7 +57,7 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
             //inter.color = tri_inter_tmp.color;
         }
     }
-    */
+    //*/
 
     return inter;
 }
@@ -155,7 +155,7 @@ void Mesh::obj_reader(std::string filename)
                 std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
                 std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
                 Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
-                tri->position = Vector(0,0,0);
+                //tri->position = Vector(0,0,0);
                 tri->color = color;
                 tri->shininess = shininess;
                 tri->reflectivity = reflectivity;
@@ -170,10 +170,16 @@ void Mesh::obj_reader(std::string filename)
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
     bv = BoundVolume::compute_bound_volume(this->vertices);
-    bvh = new BoundVolumeHierarchy(bv);
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < vertices.size(); k++)
+    {
+        center  = center + vertices[k];
+    }
+    center = center / vertices.size();
+    bvh = new BoundVolumeHierarchy(bv, center);
     for (auto tri: triangles)
     {
-        bvh->insert_triangle(*tri,0);
+        bvh->insert_triangle(tri,0);
     }
     auto aaa = bvh->build_BVH();
 }

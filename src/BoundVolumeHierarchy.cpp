@@ -3,22 +3,25 @@ BoundVolumeHierarchy::BoundVolumeHierarchy( )
 {
     //ctor
 }
-BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv)
+BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv, Vector center)
 {
     this->bv = bv;
-
+    //std::cout << center.to_string() << std::endl;
+    this->center = center;
     if(bv != nullptr)
     //this is the root node!
     {
         //compute the center of this node from the bv, and the width!
         //set these values into Vectors diameter and center.
-        center.x = (bv->d_max_vals[0] + bv->d_min_vals[0])/2;
-        center.y = (bv->d_max_vals[1] + bv->d_min_vals[1])/2;
-        center.z = (bv->d_max_vals[1] + bv->d_min_vals[2])/2;
+        //center.x = (bv->d_max_vals[0] + bv->d_min_vals[0])/2;
+        //center.y = (bv->d_max_vals[1] + bv->d_min_vals[1])/2;
+        //center.z = (bv->d_max_vals[1] + bv->d_min_vals[2])/2;
 
         diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
         diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
         diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
+        std::cout<<diameter.to_string() <<std::endl;
+        std::cout<<center.to_string() << std::endl;
     }
 
     for (int i=0;i<8;i++)
@@ -47,12 +50,12 @@ BoundVolumeHierarchy::~BoundVolumeHierarchy()
 }
 
 
-void BoundVolumeHierarchy::insert_triangle(Triangle& tri, int depth)
+void BoundVolumeHierarchy::insert_triangle(Triangle* tri, int depth)
 {
     //base case
     if (depth >= MAX_DEPTH || (triangles.size() == 0 && is_leaf))
     {
-        triangles.push_back(&tri);
+        triangles.push_back(tri);
         return;
     }
 
@@ -60,22 +63,22 @@ void BoundVolumeHierarchy::insert_triangle(Triangle& tri, int depth)
 
     if (triangles.size()==1 )
     {
-        auto tmp_tri = *triangles[0];
+        auto tmp_tri = triangles[0];
         triangles.clear();
         this->insert_triangle(tmp_tri, depth);
     }
     int key = 0;
 
 
-    if (tri.position.x > this->center.x)
+    if (tri->position.x > this->center.x)
     {
         key++;
     }
-    if (tri.position.y < this->center.y)
+    if (tri->position.y < this->center.y)
     {
         key = key+2;
     }
-    if(tri.position.z > this->center.z)
+    if(tri->position.z > this->center.z)
     {
         key= key+4;
     }
@@ -170,6 +173,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
         return bv_inter;
     }
 
+    bv_inter = bv->intersect(src,d);
     GObject::intersection best_inter = GObject::intersection();
     if(bv_inter.obj_ref != nullptr)
     //we have an intersection...
@@ -180,23 +184,35 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
         {
             for(int i=0; i<triangles.size();i++)
             {
+                //std::cout << triangles[i] << std::endl;
                 GObject::intersection tmp = triangles[i]->intersect(src, d);
-                if(tmp.t<min_t)
+                if(tmp.obj_ref != nullptr)
+                //there was a triangle intersection...
                 {
-                    min_t = tmp.t;
-                    best_inter = tmp;
+                    if(tmp.t<min_t)
+                    {
+                        min_t = tmp.t;
+                        best_inter = tmp;
+                    }
                 }
+
             }
 
         }else
         {
             for (int i=0;i<8;i++)
             {
-                GObject::intersection tmp = children[i]->intersect(src, d);
-                if (tmp.t < min_t)
+                if (children[i] != nullptr)
                 {
-                    min_t = tmp.t;
-                    best_inter = tmp;
+                    GObject::intersection tmp = children[i]->intersect(src, d);
+                    if(tmp.obj_ref != nullptr)
+                    {
+                        if (tmp.t < min_t)
+                        {
+                            min_t = tmp.t;
+                            best_inter = tmp;
+                        }
+                    }
                 }
             }
         }

@@ -3,6 +3,7 @@
 #include <string>
 #include <png.hpp>
 #include <math.h>
+#include "Utility.h"
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 

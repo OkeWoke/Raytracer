@@ -25,6 +25,7 @@ vn3(vn3)
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, const png::image< png::rgb_pixel >& texture)
 {
+    __sync_fetch_and_add(&numRayTrianglesTests, 1);
     intersection inter;
     double d_dot_n = d.dot(n);
 
@@ -40,6 +41,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, co
         if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
         {
             //intersection within triangle
+            __sync_fetch_and_add(&numRayTrianglesIsect, 1);
             bary_u/=area;
             bary_v/=area;
             double bary_w = 1 - bary_u - bary_v;
@@ -64,6 +66,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, co
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
+    __sync_fetch_and_add(&numRayTrianglesTests, 1);
     intersection inter;
     double d_dot_n = d.dot(n);
 
@@ -79,12 +82,15 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
         if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
         {
             //intersection within triangle
+            __sync_fetch_and_add(&numRayTrianglesIsect, 1);
+
             bary_u/=area;
             bary_v/=area;
             double bary_w = 1 - bary_u - bary_v;
             inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
             inter.t = t;
             inter.obj_ref = this;
+            inter.color = Color(255,0,0);
         }
     }
 
