@@ -20,8 +20,9 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv, Vector center)
         diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
         diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
         diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
-        //std::cout<<diameter.to_string() <<std::endl;
+        std::cout<<diameter.to_string() <<std::endl;
         //std::cout<<center.to_string() << std::endl;
+
     }
 
     for (int i=0;i<8;i++)
@@ -179,7 +180,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     }
 
     bv_inter = bv->intersect(src,d);
-    if (depth >= 11)
+    if (depth >= 0)
     {
         //return bv_inter;
     }

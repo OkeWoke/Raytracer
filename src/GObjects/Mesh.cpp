@@ -6,10 +6,6 @@ Mesh::Mesh()
 
 }
 
-Mesh::Mesh(std::string filename) //old constructor no longer supported
-{
-    obj_reader(filename);
-}
 
 Mesh::~Mesh()
 {
@@ -25,42 +21,17 @@ Mesh::~Mesh()
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
-
     intersection inter = bvh->intersect(src, d, 0);
-    inter.color = this->color;
-    /*
-    intersection inter;
-    intersection bv_inter = bv->intersect(src, d);
-
-    if (bv_inter.t != -1)
+    if (inter.color.b == -999)
     {
-
-        int triangle_hit_index;
-
-        double closest_t = std::numeric_limits<double>::max();
-        for(unsigned int i = 0; i < triangles.size(); i++)
-        {
-            intersection tri_inter_tmp = triangles[i]->intersect(src, d, texture);
-
-
-            if(tri_inter_tmp.t > 0 && tri_inter_tmp.t < closest_t)
-            {
-
-                closest_t = tri_inter_tmp.t;
-                triangle_hit_index = i;
-                inter.n = tri_inter_tmp.n;
-                inter.color = tri_inter_tmp.color;
-            } //finds closest triangle to intersect
-        }
-
-        if (closest_t < std::numeric_limits<double>::max())
-        {
-            inter.obj_ref = triangles[triangle_hit_index];
-            inter.t = closest_t;
-            //inter.color = tri_inter_tmp.color;
-        }
+        int t_x  = int((texture.get_width()-1)*inter.color.r);
+        int t_y = int((texture.get_height()-1)*inter.color.g);
+         png::rgb_pixel pix = texture[t_y][t_x];
+        inter.color = Color(pix.red, pix.green, pix.blue);
+    }else
+    {
+        inter.color = this->color;
     }
-    //*/
 
     return inter;
 }

@@ -23,47 +23,6 @@ vn3(vn3)
     position = (p1+p2+p3)/3;
 }
 
-GObject::intersection Triangle::intersect(const Vector& src, const Vector& d, const png::image< png::rgb_pixel >& texture)
-{
-    __sync_fetch_and_add(&numRayTrianglesTests, 1);
-    intersection inter;
-    double d_dot_n = d.dot(n);
-
-    if (d_dot_n  <0) //normal is pointing outward and not perpendicular to incoming ray
-    {
-        double t = -(src-v1).dot(n)/d_dot_n;
-
-        //interesection with plane
-        Vector p = src+t*d;
-        double bary_u = ((AB).cross(p-v1)).dot(n);
-        double bary_v = ((v3-v2).cross(p-v2)).dot(n);
-        double c = ((-1*AC).cross(p-v3)).dot(n);
-        if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
-        {
-            //intersection within triangle
-            __sync_fetch_and_add(&numRayTrianglesIsect, 1);
-            bary_u/=area;
-            bary_v/=area;
-            double bary_w = 1 - bary_u - bary_v;
-            inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
-            inter.t = t;
-            inter.obj_ref = this;
-            Vector tc =  ((bary_v*vt1 + bary_w*vt2 + bary_u*vt3));
-            double t_x = fmod(tc.x,1);
-            double t_y = fmod(tc.y, 1);
-            if (t_x<0){t_x++;}
-            if (t_y<0){t_y++;}
-
-            t_x  = int((texture.get_width()-1)*t_x);
-            t_y = int((texture.get_height()-1)*t_y);
-            png::rgb_pixel pix = texture[t_y][t_x];
-            inter.color = Color(pix.red, pix.green, pix.blue);
-        }
-    }
-
-    return inter;
-}
-
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
     __sync_fetch_and_add(&numRayTrianglesTests, 1);
@@ -90,7 +49,12 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             inter.n = normalise(vn1*bary_v + vn2*bary_w + vn3*bary_u);
             inter.t = t;
             inter.obj_ref = this;
-            //inter.color = Color(255,0,0);
+            Vector tc =  ((bary_v*vt1 + bary_w*vt2 + bary_u*vt3));
+            double t_x = fmod(tc.x,1);
+            double t_y = fmod(tc.y, 1);
+            if (t_x<0){t_x++;}
+            if (t_y<0){t_y++;}
+            inter.color = Color(t_x, t_y, -999);
         }
     }
 

@@ -21,6 +21,8 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "imageArray.h"
+#include "BoundVolume.h"
+#include "BoundVolumeHierarchy.h"
 
 #include "GObjects/Sphere.h"
 #include "GObjects/GObject.h"

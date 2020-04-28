@@ -21,7 +21,6 @@ class Mesh : public GObject
     public:
         Mesh();
         ~Mesh();
-        Mesh(std::string filename);
 
         intersection intersect(const Vector& src, const  Vector& d);
         Vector center;
