@@ -2,7 +2,7 @@
 #include<vector>
 #include<Vector.h>
 #include<limits>
-#include<GObjects/GObject.h>
+#include"GObjects/GObject.h"
 
 #ifndef BOUNDVOLUME_H
 #define BOUNDVOLUME_H

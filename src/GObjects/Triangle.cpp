@@ -1,5 +1,6 @@
 #include "GObjects/Triangle.h"
 #include<iostream>
+
 Triangle::Triangle(): GObject()//constructor no longer supported
 {
     //ctor

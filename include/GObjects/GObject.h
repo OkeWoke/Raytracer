@@ -1,5 +1,6 @@
 
 
+
 #ifndef GOBJECT_H
 #define GOBJECT_H
 
@@ -39,6 +40,8 @@ class GObject
         };
 
         virtual intersection intersect(const Vector& src, const Vector& d) = 0;
+
+        GObject* bv = nullptr; //we will need to forcefully cast this to BoundVolume type in each usecase...
 };
 
 #endif // GOBJECT_H

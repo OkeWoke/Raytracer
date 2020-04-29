@@ -1,29 +1,20 @@
 #include "BoundVolumeHierarchy.h"
+
 BoundVolumeHierarchy::BoundVolumeHierarchy( )
 {
     //ctor
 }
+
 BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv, Vector center)
 {
     this->bv = bv;
-    //std::cout << center.to_string() << std::endl;
     this->center = center;
-    if(bv != nullptr)
-    //this is the root node!
-    {
-        //compute the center of this node from the bv, and the width!
-        //set these values into Vectors diameter and center.
-        //center.x = (bv->d_max_vals[0] + bv->d_min_vals[0])/2;
-        //center.y = (bv->d_max_vals[1] + bv->d_min_vals[1])/2;
-        //center.z = (bv->d_max_vals[1] + bv->d_min_vals[2])/2;
 
-        diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
-        diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
-        diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
-        std::cout<<diameter.to_string() <<std::endl;
-        //std::cout<<center.to_string() << std::endl;
-
-    }
+    diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
+    diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
+    diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
+    //std::cout<<diameter.to_string() <<std::endl;
+    //std::cout<<center.to_string() << std::endl;
 
     for (int i=0;i<8;i++)
     {
@@ -43,11 +34,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
-    /*for (auto p : triangles)
-    {
-        delete p;
-    }*/
-    triangles.clear();
+    objects.clear();
     for (auto p : children)
     {
         delete p;
@@ -55,23 +42,22 @@ BoundVolumeHierarchy::~BoundVolumeHierarchy()
     delete bv;
 }
 
-
-void BoundVolumeHierarchy::insert_triangle(Triangle* tri, int depth)
+void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
 {
     //base case
-    if (depth >= MAX_DEPTH || (triangles.size() == 0 && is_leaf))
+    if (depth >= MAX_DEPTH || (objects.size() == 0 && is_leaf))
     {
-        triangles.push_back(tri);
+        objects.push_back(tri);
         return;
     }
 
     is_leaf = false;
 
-    if (triangles.size()==1 )
+    if (objects.size()==1 )
     {
-        auto tmp_tri = triangles[0];
-        triangles.clear();
-        this->insert_triangle(tmp_tri, depth);
+        auto tmp_tri = objects[0];
+        objects.clear();
+        this->insert_object(tmp_tri, depth);
     }
     int key = 0;
 
@@ -121,7 +107,7 @@ void BoundVolumeHierarchy::insert_triangle(Triangle* tri, int depth)
         children[key] = new BoundVolumeHierarchy(diameter, center);
     }
 
-    children[key]->insert_triangle(tri, depth+1);
+    children[key]->insert_object(tri, depth+1);
 }
 
 BoundVolume* BoundVolumeHierarchy::build_BVH()
@@ -141,25 +127,39 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
     }
 
     if (child_volumes.size() == 0)
-    //No child nodes... this is a leaf, possibly containing triangles.
+    //No child nodes... this is a leaf, possibly containing objects.
     {
-        if(triangles.size() == 0)
-        //leaf with no triangles? fuckin useless node aren't we? Return no bv.
+        if(objects.size() == 0)
+        //leaf with no objects? fuckin useless node aren't we? Return no bv.
         {
             this->bv = nullptr;
         }else
         {
-            std::vector<Vector> vertices;
-            for (int i =0; i<triangles.size();i++)
+            if (objects[0]->bv == nullptr)
+            //the objects we have no bv therefore must be triangles that have been inserted?
             {
-                vertices.push_back(triangles[i]->v1);
-                vertices.push_back(triangles[i]->v2);
-                vertices.push_back(triangles[i]->v3);
+                std::vector<Vector> vertices;
+                for (int i =0; i<objects.size();i++)
+                {
+                    Triangle* tri_pointer = (Triangle*)objects[i];
+                    vertices.push_back(tri_pointer->v1);
+                    vertices.push_back(tri_pointer->v2);
+                    vertices.push_back(tri_pointer->v3);
+                }
+                this->bv = BoundVolume::compute_bound_volume(vertices);
+            }else
+            {
+                std::vector<BoundVolume*> volumes;
+                for(int i=0; i<objects.size();i++)
+                {
+                    BoundVolume* obj_bv_pointer = (BoundVolume*)objects[i]->bv;
+                    volumes.push_back(obj_bv_pointer);
+                }
+                this->bv = BoundVolume::compute_bound_volume(volumes);
             }
-            this->bv = BoundVolume::compute_bound_volume(vertices);
-            //at this point we could clear memory of triangles as the instance doesn't need it anymore..., although
+            //at this point we could clear memory of objects as the instance doesn't need it anymore..., although...
+            //although what?
         }
-
     }else
     //We have child bounded volumes, create bvh around this
     {
@@ -192,12 +192,11 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
 
         if(is_leaf)
         {
-            for(int i=0; i<triangles.size();i++)
+            for(int i=0; i<objects.size();i++)
             {
-                //std::cout << triangles[i] << std::endl;
-                GObject::intersection tmp = triangles[i]->intersect(src, d);
+                GObject::intersection tmp = objects[i]->intersect(src, d);
                 if(tmp.obj_ref != nullptr)
-                //there was a triangle intersection...
+                //there was a object intersection...
                 {
                     if(tmp.t<min_t)
                     {

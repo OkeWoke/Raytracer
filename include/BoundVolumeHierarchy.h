@@ -16,11 +16,11 @@ class BoundVolumeHierarchy
         virtual ~BoundVolumeHierarchy();
 
         BoundVolumeHierarchy* children[8];
-        std::vector<Triangle*> triangles;
+        std::vector<GObject*> objects;
 
         BoundVolume* bv = nullptr;
 
-        void insert_triangle(Triangle* tri, int depth);
+        void insert_object(GObject* tri, int depth);
         BoundVolume* build_BVH();
         GObject::intersection intersect(const Vector& src, const Vector& d, int depth);
 

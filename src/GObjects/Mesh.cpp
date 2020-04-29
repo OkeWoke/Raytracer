@@ -153,7 +153,7 @@ void Mesh::obj_reader(std::string filename)
     bvh = new BoundVolumeHierarchy(bv, center);
     for (auto tri: triangles)
     {
-        bvh->insert_triangle(tri,0);
+        bvh->insert_object(tri,0);
     }
     auto aaa = bvh->build_BVH();
 }
