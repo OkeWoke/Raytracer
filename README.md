@@ -21,8 +21,8 @@ Looping render display window, allowing for changes in the xml to be reflected a
 
 Well distributed multithreading, each thread works on a pixel at a time, and works on the next available pixel when finished.
 
-Naive intersection (currently each intial ray is checked against every object in the object vector, mesh objects have a bounding volume)
-BVH soon
+Uses an Octree based Bounding Volume Hierarchy acceleration structure, each bounding volume is constructed from 7 plane normals.
+Primitives plane and sphere are supported, system has a high level BVH for all objects, each mesh object gets its own BVH too.
 
 
 ## Dependancies
