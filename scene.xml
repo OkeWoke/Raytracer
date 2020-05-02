@@ -1,74 +1,42 @@
-<Config threads="24" max_reflections="5" stretch="gamma"/>
-<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="4">
-    <position x="0" y="10" z="100"/><!-- Camera position -->
-    
-    <!-- The following 3 vectors define camera rotation and pointing direction, if you change these values odd things may happen-->
-    <!--<u x="1" y="0" z="-0.1"/> <!-- vertical camera dir -->
-    <!--<v x="0.12" y="-1" z="0"/> <!-- Horizontal camera dir -->
-    <!--<n x="0.1" y="0.12" z="1"/> <!-- Camera looks in this vector dir -->
-    <x_rot angle="5"/> <!-- Tilt  + is down, - is up -->
+<Config threads="21" max_reflections="3" stretch="gamma"/>
+
+<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="1">
+    <position x="0" y="0" z="20"/><!-- Camera position -->
+
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
-    
 </Camera>
 
-<Mesh filename="andypants-nurse.obj" shininess="200" reflectivity="0.5">
-    <position x="0" y="0" z="0"/>
-    <color r="200" g="5" b="5"/>
-</Mesh>
-
 <Light>
-    <position x="0" y="10" z="20"/>
+    <position x="0" y="1000" z="500"/>
     <color r="255" g="255" b="255"/>
 </Light>
-<!--
-<Triangle shininess="200" reflectivity="0.5">
-    <v1 x="-50" y="0" z="0"/>
-    <v2 x="0" y="10" z="0"/>
-    <v3 x="10" y="-50" z="0"/>
-    <color r= "255" g="255" b="0">
-</Triangle>-->
 
-<Sphere radius="25" shininess="20" reflectivity="0.6">
-    <position x="0" y="-20" z="-60"/>
-    <color r="0" g="200" b="0"/>
+<Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.1">
+    <position x="0" y="0" z="1"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up ->
+
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
+    <scale factor="1"/> <!-- This scales the model up by factor -->
+    <color r="200" g="5" b="5"/>
+    <texture filename ="Models/space.png"/>
+   
+</Mesh>
+
+<Sphere radius = "0.1" shininess = "22" reflectivity = "0">
+    <position x="3.4" y="5" z="2.1"/>
+    <color r="255" g="255" b="255"/>
 </Sphere>
 
-<Sphere radius="20" shininess="200" reflectivity="1">
-    <position x="0" y="15" z="-200"/>
-    <color r="200" g="0" b="200"/>
+<Sphere radius = "0.5" shininess = "22" reflectivity = "0">
+    <position x="-2" y="0.5" z="5"/>
+    <color r="255" g="10" b="255"/>
 </Sphere>
-
-
-
-<!-- Bottom Plane-->
-
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    
+<Plane w="5" l="5" shininess="20" reflectivity="0.31">
     <normal x="0" y="1" z="0" />
-    <position x="0" y="-20" z="0"/>
-    <color r="255" g="0" b="255"/>
+    <position x="0" y="-1" z="0"/>
+    <color r="255" g="0" b="0"/>
 </Plane>
-
-<!-- top -->
-
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="0" y="-1" z="0" />
-    <position x="0" y="15" z="0"/>
-    <color r="0" g="0" b="255"/>
-</Plane>
-
-<!--left-->
-
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="1" y="0" z="0" />
-    <position x="-10" y="0" z="0"/>
-    <color r="255" g="255" b="0"/>
-</Plane>
-
-<!--right-->
-
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="-1" y="0" z="0" />
-    <position x="10" y="0" z="0"/>
-    <color r="30" g="30" b="30"/>
-</Plane>-->

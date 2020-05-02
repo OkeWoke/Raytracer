@@ -19,7 +19,7 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
     for(int i=0; i < 7; i++)
     {
         double d_min = std::numeric_limits<double>::max();
-        double d_max = std::numeric_limits<double>::min();
+        double d_max = std::numeric_limits<double>::lowest();
 
         for(unsigned int k = 0; k < vertices.size(); k++)
         {
@@ -55,7 +55,7 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes
     for(int i=0; i<7; i++)
     {
         double d_min = std::numeric_limits<double>::max();
-        double d_max = std::numeric_limits<double>::min();
+        double d_max = std::numeric_limits<double>::lowest();
 
         for (auto bv: volumes)
         {
@@ -81,11 +81,62 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes
     return new_bv;
 }
 
+BoundVolume* BoundVolume::compute_bound_volume(std::vector<GObject*> objects)
+{
+    std::vector<BoundVolume*> volumes;
+    for (int i=0;i<objects.size();i++)
+    {
+        volumes.push_back((BoundVolume*)objects[i]->bv);
+    }
+    return compute_bound_volume(volumes);
+}
+
+BoundVolume* BoundVolume::compute_bound_volume(Sphere* sphere)
+//Compute a BV around a sphere
+{
+    BoundVolume* new_bv = new BoundVolume();
+    new_bv->color = Color(0,255,0);
+
+    for(int i=0; i<7; i++)
+    {
+        new_bv->d_min_vals[i] = (sphere->position - sphere->radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+        new_bv->d_max_vals[i] = (sphere->position + sphere->radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+    }
+
+    return new_bv;
+}
+
+BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
+{
+    Vector perp_1 = plane->n;
+    if(perp_1.x ==0)
+    {
+        perp_1.x =1;
+    }else
+    {
+        perp_1.y = perp_1.y+1;
+    }
+    perp_1 = normalise(perp_1.cross(plane->n));
+    Vector perp_2 = normalise(perp_1.cross(plane->n));
+    double radius = (perp_1*plane->w).abs() + (perp_2*plane->l).abs();
+    BoundVolume* new_bv = new BoundVolume();
+    new_bv->color = Color(0,255,0);
+
+    for(int i=0; i<7; i++)
+    {
+        new_bv->d_min_vals[i] = (plane->position - radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+        new_bv->d_max_vals[i] = (plane->position + radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+    }
+
+    return new_bv;
+}
+
+
 GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 {
-    double largest_t_near = std::numeric_limits<double>::min();;
+    double largest_t_near = std::numeric_limits<double>::lowest();
     double smallest_t_far = std::numeric_limits<double>::max();
-    GObject::intersection inter;
+    GObject::intersection inter = GObject::intersection();
     int plane_index = 0;
 
     for(int i=0; i < 7; i++)
@@ -95,9 +146,9 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
         double d_val_min = d_min_vals[i];
         double d_val_max = d_max_vals[i];
-
-        double t_near = (d_val_min - src_dot_N)/d_dot_N;
+         double t_near = (d_val_min - src_dot_N)/d_dot_N;
         double t_far = (d_val_max - src_dot_N)/d_dot_N;
+
 
         if (d_dot_N < 0 )
         {

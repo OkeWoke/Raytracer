@@ -1,6 +1,7 @@
 #include "GObjects/Triangle.h"
 #include "BoundVolume.h"
 #include "GObjects/GObject.h"
+#include "GObjects/Sphere.h"
 #include<vector>
 
 #ifndef BOUNDVOLUMEHIERARCHY_H
@@ -11,16 +12,16 @@ class BoundVolumeHierarchy
 {
     public:
         BoundVolumeHierarchy();
-        BoundVolumeHierarchy(BoundVolume* bv,  Vector center);
+        BoundVolumeHierarchy(GObject* bv,  Vector center);
         BoundVolumeHierarchy(Vector& diameter, Vector& center);
         virtual ~BoundVolumeHierarchy();
 
         BoundVolumeHierarchy* children[8];
-        std::vector<Triangle*> triangles;
+        std::vector<GObject*> objects;
 
         BoundVolume* bv = nullptr;
 
-        void insert_triangle(Triangle* tri, int depth);
+        void insert_object(GObject* tri, int depth);
         BoundVolume* build_BVH();
         GObject::intersection intersect(const Vector& src, const Vector& d, int depth);
 

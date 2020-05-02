@@ -2,11 +2,12 @@
 #include<vector>
 #include<Vector.h>
 #include<limits>
-#include<GObjects/GObject.h>
+#include"GObjects/GObject.h"
 
 #ifndef BOUNDVOLUME_H
 #define BOUNDVOLUME_H
-
+#include "GObjects/Sphere.h"
+#include "GObjects/Plane.h"
 class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane normals, computes 14 t values for intersections.
 {
     public:
@@ -22,7 +23,10 @@ class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane
         static const Vector plane_normals[7];
         static BoundVolume* compute_bound_volume(std::vector<Vector>& vertices);
         static BoundVolume* compute_bound_volume(std::vector<BoundVolume*> volumes);
+        static BoundVolume* compute_bound_volume(std::vector<GObject*> objects);
 
+        static BoundVolume* compute_bound_volume(Sphere* sphere);
+        static BoundVolume* compute_bound_volume(Plane* plane);
 };
 
 

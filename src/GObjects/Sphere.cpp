@@ -4,6 +4,11 @@ Sphere::Sphere(): GObject()
 {
 }
 
+Sphere::~Sphere()
+{
+    delete this->bv;
+}
+
 Sphere::Sphere(Vector pos, double radius): GObject(position),
 radius(radius)
 {
@@ -16,39 +21,44 @@ radius(radius)
 
 GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 {
-    intersection inter;
-
-    Vector cen = src-position;
-    double a = d.dot(d);
-    double b = 2*d.dot(cen);
-    double c = cen.dot(cen) - (radius*radius);
-
-    double disc = (b*b)-(4*a*c);
-
-    if(disc >= 0)
+    intersection bv_inter = ((BoundVolume*)this->bv)->intersect(src, d);
+    if(bv_inter.obj_ref != nullptr)
     {
-        double t_1;
-        if (b>0)
-        {
-            t_1 = (- b+ sqrt(disc) ) /( 2 * a);
-        }else
-        {
-            t_1 = (- b -sqrt(disc) ) /( 2 * a);
-        }
-        double t_2 = c/(a*t_1);
+        intersection inter = intersection();
 
-        if (t_1 < t_2)
+        Vector cen = src-position;
+        double a = d.dot(d);
+        double b = 2*d.dot(cen);
+        double c = cen.dot(cen) - (radius*radius);
+
+        double disc = (b*b)-(4*a*c);
+
+        if(disc >= 0)
         {
-            inter.t = t_1;
-        }else
-        {
-            inter.t = t_2;
+            double t_1;
+            if (b>0)
+            {
+                t_1 = (- b+ sqrt(disc) ) /( 2 * a);
+            }else
+            {
+                t_1 = (- b -sqrt(disc) ) /( 2 * a);
+            }
+            double t_2 = c/(a*t_1);
+
+            if (t_1 < t_2)
+            {
+                inter.t = t_1;
+            }else
+            {
+                inter.t = t_2;
+            }
+            inter.obj_ref = this;
+            inter.n = normalise(src+inter.t*d-position);
         }
-        inter.obj_ref = this;
-        inter.n = normalise(src+inter.t*d-position);
+
+        return inter;
     }
-
-    return inter;
+    return bv_inter;
 }
 
 void Sphere::deserialize(std::string strSubDoc)
@@ -66,4 +76,6 @@ void Sphere::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
+    this->bv = BoundVolume::compute_bound_volume(this);
+
 }
