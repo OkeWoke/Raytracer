@@ -249,7 +249,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 
     //ray_dir.abs();
 
-  /*  GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
+    GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
     if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
         {
             //yes the below is pretty shit, why do two so simillar structs exist....
@@ -265,8 +265,8 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
             }
             hit.n = inter.n;
 
-        }*/
-
+        }
+    /*
     for(unsigned int i = 0; i < objects.size(); i++)
     {
         GObject::intersection inter = objects[i]->intersect(src, hit.ray_dir);
@@ -286,7 +286,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
             }
             hit.n = inter.n;
         }
-    }
+    }*/
 
     return hit;
 }

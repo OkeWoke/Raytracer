@@ -21,8 +21,8 @@ radius(radius)
 
 GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 {
-    //intersection bv_inter = ((BoundVolume*)this->bv)->intersect(src, d);
-    //if(bv_inter.obj_ref != nullptr)
+    intersection bv_inter = ((BoundVolume*)this->bv)->intersect(src, d);
+    if(bv_inter.obj_ref != nullptr)
     {
         intersection inter = intersection();
 
