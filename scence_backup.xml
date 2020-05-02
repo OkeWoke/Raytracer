@@ -1,89 +1,42 @@
-<!-- Example XML -->
-<!-- Camera, w and h is the 'sensor' dimensions.
-     H_RES and V_RES are horizontal and vertical pixel resolution
-     fl is the focal length of the camera, smaller number means wider fov.
--->
-<Config threads="8" max_reflections="4" stretch="gamma"/>
-<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="5">
-    <position x="0" y="0" z="-80"/><!-- Camera position -->
-    
-    <!-- The following 3 vectors define camera rotation and pointing direction, if you change these values odd things may happen-->
-    <u x="1" y="0" z="0"/> <!-- vertical camera dir -->
-    <v x="0" y="1" z="-0.01"/> <!-- Horizontal camera dir -->
-    <n x="0" y="-0.01" z="-1"/> <!-- Camera looks in this vector dir -->
+<Config threads="21" max_reflections="3" stretch="gamma"/>
+
+<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="1">
+    <position x="0" y="0" z="20"/><!-- Camera position -->
+
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
 </Camera>
 
 <Light>
-    <position x="0" y="0" z="400"/>
-    <ambient r="1" g="1" b="1"/>
-    <diffuse r="20" g="20" b="20"/>
-    <specular r="10" g="10" b="10"/>
+    <position x="0" y="1000" z="500"/>
+    <color r="255" g="255" b="255"/>
 </Light>
 
-<Sphere radius="25" shininess="0" reflectivity="0">
-    <position x="0" y="-20" z="500"/>
-    <ambient r="0" g="255" b="0"/>
-    <diffuse r="0" g="200" b="0"/>
-    <specular r="255" g="255" b="255"/>
+<Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.1">
+    <position x="0" y="0" z="1"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up ->
+
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
+    <scale factor="1"/> <!-- This scales the model up by factor -->
+    <color r="200" g="5" b="5"/>
+    <texture filename ="Models/space.png"/>
+   
+</Mesh>
+
+<Sphere radius = "0.1" shininess = "22" reflectivity = "0">
+    <position x="3.4" y="5" z="2.1"/>
+    <color r="255" g="255" b="255"/>
 </Sphere>
 
-<Sphere radius="20" shininess="200" reflectivity="1">
-    <position x="0" y="30" z="550"/>
-    <ambient r="1" g="0" b="1"/>
-    <diffuse r="200" g="0" b="200"/>
-    <specular r="255" g="255" b="255"/>
+<Sphere radius = "0.5" shininess = "22" reflectivity = "0">
+    <position x="-2" y="0.5" z="5"/>
+    <color r="255" g="10" b="255"/>
 </Sphere>
-
-<!-- Bottom Plane-->
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
+    
+<Plane w="5" l="5" shininess="20" reflectivity="0.31">
     <normal x="0" y="1" z="0" />
-    <position x="0" y="-50" z="0"/>
-    <ambient r="1" g="0" b="0"/>
-    <diffuse r="255" g="0" b="0"/>
-    <specular r="255" g="255" b="255"/>
+    <position x="0" y="-1" z="0"/>
+    <color r="255" g="0" b="0"/>
 </Plane>
-
-<!-- Top Plane-->
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="0" y="-1" z="0" />
-    <position x="0" y="60" z="0"/>
-    <ambient r="0" g="0" b="1"/>
-    <diffuse r="0" g="0" b="255"/>
-    <specular r="255" g="255" b="255"/>
-</Plane>
-
-<!-- Right plane-->
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="-1" y="0" z="0" />
-    <position x="30" y="0" z="0"/>
-    <ambient r="0" g="0" b="0"/>
-    <diffuse r="30" g="30" b="30"/>
-    <specular r="255" g="255" b="255"/>
-</Plane>
-
-<!-- Left plane-->
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="1" y="0" z="0" />
-    <position x="-30" y="0" z="0"/>
-    <ambient r="1" g="1" b="0"/>
-    <diffuse r="255" g="255" b="0"/>
-    <specular r="255" g="255" b="255"/>
-</Plane>
-
-<!-- Back Plane -->
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="0" y="0" z="1" />
-    <position x="30" y="0" z="700"/>
-    <ambient r="1" g="1" b="1"/>
-    <diffuse r="255" g="255" b="255"/>
-    <specular r="255" g="255" b="255"/>
-</Plane>
-
-<Plane w="0" l="0" shininess="20" reflectivity="0.31">
-    <normal x="0" y="0" z="-1" />
-    <position x="30" y="0" z="-90"/>
-    <ambient r="1" g="1" b="1"/>
-    <diffuse r="255" g="255" b="255"/>
-    <specular r="255" g="255" b="255"/>
-</Plane>
-

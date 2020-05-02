@@ -58,7 +58,7 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 
         return inter;
     }
-    //return bv_inter;
+    return bv_inter;
 }
 
 void Sphere::deserialize(std::string strSubDoc)
