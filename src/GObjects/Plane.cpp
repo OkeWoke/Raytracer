@@ -5,6 +5,11 @@ Plane::Plane(): GObject()
 {
 }
 
+Plane::~Plane()
+{
+    delete this->bv;
+}
+
 Plane::Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity): GObject(c, pos, shininess, reflectivity),
 n(normalise(n)),
 w(w),
@@ -14,16 +19,23 @@ l(l)
 
 GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
 {
-    intersection inter;
-    inter.obj_ref =nullptr;
-    double tmp = d.dot(n);
-    if (tmp!=0)
+    intersection bv_inter = ((BoundVolume*)this->bv)->intersect(src, d);
+
+    if(bv_inter.obj_ref != nullptr)
     {
-        inter.t = (position-src).dot(n)/(tmp);
-        inter.obj_ref = this;
-        inter.n = n;
+        intersection inter;
+        inter.obj_ref =nullptr;
+        double tmp = d.dot(n);
+
+        if (tmp!=0)
+        {
+            inter.t = (position-src).dot(n)/(tmp);
+            inter.obj_ref = this;
+            inter.n = n;
+        }
+        return inter;
     }
-    return inter;
+    return bv_inter;
 }
 
 
@@ -46,4 +58,5 @@ void Plane::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
+    this->bv = BoundVolume::compute_bound_volume(this);
 }

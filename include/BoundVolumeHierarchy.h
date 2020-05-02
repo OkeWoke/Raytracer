@@ -1,6 +1,7 @@
 #include "GObjects/Triangle.h"
 #include "BoundVolume.h"
 #include "GObjects/GObject.h"
+#include "GObjects/Sphere.h"
 #include<vector>
 
 #ifndef BOUNDVOLUMEHIERARCHY_H
@@ -11,7 +12,7 @@ class BoundVolumeHierarchy
 {
     public:
         BoundVolumeHierarchy();
-        BoundVolumeHierarchy(BoundVolume* bv,  Vector center);
+        BoundVolumeHierarchy(GObject* bv,  Vector center);
         BoundVolumeHierarchy(Vector& diameter, Vector& center);
         virtual ~BoundVolumeHierarchy();
 

@@ -31,7 +31,7 @@ class Mesh : public GObject
         void obj_reader(std::string filename);
         void deserialize(std::string strSubDoc);
 
-        BoundVolume* bv;
+        //BoundVolume* bv;
         BoundVolumeHierarchy* bvh;
 
     private:

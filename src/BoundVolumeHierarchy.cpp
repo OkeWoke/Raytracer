@@ -5,14 +5,14 @@ BoundVolumeHierarchy::BoundVolumeHierarchy( )
     //ctor
 }
 
-BoundVolumeHierarchy::BoundVolumeHierarchy(BoundVolume* bv, Vector center)
+BoundVolumeHierarchy::BoundVolumeHierarchy(GObject* bv, Vector center)
 {
-    this->bv = bv;
+    this->bv = (BoundVolume*)bv;
     this->center = center;
 
-    diameter.x = abs(bv->d_max_vals[0] - bv->d_min_vals[0]);
-    diameter.y = abs(bv->d_max_vals[1] - bv->d_min_vals[1]);
-    diameter.z = abs(bv->d_max_vals[2] - bv->d_min_vals[2]);
+    diameter.x = abs(this->bv->d_max_vals[0] - this->bv->d_min_vals[0]);
+    diameter.y = abs(this->bv->d_max_vals[1] - this->bv->d_min_vals[1]);
+    diameter.z = abs(this->bv->d_max_vals[2] - this->bv->d_min_vals[2]);
     //std::cout<<diameter.to_string() <<std::endl;
     //std::cout<<center.to_string() << std::endl;
 
@@ -176,11 +176,11 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     if(this->bv == nullptr)
         //this case shouldnt happen?
     {
-        return bv_inter;
+        //return bv_inter;
     }
 
     bv_inter = bv->intersect(src,d);
-    if (depth >= 0)
+    if (depth >= 2)
     {
         //return bv_inter;
     }

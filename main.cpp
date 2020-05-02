@@ -44,6 +44,7 @@ struct Hit
     GObject* obj;
     Color color;
 
+
     ~Hit()
     {
         obj = nullptr;
@@ -71,6 +72,7 @@ vector<Light> lights;
 Camera cam;
 Config config;
 
+BoundVolumeHierarchy* bvh;
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
@@ -110,7 +112,19 @@ int main()
         numRayTrianglesIsect = 0;
 
         deserialize("scene.xml");
-
+        BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+        Vector center = Vector(0,0,0);
+        for(unsigned int k = 0; k < objects.size(); k++)
+        {
+            center  = center + objects[k]->position;
+        }
+        center = center / objects.size();
+        bvh = new BoundVolumeHierarchy(scene_bv, center);
+        for (auto obj: objects)
+        {
+            bvh->insert_object(obj,0);
+        }
+        auto aaa = bvh->build_BVH();
         auto start = chrono::steady_clock::now();
         cast_rays_multithread(cam, img);
         auto ray_end = chrono::steady_clock::now();
@@ -153,6 +167,8 @@ int main()
 
             delete p;
         }
+        delete bvh;
+
 
         objects.clear();
         img.clearArray();
@@ -227,20 +243,38 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 {
     Hit hit;
     hit.src = src;
-    hit.ray_dir= ray_dir;
+    hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
     hit.obj = nullptr;
 
-    Vector ray_dir_norm = ray_dir/ray_dir.abs();
-    for(unsigned int i = 0; i < objects.size(); i++)
-    {
-        //shitty work around for now until accelerated structures
-        GObject::intersection inter  = objects[i]->intersect(src, ray_dir_norm);
+    //ray_dir.abs();
 
-        if(inter.t > 0.000001 && (hit.obj == nullptr || (inter.t / ray_dir.abs()) < hit.t))//if hit is viisible and new hit is closer than previous
+  /*  GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
+    if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
         {
             //yes the below is pretty shit, why do two so simillar structs exist....
-            hit.t = inter.t / ray_dir.abs();
+            hit.t = inter.t;// ray_dir.abs();
+            hit.obj = inter.obj_ref;
+
+            if (inter.color.r == -1)
+            {
+                hit.color = inter.obj_ref->color;
+            }else
+            {
+                hit.color = inter.color;
+            }
+            hit.n = inter.n;
+
+        }*/
+
+    for(unsigned int i = 0; i < objects.size(); i++)
+    {
+        GObject::intersection inter = objects[i]->intersect(src, hit.ray_dir);
+
+        if(inter.t > 0.000001 && (hit.obj == nullptr || (inter.t ) < hit.t))//if hit is viisible and new hit is closer than previous
+        {
+            //yes the below is pretty shit, why do two so simillar structs exist....
+            hit.t = inter.t ;// ray_dir.abs();
             hit.obj = inter.obj_ref; //get_obj will return self/this for primitves, but for meshes will return specific triangle object.
 
             if (inter.color.r == -1)
@@ -259,49 +293,52 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 
 Color shade(const Hit& hit, int reflection_count)
 {
-    int min_reflectivity = 0.3;
 
+    int min_reflectivity = 0.3;
+    Color c = Color(0, 0, 0);
     if(hit.obj == nullptr || hit.t == -1)
     {
-        return Color(0,0,0);
+        return c;
     }
-
+    //return Color(255,0,0);
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
     Vector n = hit.n; //hit.obj->normal(p);
     Vector v = hit.src - p; //vector from point to viewer
-    Color c = Color(0, 0, 0);
 
     for(unsigned int i = 0; i < lights.size(); i++)
     {
         Vector s = lights[i].position - p;
-        double light_to_p_dist = s.abs();
-         s = normalise(s);
-        Vector h = normalise(normalise(s) + normalise(v));
-        double div_factor = s.abs();
-
+        s = normalise(s);
+        Vector h = normalise(s + normalise(v));
         //ambient
         //c = c + (hit.color * lights[i].color)/(255);//div;
 
-        Hit shadow = intersect(p,s); //0.001 offset to avoid collision withself //+0.001*s
-        if(shadow.obj == nullptr || shadow.t < 0 || shadow.t > light_to_p_dist)//light_to_p_dist)
+        Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
+
+        if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > 1)//)
         {
-            if(s.dot(n)> 0 )
+            //if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
             {
+                double div_factor = shadow.t*shadow.t*255;
                 //diffuse
-                c = c + hit.color * lights[i].color * s.dot(n) / div_factor;
+                c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
 
                 //specular
                 double val = h.dot(n) / h.abs();
-                c = c + Color(255, 255, 255) * lights[i].color * pow(val, hit.obj->shininess) / div_factor;
+                c = c +  lights[i].color * pow(val, hit.obj->shininess) /div_factor;
             }
         }
 
         //we can have reflections even if the object is visible but in shadow.
-        if(reflection_count < config.max_reflections && hit.obj->reflectivity>=min_reflectivity)
+       if(reflection_count < config.max_reflections)//&& hit.obj->reflectivity>=min_reflectivity)
         {
             Vector reflec_ray = normalise(hit.ray_dir - n * 2  *hit.ray_dir.dot(n));
             Hit reflection = intersect(p+0.001*reflec_ray, reflec_ray);//0.001 offset to avoid collision withself
-            Color reflec_color = shade(reflection, reflection_count+1);
+             Color reflec_color;
+            if(reflection.t>-1)
+            {
+                 reflec_color = shade(reflection, reflection_count+1);
+            }
 
             c = c + hit.obj->reflectivity * reflec_color;
         }
