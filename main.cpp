@@ -13,7 +13,8 @@
 #include <functional>
 #include <fstream>
 #include <future>
-
+#include <stdlib.h>
+#include <time.h>
 
 #include "Camera.h"
 #include "Light.h"
@@ -55,6 +56,7 @@ struct Config
 {
     int threads_to_use;
     int max_reflections;
+    int spp;
     string stretch;
 };
 
@@ -65,6 +67,9 @@ void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_
 void deserialize(string filename);
 void cast_rays_multithread(const Camera& cam, const ImageArray& img);
 void cast_rays_multithread_2(const Camera& cam, const ImageArray& img);
+double double_rand(const double & min, const double & max);
+Vector uniform_hemisphere(double u1, double u2);
+void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
 
 vector<GObject*> objects;
@@ -76,6 +81,36 @@ BoundVolumeHierarchy* bvh;
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
+
+
+double double_rand(const double & min, const double & max) {
+    static thread_local std::mt19937 generator;
+    std::uniform_real_distribution<double> distribution(min, max);
+    return distribution(generator);
+}
+
+Vector uniform_hemisphere(double u1, double u2) {
+	const double r = sqrt(1.0 - u1*u1);
+	const double phi = 2 * PI * u2;
+	return Vector(cos(phi)*r, sin(phi)*r, u1);
+}
+
+//below function is taken from smallpaint
+// given v1, set v2 and v3 so they form an orthonormal system
+// (we assume v1 is already normalized)
+void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
+	if (std::abs(v1.x) > std::abs(v1.y)) {
+		// project to the y = 0 plane and construct a normalized orthogonal vector in this plane
+		double invLen = 1.f / sqrtf(v1.x * v1.x + v1.z * v1.z);
+		v2 = Vector(-v1.z * invLen, 0.0f, v1.x * invLen);
+	} else {
+		// project to the x = 0 plane and construct a normalized orthogonal vector in this plane
+		double invLen = 1.0f / sqrtf(v1.y * v1.y + v1.z * v1.z);
+		v2 = Vector(0.0f, v1.z * invLen, -v1.y * invLen);
+	}
+	v3 = v1 % v2;
+}
+
 
 int main()
 {
@@ -225,13 +260,19 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
                         break;
                     }
 
-
                     int y_index = x_index / cam.H_RES;
                     x_index = x_index%cam.H_RES;
-                    Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*x_index/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*y_index/(cam.V_RES-1)) -1)*cam.v;
-                    Hit hit = intersect(cam.pos, ray_dir);
-                    Color c = shade(hit, 0);
-                    img.pixelMatrix[x_index][y_index] = c;
+                    Color c;
+
+                    for(int s=0;s<config.spp; s++)
+                    {
+                        double x_offset = double_rand(-0.5,0.5);
+                        double y_offset = double_rand(-0.5,0.5);
+                        Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
+                        Hit hit = intersect(cam.pos, ray_dir);
+                        c = c+ shade(hit, 0);
+                    }
+                    img.pixelMatrix[x_index][y_index] = c/config.spp;
                 }
             }));
     }
@@ -246,6 +287,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
     hit.obj = nullptr;
+
 
     GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
     if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
@@ -271,53 +313,62 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
 Color shade(const Hit& hit, int reflection_count)
 {
 
-    int min_reflectivity = 0.3;
     Color c = Color(0, 0, 0);
+    //c = c+ hit.obj->emission;
+
     if(hit.obj == nullptr || hit.t == -1)
     {
         return c;
     }
-    //return Color(255,0,0);
+
+
+    if (reflection_count> config.max_reflections)
+    {
+        return c;
+    }
+
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
     Vector n = hit.n; //hit.obj->normal(p);
     Vector v = hit.src - p; //vector from point to viewer
 
-    for(unsigned int i = 0; i < lights.size(); i++)
+
+    if(hit.obj->brdf == 0)
+    //diffuse object
     {
-        Vector s = lights[i].position - p;
-        s = normalise(s);
-        Vector h = normalise(s + normalise(v));
-        //ambient
-        //c = c + (hit.color * lights[i].color)/(255);//div;
+        //indirect illumination
+        Vector v1, v2;
+        create_orthonormal_basis(n, v1, v2);
 
-        Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
+        Vector sample_dir = uniform_hemisphere(double_rand(0,1), double_rand(0,1)); //can replace with halton series etc in the future.
+        Vector transformed_dir;
+        //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
+        transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
+        transformed_dir.y = Vector(v1.y, v2.y, n.y).dot(sample_dir);
+        transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
+        double cos_t = transformed_dir.dot(n);
+        Hit diffuse_relfec_hit = intersect(p, transformed_dir);
+        Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1);
+        c = c + diffuse_reflec_color*cos_t*hit.color/255;//idk where 0.1 comes from.
 
-        if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > 1)//)
+        //direct illumination
+        for(unsigned int i = 0; i < lights.size(); i++)
         {
-            //if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
+            Vector s = lights[i].position - p;
+            s = normalise(s);
+
+            Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
+
+            if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > 1)
+            //the object is not occluded from the light.
             {
-                double div_factor = shadow.t*shadow.t*255;
-                //diffuse
-                c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
+                if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
+                {
+                    double div_factor = 255; //shadow.t*shadow.t*
+                    //diffuse
+                    c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
 
-                //specular
-                double val = h.dot(n) / h.abs();
-                c = c +  lights[i].color * pow(val, hit.obj->shininess) /div_factor;
+                }
             }
-        }
-
-        //we can have reflections even if the object is visible but in shadow.
-       if(reflection_count < config.max_reflections)//&& hit.obj->reflectivity>=min_reflectivity)
-        {
-            Vector reflec_ray = normalise(hit.ray_dir - n * 2  *hit.ray_dir.dot(n));
-            Hit reflection = intersect(p+0.001*reflec_ray, reflec_ray);//0.001 offset to avoid collision withself
-             Color reflec_color;
-            if(reflection.t!= -1)
-            {
-                 reflec_color = shade(reflection, reflection_count+1);
-            }
-
-            c = c + hit.obj->reflectivity * reflec_color;
         }
     }
 
@@ -352,6 +403,7 @@ void deserialize(string filename)
     config.threads_to_use = stoi(xml.GetAttrib("threads"));
     if (config.threads_to_use < 1){config.threads_to_use=1;}
     config.max_reflections = stoi(xml.GetAttrib("max_reflections"));
+    config.spp = stoi(xml.GetAttrib("samplesPP"));
     config.stretch = xml.GetAttrib("stretch");
 
     xml.FindElem(); //camera

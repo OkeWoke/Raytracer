@@ -48,6 +48,7 @@ void Plane::deserialize(std::string strSubDoc)
     l = std::stod(xml.GetAttrib("l"));
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    brdf = std::stod(xml.GetAttrib("brdf"));
     xml.IntoElem();
 
     xml.FindElem("normal");
@@ -58,5 +59,8 @@ void Plane::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
+
+    xml.FindElem("emission");
+    Color::deserialize(xml.GetSubDoc(), emission);
     this->bv = BoundVolume::compute_bound_volume(this);
 }

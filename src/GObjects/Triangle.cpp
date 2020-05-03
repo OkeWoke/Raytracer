@@ -55,7 +55,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             double t_y = fmod(tc.y, 1);
             if (t_x<0){t_x++;}
             if (t_y<0){t_y++;}
-            inter.color = Color(t_x, t_y, -999);
+            inter.color = Color(t_x, t_y, -99);
         }
     }
 
