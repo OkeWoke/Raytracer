@@ -108,25 +108,23 @@ BoundVolume* BoundVolume::compute_bound_volume(Sphere* sphere)
 
 BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
 {
-    Vector perp_1 = plane->n;
-    if(perp_1.x ==0)
-    {
-        perp_1.x =1;
-    }else
-    {
-        perp_1.y = perp_1.y+1;
-    }
-    perp_1 = normalise(perp_1.cross(plane->n));
-    Vector perp_2 = normalise(perp_1.cross(plane->n));
-    double radius = (perp_1*plane->w).abs() + (perp_2*plane->l).abs();
-    BoundVolume* new_bv = new BoundVolume();
-    new_bv->color = Color(0,255,0);
 
-    for(int i=0; i<7; i++)
+    Vector h_offset = plane->u*plane->w;
+    Vector v_offset = plane->v*plane->l;
+
+    Vector v1 = plane->position + h_offset  + v_offset + plane->n*0.1;
+    Vector v2 = v1 - 2*v_offset;
+    Vector v3 = plane->position - h_offset - v_offset + plane->n*0.1;
+    Vector v4 = v3 +2*v_offset;
+    std::vector<Vector> vertices{v1, v2, v3, v4};
+    std::vector<Vector> vertices_to_send;
+    for (Vector vec : vertices)
     {
-        new_bv->d_min_vals[i] = (plane->position - radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
-        new_bv->d_max_vals[i] = (plane->position + radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+        vertices_to_send.push_back(vec);
+        vertices_to_send.push_back(vec - 0.2*plane->n);
     }
+
+    BoundVolume* new_bv = compute_bound_volume(vertices_to_send);
 
     return new_bv;
 }

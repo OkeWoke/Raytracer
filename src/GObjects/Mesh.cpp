@@ -45,6 +45,7 @@ void Mesh::deserialize(std::string strSubDoc)
 
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    brdf = std::stod(xml.GetAttrib("brdf"));
     xml.IntoElem();
 
     xml.FindElem("position");
