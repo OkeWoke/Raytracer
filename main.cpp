@@ -95,6 +95,18 @@ Vector uniform_hemisphere(double u1, double u2) {
 	return Vector(cos(phi)*r, sin(phi)*r, u1);
 }
 
+Vector cosine_weighted_hemisphere(double u1, double u2)
+// taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
+{
+    const float r = sqrt(u1);
+    const float theta = 2 * PI * u2;
+
+    const float x = r * cos(theta);
+    const float y = r * sin(theta);
+
+    return Vector(x, y, sqrt(max((double)0, 1 - u1)));
+}
+
 //below function is taken from smallpaint
 // given v1, set v2 and v3 so they form an orthonormal system
 // (we assume v1 is already normalized)
@@ -211,6 +223,19 @@ int main()
 
     objects.clear();
     deserialize("scene.xml");
+    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < objects.size(); k++)
+    {
+        center  = center + objects[k]->position;
+    }
+    center = center / objects.size();
+    bvh = new BoundVolumeHierarchy(scene_bv, center);
+    for (auto obj: objects)
+    {
+        bvh->insert_object(obj,0);
+    }
+    auto aaa = bvh->build_BVH();
 
     img.clearArray();
 
@@ -339,7 +364,7 @@ Color shade(const Hit& hit, int reflection_count)
         Vector v1, v2;
         create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = uniform_hemisphere(double_rand(0,1), double_rand(0,1)); //can replace with halton series etc in the future.
+        Vector sample_dir = cosine_weighted_hemisphere(double_rand(0,1), double_rand(0,1)); //can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
@@ -347,18 +372,23 @@ Color shade(const Hit& hit, int reflection_count)
         transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
         double cos_t = transformed_dir.dot(n);
         Hit diffuse_relfec_hit = intersect(p, transformed_dir);
-        Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1);
-        c = c + diffuse_reflec_color*cos_t*hit.color/255;//idk where 0.1 comes from.
+        if(diffuse_relfec_hit.t != -1)
+        {
+            Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1);
+            c = c + diffuse_reflec_color*hit.color/255;//idk where 0.1 comes from.cos_t*
+        }
+
 
         //direct illumination
         for(unsigned int i = 0; i < lights.size(); i++)
         {
             Vector s = lights[i].position - p;
+            double dist = s.abs();
             s = normalise(s);
 
             Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
 
-            if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > 1)
+            if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > dist)
             //the object is not occluded from the light.
             {
                 if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
@@ -368,6 +398,9 @@ Color shade(const Hit& hit, int reflection_count)
                     c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
 
                 }
+            }else
+            {
+                //return Color(0,.01,0);
             }
         }
     }

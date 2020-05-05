@@ -22,16 +22,17 @@ Mesh::~Mesh()
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
     intersection inter = bvh->intersect(src, d, 0);
-    if (inter.color.b == -999)
+    if (inter.color.b == -939)
     {
         int t_x  = int((texture.get_width()-1)*inter.color.r);
         int t_y = int((texture.get_height()-1)*inter.color.g);
-         png::rgb_pixel pix = texture[t_y][t_x];
+        png::rgb_pixel pix = texture[t_y][t_x];
         inter.color = Color(pix.red, pix.green, pix.blue);
     }else
     {
         inter.color = this->color;
     }
+    if(inter.obj_ref != nullptr){inter.obj_ref->brdf = 0;}
 
     return inter;
 }

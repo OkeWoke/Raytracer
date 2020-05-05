@@ -108,7 +108,6 @@ BoundVolume* BoundVolume::compute_bound_volume(Sphere* sphere)
 
 BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
 {
-
     Vector h_offset = plane->u*plane->w;
     Vector v_offset = plane->v*plane->l;
 
@@ -116,8 +115,10 @@ BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
     Vector v2 = v1 - 2*v_offset;
     Vector v3 = plane->position - h_offset - v_offset + plane->n*0.1;
     Vector v4 = v3 +2*v_offset;
+
     std::vector<Vector> vertices{v1, v2, v3, v4};
     std::vector<Vector> vertices_to_send;
+
     for (Vector vec : vertices)
     {
         vertices_to_send.push_back(vec);
@@ -144,7 +145,7 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
         double d_val_min = d_min_vals[i];
         double d_val_max = d_max_vals[i];
-         double t_near = (d_val_min - src_dot_N)/d_dot_N;
+        double t_near = (d_val_min - src_dot_N)/d_dot_N;
         double t_far = (d_val_max - src_dot_N)/d_dot_N;
 
 

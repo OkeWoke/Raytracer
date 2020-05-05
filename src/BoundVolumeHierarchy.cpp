@@ -176,7 +176,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     if(this->bv == nullptr)
         //this case shouldnt happen?
     {
-        //return bv_inter;
+        return bv_inter;
     }
 
     bv_inter = bv->intersect(src,d);
@@ -198,7 +198,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
                 if(tmp.obj_ref != nullptr)
                 //there was a object intersection...
                 {
-                    if(tmp.t<min_t && tmp.t > 0)
+                    if(tmp.t<min_t && tmp.t > 0.001)
                     {
                         min_t = tmp.t;
                         best_inter = tmp;
