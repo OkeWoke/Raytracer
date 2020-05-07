@@ -24,7 +24,8 @@
 #include "imageArray.h"
 #include "BoundVolume.h"
 #include "BoundVolumeHierarchy.h"
-
+#include "HaltonSampler.h"
+#include "RandomSampler.h"
 #include "GObjects/Sphere.h"
 #include "GObjects/GObject.h"
 #include "GObjects/Plane.h"
@@ -36,6 +37,7 @@
 
 using namespace std;
 using namespace cimg_library;
+
 struct Hit
 {
     Vector src;
@@ -60,9 +62,10 @@ struct Config
     string stretch;
 };
 
+// function prototypes
 void draw(ImageArray& img, string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir);
-Color shade(const Hit& hit, int reflection_count);
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
 void deserialize(string filename);
 void cast_rays_multithread(const Camera& cam, const ImageArray& img);
@@ -72,6 +75,7 @@ Vector uniform_hemisphere(double u1, double u2);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
 
+//var/obj declaration
 vector<GObject*> objects;
 vector<Light> lights;
 Camera cam;
@@ -82,12 +86,6 @@ uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
 
-
-double double_rand(const double & min, const double & max) {
-    static thread_local std::mt19937 generator;
-    std::uniform_real_distribution<double> distribution(min, max);
-    return distribution(generator);
-}
 
 Vector uniform_hemisphere(double u1, double u2) {
 	const double r = sqrt(1.0 - u1*u1);
@@ -150,7 +148,6 @@ int main()
 
     objects.clear();
     img.clearArray();
-
     while (!display.is_closed())
     {
 
@@ -216,42 +213,15 @@ int main()
         }
         delete bvh;
 
-
         objects.clear();
+        if (display.is_closed())
+        {
+            draw(img, filename.str());
+            cout << "Finished!" << endl;
+            img.deleteArray();
+        }
         img.clearArray();
     }
-
-    objects.clear();
-    deserialize("scene.xml");
-    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
-    Vector center = Vector(0,0,0);
-    for(unsigned int k = 0; k < objects.size(); k++)
-    {
-        center  = center + objects[k]->position;
-    }
-    center = center / objects.size();
-    bvh = new BoundVolumeHierarchy(scene_bv, center);
-    for (auto obj: objects)
-    {
-        bvh->insert_object(obj,0);
-    }
-    auto aaa = bvh->build_BVH();
-
-    img.clearArray();
-
-    cast_rays_multithread(cam, img);
-    for (auto p : objects)
-    {
-
-        delete p;
-    }
-
-    objects.clear();
-    draw(img, filename.str());
-    img.clearArray();
-    cout << "Finished!" << endl;
-
-    img.deleteArray();
     getch();
     return 0;
 
@@ -289,15 +259,22 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
                     x_index = x_index%cam.H_RES;
                     Color c;
 
+
+                    Sampler* ha1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);
+                    Sampler* ha2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000);
+
                     for(int s=0;s<config.spp; s++)
                     {
-                        double x_offset = double_rand(-0.5,0.5);
-                        double y_offset = double_rand(-0.5,0.5);
+                        double x_offset = ha1->next() - 0.5;
+                        double y_offset = ha2->next() - 0.5;
                         Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                         Hit hit = intersect(cam.pos, ray_dir);
-                        c = c+ shade(hit, 0);
+                        c =  c + shade(hit, 0, ha1, ha2);
+
                     }
-                    img.pixelMatrix[x_index][y_index] = c/config.spp;
+                    delete ha1, ha2;
+
+                    img.pixelMatrix[x_index][y_index] =  c/config.spp;
                 }
             }));
     }
@@ -335,7 +312,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     return hit;
 }
 
-Color shade(const Hit& hit, int reflection_count)
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
 {
 
     Color c = Color(0, 0, 0);
@@ -354,7 +331,7 @@ Color shade(const Hit& hit, int reflection_count)
 
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
     Vector n = hit.n; //hit.obj->normal(p);
-    Vector v = hit.src - p; //vector from point to viewer
+    //Vector v = hit.src - p; //vector from point to viewer
 
 
     if(hit.obj->brdf == 0)
@@ -364,17 +341,17 @@ Color shade(const Hit& hit, int reflection_count)
         Vector v1, v2;
         create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = cosine_weighted_hemisphere(double_rand(0,1), double_rand(0,1)); //can replace with halton series etc in the future.
+        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next()); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
         transformed_dir.y = Vector(v1.y, v2.y, n.y).dot(sample_dir);
         transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
-        double cos_t = transformed_dir.dot(n);
+        //double cos_t = transformed_dir.dot(n);
         Hit diffuse_relfec_hit = intersect(p, transformed_dir);
         if(diffuse_relfec_hit.t != -1)
         {
-            Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1);
+            Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2);
             c = c + diffuse_reflec_color*hit.color/255;//idk where 0.1 comes from.cos_t*
         }
 
@@ -398,9 +375,6 @@ Color shade(const Hit& hit, int reflection_count)
                     c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
 
                 }
-            }else
-            {
-                //return Color(0,.01,0);
             }
         }
     }
@@ -410,8 +384,6 @@ Color shade(const Hit& hit, int reflection_count)
 
 void draw(ImageArray& img, string filename)
 {
-    img.gammaCorrection();
-    img.normalise();
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
     for (int y = 0; y < img.HEIGHT; ++y)
