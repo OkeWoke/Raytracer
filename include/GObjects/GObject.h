@@ -36,7 +36,7 @@ class GObject
 
             ~intersection()
             {
-                obj_ref = nullptr;
+                //obj_ref = nullptr;
             }
         };
 

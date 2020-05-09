@@ -233,7 +233,20 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
 struct BVHInter
 {
     BoundVolumeHierarchy* bvh;
-    GObject::intersection inter = GObject::intersection();
+    GObject::intersection inter;
+    BVHInter()
+    {
+      inter = GObject::intersection();
+      bvh = nullptr;
+    };
+
+    ~BVHInter()
+    {
+        //~inter();
+        //delete bvh;
+
+    };
+
 };
 
 static bool Compare(BVHInter inter1, BVHInter inter2)
@@ -253,7 +266,7 @@ GObject::intersection BoundVolumeHierarchy::priority_intersect(const Vector& src
             GObject::intersection tmp = children[i]->bv_intersect(src, d);
             if(tmp.obj_ref != nullptr)
             {
-                BVHInter bvh_tmp;
+                BVHInter bvh_tmp = BVHInter();
                 bvh_tmp.inter = tmp;
                 bvh_tmp.bvh = children[i];
                 pq.push(bvh_tmp);
@@ -263,13 +276,19 @@ GObject::intersection BoundVolumeHierarchy::priority_intersect(const Vector& src
 
     while(true)
     {
+        if(pq.size()==0)
+        {
+            return GObject::intersection();
+        }
         BVHInter top_node = pq.top();
+
+
         pq.pop();
         if(top_node.bvh->is_leaf)
         {
             //below line possibly slow/inefficient?
             GObject::intersection leaf_inter = top_node.bvh->intersect(src, d, 0);//depth value incorrect here but oh well.
-            if(leaf_inter.obj_ref != nullptr && leaf_inter.t < pq.top().inter.t)
+            if(leaf_inter.obj_ref != nullptr && leaf_inter.t < pq.top().inter.t || pq.size() == 0)
             //we have an intersection with somethin inside leaf node...
             {
                 return leaf_inter;
@@ -283,7 +302,7 @@ GObject::intersection BoundVolumeHierarchy::priority_intersect(const Vector& src
                     GObject::intersection tmp = top_node.bvh->children[i]->bv_intersect(src, d);
                     if(tmp.obj_ref != nullptr)
                     {
-                        BVHInter bvh_tmp;
+                        BVHInter bvh_tmp = BVHInter();
                         bvh_tmp.inter = tmp;
                         bvh_tmp.bvh = top_node.bvh->children[i];
                         pq.push(bvh_tmp);
