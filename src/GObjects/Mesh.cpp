@@ -21,7 +21,7 @@ Mesh::~Mesh()
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
-    intersection inter = bvh->intersect(src, d, 0);
+    intersection inter = bvh->priority_intersect(src,d,0);//intersect(src, d, 0);
     if (inter.color.b == -939)
     {
         int t_x  = int((texture.get_width()-1)*inter.color.r);

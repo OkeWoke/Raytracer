@@ -316,13 +316,17 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
 {
 
     Color c = Color(0, 0, 0);
-    //c = c+ hit.obj->emission;
+    //
 
     if(hit.obj == nullptr || hit.t == -1)
     {
         return c;
     }
 
+    if(hit.obj != nullptr)
+    {
+        c = c+ hit.obj->emission;
+    }
 
     if (reflection_count> config.max_reflections)
     {

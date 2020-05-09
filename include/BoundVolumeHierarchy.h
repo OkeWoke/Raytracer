@@ -3,7 +3,8 @@
 #include "GObjects/GObject.h"
 #include "GObjects/Sphere.h"
 #include<vector>
-
+#include<queue>
+#include<functional>
 #ifndef BOUNDVOLUMEHIERARCHY_H
 #define BOUNDVOLUMEHIERARCHY_H
 
@@ -24,7 +25,8 @@ class BoundVolumeHierarchy
         void insert_object(GObject* tri, int depth);
         BoundVolume* build_BVH();
         GObject::intersection intersect(const Vector& src, const Vector& d, int depth);
-
+        GObject::intersection bv_intersect(const Vector& src, const Vector& d);
+        GObject::intersection priority_intersect(const Vector& src, const Vector& d, int depth);
         Vector center;
         Vector diameter;
 
