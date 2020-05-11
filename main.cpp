@@ -148,10 +148,9 @@ int main()
     }
 
     objects.clear();
-    img.clearArray();
     while (!display.is_closed())
     {
-
+        img.clearArray();
         numPrimaryRays = 0;
         numRayTrianglesTests = 0;
         numRayTrianglesIsect = 0;
@@ -210,7 +209,7 @@ int main()
 
         delete bvh;
         bvh = nullptr;
-        //memory leak with this commented out
+
 
         objects.clear();
         if (display.is_closed())
@@ -219,7 +218,6 @@ int main()
             cout << "Finished!" << endl;
             img.deleteArray();
         }
-        img.clearArray();
     }
     getch();
     return 0;

@@ -46,11 +46,10 @@ BoundVolumeHierarchy::~BoundVolumeHierarchy()
         delete p;
         p = nullptr;
     }
-    //if (bv!= nullptr)
-    {
-        delete bv;
-        bv = nullptr;
-    }
+
+    delete bv;
+    bv = nullptr;
+
 
 }
 

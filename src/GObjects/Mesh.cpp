@@ -18,6 +18,8 @@ Mesh::~Mesh()
     triangles.clear();
     delete bvh;
     bvh = nullptr;
+    delete bv;
+    bv = nullptr;
 
 }
 
