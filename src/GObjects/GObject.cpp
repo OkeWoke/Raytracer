@@ -7,5 +7,7 @@ GObject::GObject()
 
 GObject::~GObject()
 {
-    //virtual dtor
+    //dont uncomment, pointer handling should be done per obj basis.
+    //delete bv;
+    //bv = nullptr;
 }

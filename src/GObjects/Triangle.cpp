@@ -27,10 +27,10 @@ vn3(vn3)
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
     __sync_fetch_and_add(&numRayTrianglesTests, 1);
-    intersection inter;
+    intersection inter = intersection();
     double d_dot_n = d.dot(n);
 
-    if (d_dot_n  <0) //normal is pointing outward and not perpendicular to incoming ray
+    if (d_dot_n  !=0) //normal is pointing outward and not perpendicular to incoming ray
     {
         double t = -(src-v1).dot(n)/d_dot_n;
 

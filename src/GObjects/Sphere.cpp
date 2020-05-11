@@ -6,7 +6,8 @@ Sphere::Sphere(): GObject()
 
 Sphere::~Sphere()
 {
-    delete this->bv;
+    delete bv;
+    bv = nullptr;
 }
 
 Sphere::Sphere(Vector pos, double radius): GObject(position),

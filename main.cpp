@@ -141,9 +141,10 @@ int main()
 
     int orw = 20;
     lights.clear();
-    for (auto p : objects)
+    for (auto p : objects) // we only need this here and not in the main loop because the bvh destructor deletes the objects
     {
         delete p;
+        p = nullptr;
     }
 
     objects.clear();
@@ -168,7 +169,7 @@ int main()
         {
             bvh->insert_object(obj,0);
         }
-        auto aaa = bvh->build_BVH();
+        auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
         auto start = chrono::steady_clock::now();
         cast_rays_multithread(cam, img);
         auto ray_end = chrono::steady_clock::now();
@@ -206,12 +207,10 @@ int main()
         cout << "Image display completed in: "<< setw(orw-7) <<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
         cout << "----------------------------------------\n\n\n\n" << endl;
         lights.clear();
-        for (auto p : objects)
-        {
 
-            delete p;
-        }
         delete bvh;
+        bvh = nullptr;
+        //memory leak with this commented out
 
         objects.clear();
         if (display.is_closed())
@@ -273,6 +272,8 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
 
                     }
                     delete ha1, ha2;
+                    ha1 = nullptr;
+                    ha2 = nullptr;
 
                     img.pixelMatrix[x_index][y_index] =  c/config.spp;
                 }
@@ -369,10 +370,10 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
 
             Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
 
-            if(shadow.obj == nullptr|| shadow.t < 0 || shadow.t > dist)
+            if(shadow.obj == nullptr|| shadow.t < 0.0001 || shadow.t > dist-0.0001)
             //the object is not occluded from the light.
             {
-                if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
+                if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
                 {
                     double div_factor = 255; //shadow.t*shadow.t*
                     //diffuse

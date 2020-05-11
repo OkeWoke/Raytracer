@@ -7,7 +7,8 @@ Plane::Plane(): GObject()
 
 Plane::~Plane()
 {
-    delete this->bv;
+    delete bv;
+    bv = nullptr;
 }
 
 Plane::Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity): GObject(c, pos, shininess, reflectivity),

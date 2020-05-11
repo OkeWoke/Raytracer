@@ -12,16 +12,18 @@ Mesh::~Mesh()
     vertices.clear();
     for (auto p : triangles)
     {
-        delete p;
+        //delete p;
+        //p = nullptr;
     }
-
     triangles.clear();
-    bvh->~BoundVolumeHierarchy();
+    delete bvh;
+    bvh = nullptr;
+
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
-    intersection inter = bvh->priority_intersect(src,d,0);//intersect(src, d, 0);
+    intersection inter = bvh->intersect(src, d, 0);//priority_intersect(src,d,0);
     if (inter.color.b == -939)
     {
         int t_x  = int((texture.get_width()-1)*inter.color.r);
@@ -145,17 +147,19 @@ void Mesh::obj_reader(std::string filename)
         }
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
-    bv = BoundVolume::compute_bound_volume(this->vertices);
+    bv = BoundVolume::compute_bound_volume(this->vertices); //this is deleted by bvh destructor?
     Vector center = Vector(0,0,0);
     for(unsigned int k = 0; k < vertices.size(); k++)
     {
         center  = center + vertices[k];
     }
     center = center / vertices.size();
-    bvh = new BoundVolumeHierarchy(bv, center);
+    this->bvh = new BoundVolumeHierarchy(bv, center);
     for (auto tri: triangles)
     {
         bvh->insert_object(tri,0);
     }
     auto aaa = bvh->build_BVH();
+    //delete aaa;
+    //aaa =nullptr;//deleting bvh will delete this.
 }
