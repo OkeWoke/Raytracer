@@ -206,7 +206,11 @@ int main()
         cout << "Image display completed in: "<< setw(orw-7) <<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
         cout << "----------------------------------------\n\n\n\n" << endl;
         lights.clear();
-
+        for (auto p : objects) // we only need this here and not in the main loop because the bvh destructor deletes the objects
+        {
+            delete p;
+            p = nullptr;
+        }
         delete bvh;
         bvh = nullptr;
 
@@ -271,7 +275,10 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
                         c =  c + shade(hit, 0, sampler3, sampler4);
 
                     }
-                    delete ha1, ha2, sampler3, sampler4;
+                    delete ha1;
+                    delete ha2;
+                    delete sampler3;
+                    delete sampler4;
                     ha1 = nullptr;
                     ha2 = nullptr;
                     sampler3 = nullptr;

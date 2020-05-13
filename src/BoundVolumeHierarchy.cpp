@@ -35,11 +35,11 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
-    for (auto p : objects)
+    /*for (auto p : objects)
     {
         delete p; // triangles deleted by mesh, double delete results in seg fault for some reason.
         p = nullptr;
-    }
+    }*/
     objects.clear();
     for (auto p : children)
     {

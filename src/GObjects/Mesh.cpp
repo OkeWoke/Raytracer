@@ -9,13 +9,14 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-    vertices.clear();
+
     for (auto p : triangles)
     {
-        //delete p;
-        //p = nullptr;
+        delete p;
+        p = nullptr;
     }
     triangles.clear();
+    vertices.clear();
     delete bvh;
     bvh = nullptr;
     delete bv;
