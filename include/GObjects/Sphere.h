@@ -18,6 +18,7 @@ class Sphere: public GObject
 
         void deserialize(std::string strSubDoc);
         double radius;
+        Vector get_random_point(double val1, double val2);
     //private:
 
 };

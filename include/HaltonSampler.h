@@ -9,9 +9,10 @@ class HaltonSampler : public Sampler
         HaltonSampler();
         HaltonSampler(int base, int index);
         double next();
-    protected:
+        double nextI(int index);
 
-    private:
+
+
         int base;
         int index;
 };

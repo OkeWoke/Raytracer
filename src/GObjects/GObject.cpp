@@ -11,3 +11,4 @@ GObject::~GObject()
     //delete bv;
     //bv = nullptr;
 }
+

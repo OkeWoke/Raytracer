@@ -61,6 +61,13 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
     return bv_inter;
 }
 
+
+Vector Sphere::get_random_point(double val1, double val2)
+{
+ return Vector(0,0,0);
+}
+
+
 void Sphere::deserialize(std::string strSubDoc)
 {
     CMarkup xml(strSubDoc);

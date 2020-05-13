@@ -15,3 +15,8 @@ double RandomSampler::next()
     std::uniform_real_distribution<double> distribution(this->min, this->max);
     return distribution(generator);
 }
+
+double RandomSampler::nextI(int i)
+{
+    return 0;
+}

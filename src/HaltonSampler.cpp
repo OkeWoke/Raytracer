@@ -26,3 +26,20 @@ double HaltonSampler::next()
     this->index++;
     return r;
 }
+
+double HaltonSampler::nextI(int index)
+{
+
+    double f =1;
+    double r = 0;
+    int tmp_index = index;
+
+    while (tmp_index > 0)
+    {
+        f = f/this->base;
+        r = r + f * (tmp_index % base);
+        tmp_index = (int)floor(tmp_index/base);
+    }
+
+    return r;
+}

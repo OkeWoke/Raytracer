@@ -14,6 +14,7 @@ class Plane: public GObject
         Plane(Vector pos, Vector n, double l, double w, Color c, double shininess, double reflectivity);
         intersection intersect(const Vector& src, const Vector& d);
         void deserialize(std::string strSubDoc);
+        Vector get_random_point(double val1, double val2);
         Vector n;
         Vector u;
         Vector v;

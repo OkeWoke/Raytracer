@@ -257,8 +257,10 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
                     Color c;
 
 
-                    Sampler* ha1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);
-                    Sampler* ha2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000);
+                    Sampler* ha1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
+                    Sampler* ha2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
+                    Sampler* sampler3 = new RandomSampler();
+                    Sampler* sampler4 = new RandomSampler();
 
                     for(int s=0;s<config.spp; s++)
                     {
@@ -266,12 +268,14 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
                         double y_offset = ha2->next() - 0.5;
                         Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                         Hit hit = intersect(cam.pos, ray_dir);
-                        c =  c + shade(hit, 0, ha1, ha2);
+                        c =  c + shade(hit, 0, sampler3, sampler4);
 
                     }
-                    delete ha1, ha2;
+                    delete ha1, ha2, sampler3, sampler4;
                     ha1 = nullptr;
                     ha2 = nullptr;
+                    sampler3 = nullptr;
+                    sampler4 = nullptr;
 
                     img.pixelMatrix[x_index][y_index] =  c/config.spp;
                 }
@@ -322,9 +326,9 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
         return c;
     }
 
-    if(hit.obj != nullptr)
+    if(hit.obj != nullptr) //bad check to see if emissive. && hit.obj->emission.r >0 && hit.n.dot(hit.ray_dir)<0
     {
-        c = c+ hit.obj->emission;
+        c = c+ (hit.obj->emission)/255;
     }
 
     if (reflection_count> config.max_reflections)
@@ -360,24 +364,29 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
 
 
         //direct illumination
-        for(unsigned int i = 0; i < lights.size(); i++)
+        //for(unsigned int i = 0; i < lights.size(); i++)
+        for(unsigned int i = 0; i < objects.size(); i++)
         {
-            Vector s = lights[i].position - p;
-            double dist = s.abs();
-            s = normalise(s);
-
-            Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
-
-            if(shadow.obj == nullptr|| shadow.t < 0.0001 || shadow.t > dist-0.0001)
-            //the object is not occluded from the light.
+            if(objects[i]->emission.r > 0 || objects[i]->emission.g !=0 || objects[i]->emission.b != 0)
             {
-                if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
-                {
-                    double div_factor = 255; //shadow.t*shadow.t*
-                    //diffuse
-                    c = c + hit.color * lights[i].color * s.dot(n) /(div_factor*255);
+                Vector light_point = objects[i]->get_random_point(ha2->next(), ha1->next());//lights[i].position;//
+                Vector s =  light_point- p;
+                double dist = s.abs();
+                s = normalise(s);
 
+                Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
+
+                if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
+                //the object is not occluded from the light.
+                {
+                    if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
+                    {
+                        //diffuse
+                        c = c + hit.color * objects[i]->emission * s.dot(n)/(255*255); // lights[i].color
+
+                    }
                 }
+
             }
         }
     }

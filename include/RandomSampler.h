@@ -10,6 +10,7 @@ class RandomSampler : public Sampler
         RandomSampler(double min, double max);
 
         double next();
+        double nextI(int i);
 
     private:
         double min;

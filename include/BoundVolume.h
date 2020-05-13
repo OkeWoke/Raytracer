@@ -27,6 +27,7 @@ class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane
 
         static BoundVolume* compute_bound_volume(Sphere* sphere);
         static BoundVolume* compute_bound_volume(Plane* plane);
+        Vector get_random_point(double val1, double val2);
 };
 
 

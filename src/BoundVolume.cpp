@@ -170,3 +170,8 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
     return inter;
 }
+
+Vector BoundVolume::get_random_point(double val, double val2)
+{
+
+}

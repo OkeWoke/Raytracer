@@ -180,33 +180,6 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
     return this->bv;
 }
 
-struct BVHInter
-{
-    BoundVolumeHierarchy* bvh;
-    GObject::intersection* inter;
-
-    BVHInter()
-    {
-      inter = new GObject::intersection();
-      bvh = nullptr;
-
-    };
-
-    ~BVHInter()
-    {
-//        delete inter;
-        bvh = nullptr;
-        //~inter();
-        //delete bvh;
-
-    };
-
-};
-
-static bool Compare(BVHInter inter1, BVHInter inter2)
-{
-    return inter1.inter->t < inter2.inter->t;
-}
 
 GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth)
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
@@ -267,69 +240,4 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     }
 
     return best_inter;
-}
-
-
-
-/*
-GObject::intersection BoundVolumeHierarchy::priority_intersect(const Vector& src, const Vector& d, int depth)
-{
-
-    std::priority_queue<BVHInter, std::vector<BVHInter>, std::function<bool(BVHInter, BVHInter)>> pq(Compare);
-    for (int i=0; i<8; i++)
-    {
-        if (children[i] != nullptr)
-        {
-            GObject::intersection tmp = children[i]->bv_intersect(src, d);
-            if(tmp.obj_ref != nullptr)
-            {
-                BVHInter bvh_tmp = BVHInter();
-                bvh_tmp.inter = tmp;
-                bvh_tmp.bvh = children[i];
-                pq.push(bvh_tmp);
-            }
-        }
-    }
-
-    while(true)
-    {
-        if(pq.size()==0)
-        {
-            return GObject::intersection();
-        }
-
-        if(top_node.bvh->is_leaf)
-        {
-            //below line possibly slow/inefficient?
-            GObject::intersection leaf_inter = top_node.bvh->intersect(src, d, 0);//depth value incorrect here but oh well.
-            if(leaf_inter.obj_ref != nullptr  || pq.size() == 0) //leaf_inter.obj_ref != nullptr && leaf_inter.t < pq.top().inter.t || pq.size() == 0
-            //we have an intersection with somethin inside leaf node...
-            {
-                return leaf_inter;
-            }
-        }else
-        {
-            for (int i=0;i<8;i++)
-            {
-                if (top_node.bvh->children[i] != nullptr)
-                {
-                    GObject::intersection tmp = top_node.bvh->children[i]->bv_intersect(src, d);
-                    if(tmp.obj_ref != nullptr)
-                    {
-                        BVHInter bvh_tmp = BVHInter();
-                        bvh_tmp.inter = tmp;
-                        bvh_tmp.bvh = top_node.bvh->children[i];
-                        pq.push(bvh_tmp);
-                    }
-                }
-            }
-        }
-    }
-}
-*/
-GObject::intersection BoundVolumeHierarchy::bv_intersect(const Vector& src, const Vector& d)
-{
-    GObject::intersection inter = bv->intersect(src,d); //need to remove this check from normal intersect
-
-    return inter;
 }

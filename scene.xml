@@ -1,66 +1,46 @@
-<Config threads="1" max_reflections="1" samplesPP="1" stretch="gamma"/>
+<Config threads="22" max_reflections="10" samplesPP="100" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2">
-    <position x="0" y="2" z="15"/><!-- Camera position -->
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2">
+    <position x="0" y="0" z="19"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
 </Camera>
 
-<Light>
-    <position x="0" y="1" z="6"/>
-    <color r="1" g="1" b="1"/>
-</Light>
+
 <Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.9" brdf = "0">
-    <position x="1.5" y="0" z="9.5"/>
+    <position x="1.5" y="-3.8" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
 
     <y_rot angle="-25"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
-    <scale factor="0.5"/> <!-- This scales the model up by factor -->
+    <scale factor="0.8"/> <!-- This scales the model up by factor -->
     <color r="155" g="0" b="1"/>
     <texture filename ="Models/space.png"/>
    
 </Mesh>
-<!--
-<Sphere radius = "0.3" shininess = "22" reflectivity = "0" brdf = "0">
-    <position x="0" y="0.5" z="8.1"/>
-    <color r="255" g="255" b="255"/>
-    <emission r="2" g="2" b="2"/>
-    
-    
-    Triangle count: 8808
-Casting completed in:                 1916 (ms)
-Number of primary rays:                     0
-Number of Triangle Tests:              7337277
-Number of Triangle Intersections:   1305681
-Percentage of sucesful triangle tests:  17.7952%
-0.106952
-Image display completed in:            88 (ms)
-----------------------------------------
-</Sphere>-->
 
 <Sphere radius = "0.5" shininess = "22" reflectivity = "0" brdf= "0">
-    <position x="-1" y="0.5" z="5"/>
+    <position x="-1" y="-2" z="-1"/>
     <color r="255" g="10" b="255"/>
     <emission r="0" g="0" b="0"/>
 </Sphere>
-    
-<!-- Bottom Plane -->
-<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="0" z="3"/>
+
+<!-- top emissive plane area light-->
+<Plane w="1" l="1" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="3.8" z="4"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
+    <z_rot angle="180"/> <!-- roll -->
     
     <color r="120" g="120" b="222"/>
-    <emission r="00" g="0" b="0"/>
+    <emission r="100" g="100" b="100"/>
 </Plane>
 
-<!-- Back Plane -->
+<!-- back Plane -->
 <Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="3" z="3"/>
+    <position x="0" y="0" z="-3"/>
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
@@ -68,32 +48,13 @@ Image display completed in:            88 (ms)
     <color r="120" g="120" b="222"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
-<!-- front plane behind cam-->
-<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="3" z="16"/>
-    <x_rot angle="-90"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="0" g="0" b="0"/>
-</Plane>
 
-<!-- right Plane -->
-<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="2" y="3" z="3"/>
-    <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="90"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="0" g="0" b="0"/>
-</Plane>
 
-<!-- Left Plane -->
-<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="-2" y="3" z="3"/>
-    <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
+
+<!-- left Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="-3" y="0" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="-90"/> <!-- roll -->
     
@@ -101,10 +62,21 @@ Image display completed in:            88 (ms)
     <emission r="0" g="0" b="0"/>
 </Plane>
 
-<!-- top Plane -->
-<Plane w="3" l="3" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="5" z="3"/>
-    <x_rot angle="180"/> <!-- Tilt  + is down, - is up -->
+<!-- Right Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="3" y="0" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="90"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>
+
+<!-- bottom Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="-3" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
     
@@ -112,5 +84,13 @@ Image display completed in:            88 (ms)
     <emission r="0" g="0" b="0"/>
 </Plane>
 
-
-
+<!-- top plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="4" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="180"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>

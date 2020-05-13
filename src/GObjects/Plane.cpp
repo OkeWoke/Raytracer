@@ -24,21 +24,32 @@ GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
     //return bv_inter;
     if(bv_inter.obj_ref != nullptr)
     {
-        intersection inter;
-        inter.obj_ref =nullptr;
+        intersection inter = GObject::intersection();
         double tmp = d.dot(n);
-
         if (tmp!=0)
         {
-            inter.t = (position-src).dot(n)/(tmp);
-            inter.obj_ref = this;
-            inter.n = n;
+            double tmp_t = (position-src).dot(n)/(tmp);
+            Vector hit_point = src+tmp_t*d;
+            if((hit_point-position).abs() < w)
+            {
+                inter.t = tmp_t;
+                inter.obj_ref = this;
+                inter.n = n;
+            }
+
         }
         return inter;
     }
-    return bv_inter;
+    return GObject::intersection();//bv_inter;
 }
 
+Vector Plane::get_random_point(double val1, double val2)
+//Supplies a random point on the planes surface.
+{
+    Vector point = this->position;
+    point = point + w*this->u*(val1-0.5) + l*this->v*(val2-0.5);
+    return point;
+}
 
 void Plane::deserialize(std::string strSubDoc)
 {
@@ -75,9 +86,9 @@ void Plane::deserialize(std::string strSubDoc)
     xml.FindElem("z_rot");
     mat = mat * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
 
-    n = mat.mult_vec(n, 0);
-    u = mat.mult_vec(u, 0);
-    v = mat.mult_vec(v, 0);
+    n = normalise(mat.mult_vec(n, 0));
+    u = normalise(mat.mult_vec(u, 0));
+    v = normalise(mat.mult_vec(v, 0));
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
 

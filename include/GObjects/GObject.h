@@ -41,7 +41,7 @@ class GObject
         };
 
         virtual intersection intersect(const Vector& src, const Vector& d) = 0;
-
+        virtual Vector get_random_point(double val1, double val2) = 0;
         GObject* bv = nullptr; //we will need to forcefully cast this to BoundVolume type in each usecase...
 };
 

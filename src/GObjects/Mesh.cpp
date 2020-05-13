@@ -165,3 +165,8 @@ void Mesh::obj_reader(std::string filename)
     //delete aaa;
     //aaa =nullptr;//deleting bvh will delete this.
 }
+
+Vector Mesh::get_random_point(double val, double val2)
+{
+    return Vector();
+}

@@ -94,3 +94,9 @@ void Triangle::deserialize(std::string strSubDoc)//old method no longer working
     AC = v3-v1;
     n = normalise(AB.cross(AC));
 }
+
+Vector Triangle::get_random_point(double val, double val2)
+{
+    return Vector();
+}
+
