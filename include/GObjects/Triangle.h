@@ -18,6 +18,7 @@ class Triangle: public GObject
         std::string to_string();
         Vector v1, v2, v3;
         void deserialize(std::string strSubDoc);
+        Vector get_random_point(double val1, double val2);
 
     private:
         Vector vt1, vt2, vt3; //texture coords only use x,y, z=0

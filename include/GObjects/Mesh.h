@@ -33,7 +33,7 @@ class Mesh : public GObject
 
         //BoundVolume* bv;
         BoundVolumeHierarchy* bvh;
-
+        Vector get_random_point(double val1, double val2);
     private:
         Matrix mat;
         GObject* tri;

@@ -30,16 +30,27 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
     {
         this->children[i] = nullptr;
     }
+    this->bv = nullptr;
 }
 
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
+    /*for (auto p : objects)
+    {
+        delete p; // triangles deleted by mesh, double delete results in seg fault for some reason.
+        p = nullptr;
+    }*/
     objects.clear();
     for (auto p : children)
     {
         delete p;
+        p = nullptr;
     }
+
     delete bv;
+    bv = nullptr;
+
+
 }
 
 void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
@@ -168,6 +179,7 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
 
     return this->bv;
 }
+
 
 GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth)
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.

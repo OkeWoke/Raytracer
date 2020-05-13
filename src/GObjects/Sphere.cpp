@@ -6,7 +6,8 @@ Sphere::Sphere(): GObject()
 
 Sphere::~Sphere()
 {
-    delete this->bv;
+    delete bv;
+    bv = nullptr;
 }
 
 Sphere::Sphere(Vector pos, double radius): GObject(position),
@@ -55,11 +56,17 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
             inter.obj_ref = this;
             inter.n = normalise(src+inter.t*d-position);
         }
-
         return inter;
     }
     return bv_inter;
 }
+
+
+Vector Sphere::get_random_point(double val1, double val2)
+{
+ return Vector(0,0,0);
+}
+
 
 void Sphere::deserialize(std::string strSubDoc)
 {
@@ -69,6 +76,8 @@ void Sphere::deserialize(std::string strSubDoc)
     radius = std::stod(xml.GetAttrib("radius"));
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    brdf = std::stod(xml.GetAttrib("brdf"));
+
     xml.IntoElem();
 
     xml.FindElem("position");
@@ -76,6 +85,8 @@ void Sphere::deserialize(std::string strSubDoc)
 
     xml.FindElem("color");
     Color::deserialize(xml.GetSubDoc(), color);
-    this->bv = BoundVolume::compute_bound_volume(this);
 
+    xml.FindElem("emission");
+    Color::deserialize(xml.GetSubDoc(), emission);
+    this->bv = BoundVolume::compute_bound_volume(this);
 }

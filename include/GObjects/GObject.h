@@ -17,7 +17,8 @@ class GObject
         Vector position;
         double shininess;
         double reflectivity;
-
+        Color emission;
+        int brdf;
         GObject();
         virtual ~GObject();
         GObject(Vector position): position(position){};
@@ -35,12 +36,12 @@ class GObject
 
             ~intersection()
             {
-                obj_ref = nullptr;
+                //obj_ref = nullptr;
             }
         };
 
         virtual intersection intersect(const Vector& src, const Vector& d) = 0;
-
+        virtual Vector get_random_point(double val1, double val2) = 0;
         GObject* bv = nullptr; //we will need to forcefully cast this to BoundVolume type in each usecase...
 };
 

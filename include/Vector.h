@@ -37,7 +37,7 @@ Vector operator-(const Vector& LHS, const Vector& RHS);
 Vector operator*(const Vector& LHS, double RHS);
 Vector operator*(double LHS, const Vector& RHS);
 Vector operator/ (const Vector& LHS, double RHS);
-
+Vector operator%(const Vector& LHS, const Vector& RHS);
 Vector normalise(const Vector& vec);
 
 #endif // VECTOR_H

@@ -1,42 +1,96 @@
-<Config threads="21" max_reflections="3" stretch="gamma"/>
+<Config threads="22" max_reflections="10" samplesPP="100" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="1000" V_Res="1000" fl="1">
-    <position x="0" y="0" z="20"/><!-- Camera position -->
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2">
+    <position x="0" y="0" z="19"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
 </Camera>
 
-<Light>
-    <position x="0" y="1000" z="500"/>
-    <color r="255" g="255" b="255"/>
-</Light>
 
-<Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.1">
-    <position x="0" y="0" z="1"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up ->
+<Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.9" brdf = "0">
+    <position x="1.5" y="-3.8" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
 
-    <y_rot angle="0"/> <!-- pan -->
+    <y_rot angle="-25"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
-    <scale factor="1"/> <!-- This scales the model up by factor -->
-    <color r="200" g="5" b="5"/>
+    <scale factor="0.8"/> <!-- This scales the model up by factor -->
+    <color r="155" g="0" b="1"/>
     <texture filename ="Models/space.png"/>
    
 </Mesh>
 
-<Sphere radius = "0.1" shininess = "22" reflectivity = "0">
-    <position x="3.4" y="5" z="2.1"/>
-    <color r="255" g="255" b="255"/>
+<Sphere radius = "0.5" shininess = "22" reflectivity = "0" brdf= "0">
+    <position x="-1" y="-2" z="-1"/>
+    <color r="255" g="10" b="255"/>
+    <emission r="0" g="0" b="0"/>
 </Sphere>
 
-<Sphere radius = "0.5" shininess = "22" reflectivity = "0">
-    <position x="-2" y="0.5" z="5"/>
-    <color r="255" g="10" b="255"/>
-</Sphere>
+<!-- top emissive plane area light-->
+<Plane w="1" l="1" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="3.8" z="4"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="180"/> <!-- roll -->
     
-<Plane w="5" l="5" shininess="20" reflectivity="0.31">
-    <normal x="0" y="1" z="0" />
-    <position x="0" y="-1" z="0"/>
-    <color r="255" g="0" b="0"/>
+    <color r="120" g="120" b="222"/>
+    <emission r="100" g="100" b="100"/>
+</Plane>
+
+<!-- back Plane -->
+<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="0" z="-3"/>
+    <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>
+
+
+
+<!-- left Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="-3" y="0" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="-90"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>
+
+<!-- Right Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="3" y="0" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="90"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>
+
+<!-- bottom Plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="-3" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
+</Plane>
+
+<!-- top plane -->
+<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+    <position x="0" y="4" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/> <!-- pan -->
+    <z_rot angle="180"/> <!-- roll -->
+    
+    <color r="120" g="120" b="222"/>
+    <emission r="0" g="0" b="0"/>
 </Plane>

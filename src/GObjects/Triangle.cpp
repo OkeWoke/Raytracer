@@ -27,10 +27,10 @@ vn3(vn3)
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
     __sync_fetch_and_add(&numRayTrianglesTests, 1);
-    intersection inter;
+    intersection inter = intersection();
     double d_dot_n = d.dot(n);
 
-    if (d_dot_n  <0) //normal is pointing outward and not perpendicular to incoming ray
+    if (d_dot_n  !=0) //normal is pointing outward and not perpendicular to incoming ray
     {
         double t = -(src-v1).dot(n)/d_dot_n;
 
@@ -55,7 +55,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             double t_y = fmod(tc.y, 1);
             if (t_x<0){t_x++;}
             if (t_y<0){t_y++;}
-            inter.color = Color(t_x, t_y, -999);
+            inter.color = Color(t_x, t_y, -99);
         }
     }
 
@@ -94,3 +94,9 @@ void Triangle::deserialize(std::string strSubDoc)//old method no longer working
     AC = v3-v1;
     n = normalise(AB.cross(AC));
 }
+
+Vector Triangle::get_random_point(double val, double val2)
+{
+    return Vector();
+}
+

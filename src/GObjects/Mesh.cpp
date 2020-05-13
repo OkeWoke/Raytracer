@@ -9,29 +9,35 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-    vertices.clear();
+
     for (auto p : triangles)
     {
         delete p;
+        p = nullptr;
     }
-
     triangles.clear();
-    bvh->~BoundVolumeHierarchy();
+    vertices.clear();
+    delete bvh;
+    bvh = nullptr;
+    delete bv;
+    bv = nullptr;
+
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
-    intersection inter = bvh->intersect(src, d, 0);
-    if (inter.color.b == -999)
+    intersection inter = bvh->intersect(src, d, 0);//priority_intersect(src,d,0);
+    if (inter.color.b == -939)
     {
         int t_x  = int((texture.get_width()-1)*inter.color.r);
         int t_y = int((texture.get_height()-1)*inter.color.g);
-         png::rgb_pixel pix = texture[t_y][t_x];
+        png::rgb_pixel pix = texture[t_y][t_x];
         inter.color = Color(pix.red, pix.green, pix.blue);
     }else
     {
         inter.color = this->color;
     }
+    if(inter.obj_ref != nullptr){inter.obj_ref->brdf = 0;}
 
     return inter;
 }
@@ -45,6 +51,7 @@ void Mesh::deserialize(std::string strSubDoc)
 
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    brdf = std::stod(xml.GetAttrib("brdf"));
     xml.IntoElem();
 
     xml.FindElem("position");
@@ -143,17 +150,24 @@ void Mesh::obj_reader(std::string filename)
         }
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
-    bv = BoundVolume::compute_bound_volume(this->vertices);
+    bv = BoundVolume::compute_bound_volume(this->vertices); //this is deleted by bvh destructor?
     Vector center = Vector(0,0,0);
     for(unsigned int k = 0; k < vertices.size(); k++)
     {
         center  = center + vertices[k];
     }
     center = center / vertices.size();
-    bvh = new BoundVolumeHierarchy(bv, center);
+    this->bvh = new BoundVolumeHierarchy(bv, center);
     for (auto tri: triangles)
     {
         bvh->insert_object(tri,0);
     }
     auto aaa = bvh->build_BVH();
+    //delete aaa;
+    //aaa =nullptr;//deleting bvh will delete this.
+}
+
+Vector Mesh::get_random_point(double val, double val2)
+{
+    return Vector();
 }

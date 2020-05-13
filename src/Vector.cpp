@@ -112,6 +112,11 @@ Vector operator*(double LHS, const Vector& RHS)
     return result;
 }
 
+Vector operator%(const Vector& LHS, const Vector& RHS)
+{
+    return Vector(LHS.y*RHS.z - LHS.z*RHS.y, LHS.z*RHS.x - LHS.x*RHS.z, LHS.x*RHS.y - LHS.y*RHS.x);
+}
+
 bool operator==(const Vector& LHS, const Vector& RHS)
 {
     return (LHS.x==RHS.x && LHS.y==RHS.y && LHS.z==RHS.z);
