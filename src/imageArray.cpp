@@ -1,5 +1,11 @@
 #include "imageArray.h"
 #include <string>
+
+ImageArray::ImageArray():WIDTH(500),HEIGHT(500)
+{
+
+}
+
 ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height)
 {
     histogram = new int[MAX_VAL];
@@ -15,6 +21,11 @@ ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height)
         pixelMatrix[x][y] =Color();
     };
     iterate(fInit);
+}
+
+ImageArray::~ImageArray()
+{
+    deleteArray();
 }
 
 void ImageArray::clearArray()//resets array to 0
