@@ -308,22 +308,18 @@ int main()
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
-    int total_samples = total_pixels*config.spp;
-
     int cores_to_use = config.threads_to_use;//global
-    //uint64_t pixel_count = 0;
     volatile atomic<size_t> pixel_count(0);
     vector<future<void>> future_vector;
+
     for (int i = 0; i<cores_to_use; i++ )
     {
-
         future_vector.emplace_back(
             async(launch::async, [=,&cam, &img, &pixel_count]()
             {
                 while(true)
                 {
-                    int x_index = pixel_count++;//pixel_count;
-                    //__sync_fetch_and_add(&pixel_count, 1);//not sure if this will lead to non atomic behaviour with above line...
+                    int x_index = pixel_count++;
 
                     if (x_index >=total_pixels)
                     {
@@ -332,17 +328,14 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
 
                     int y_index = x_index / cam.H_RES;
                     x_index = x_index%cam.H_RES;
-                    Color c;
-
 
                     double x_offset = sampler1->next() - 0.5;
                     double y_offset = sampler2->next() - 0.5;
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                     Hit hit = intersect(cam.pos, ray_dir, bvh);
-                    c =  c + shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
+                    Color c = shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
-                    //Update image and display image.
-                    img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c/config.spp;
+                    img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
                 }
             }));
     }
@@ -357,7 +350,6 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
     hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
     hit.obj = nullptr;
-
 
     GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
     if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
@@ -382,9 +374,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
 
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
 {
-
     Color c = Color(0, 0, 0);
-    //
 
     if(hit.obj == nullptr || hit.t == -1)
     {
@@ -404,7 +394,6 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
     Vector p = hit.src + hit.t * hit.ray_dir; //hit point
     Vector n = hit.n; //hit.obj->normal(p);
     //Vector v = hit.src - p; //vector from point to viewer
-
 
     if(hit.obj->brdf == 0)
     //diffuse object
@@ -426,7 +415,6 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
             c = c + diffuse_reflec_color*hit.color/255;//idk where 0.1 comes from.cos_t*
         }
-
 
         //direct illumination
         //for(unsigned int i = 0; i < lights.size(); i++)
@@ -451,7 +439,6 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
 
                     }
                 }
-
             }
         }
     }
