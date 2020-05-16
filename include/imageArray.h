@@ -24,6 +24,8 @@ class ImageArray //A class that handles a 2D array of ints.
         const int HEIGHT;
 
         Color **pixelMatrix;
+        ImageArray();
+        ~ImageArray();
         ImageArray(int width, int height);
 
         void deleteArray();

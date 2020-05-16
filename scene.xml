@@ -1,4 +1,4 @@
-<Config threads="22" max_reflections="10" samplesPP="100" stretch="gamma"/>
+<Config threads="22" max_reflections="10" samplesPP="50" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2">
     <position x="0" y="0" z="19"/><!-- Camera position -->
@@ -10,7 +10,7 @@
 
 
 <Mesh filename="Models/andypants-nurse.obj" shininess="100" reflectivity="0.9" brdf = "0">
-    <position x="1.5" y="-3.8" z="0"/>
+    <position x="1.5" y="-3.8" z="3"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
 
     <y_rot angle="-25"/> <!-- pan -->
@@ -21,9 +21,9 @@
    
 </Mesh>
 
-<Sphere radius = "0.5" shininess = "22" reflectivity = "0" brdf= "0">
-    <position x="-1" y="-2" z="-1"/>
-    <color r="255" g="10" b="255"/>
+<Sphere radius = "1" shininess = "22" reflectivity = "0" brdf= "0">
+    <position x="-1" y="-2" z="4"/>
+    <color r="55" g="250" b="55"/>
     <emission r="0" g="0" b="0"/>
 </Sphere>
 
@@ -58,7 +58,7 @@
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="-90"/> <!-- roll -->
     
-    <color r="120" g="120" b="222"/>
+    <color r="155" g="55" b="55"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
 
@@ -69,7 +69,7 @@
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="90"/> <!-- roll -->
     
-    <color r="120" g="120" b="222"/>
+    <color r="120" g="155" b="50"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
 

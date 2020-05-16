@@ -35,6 +35,11 @@
 #include "ext/Markup.h"
 #include "ext/CImg.h"
 
+//sorry linux, i need these to figure out when the scene.xml file was last written to.
+#include <windows.h>
+#include <tchar.h>
+//#include <strsafe.h>
+
 using namespace std;
 using namespace cimg_library;
 
@@ -64,24 +69,18 @@ struct Config
 
 // function prototypes
 void draw(ImageArray& img, string filename);
-Hit intersect(const Vector& src, const Vector& ray_dir);
-Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2);
+Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
-void deserialize(string filename);
-void cast_rays_multithread(const Camera& cam, const ImageArray& img);
-void cast_rays_multithread_2(const Camera& cam, const ImageArray& img);
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config);
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights);
 double double_rand(const double & min, const double & max);
 Vector uniform_hemisphere(double u1, double u2);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
+void clear_globals();
 
-//var/obj declaration
-vector<GObject*> objects;
-vector<Light> lights;
-Camera cam;
-Config config;
-
-BoundVolumeHierarchy* bvh;
+// global var declaration
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
@@ -121,108 +120,180 @@ void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
 	v3 = v1 % v2;
 }
 
+void clear_globals()
+{
+
+    numPrimaryRays = 0;
+    numRayTrianglesTests = 0;
+    numRayTrianglesIsect = 0;
+}
+
+string get_write_time(string filename)
+//returns a string of the last write time of a file
+{
+    char filename_char[filename.length()+1];
+    strcpy(filename_char, filename.c_str());
+
+    HANDLE hFile;
+    FILETIME ftCreate, ftAccess, ftWrite;
+    SYSTEMTIME stUTC, stLocal;
+    hFile = CreateFile(filename_char, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if(GetFileTime(hFile, &ftCreate, &ftAccess, &ftWrite)){}
+    FileTimeToSystemTime(&ftWrite, &stUTC);
+    SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
+    CloseHandle(hFile);
+    ostringstream write_time_string;
+    write_time_string << stLocal.wHour << stLocal.wMinute << stLocal.wSecond;
+    return write_time_string.str();
+}
 
 int main()
 {
-    //Initialisation
+    vector<GObject*> objects;
+    vector<Light> lights;
+    Camera cam;
+    Config config;
+    int orw = 20;
+
+    //initial call to deserialize just so I can define ImageArray...
     cout<<"Loading scene from scene.xml..." << endl;
-    deserialize("scene.xml");
-    cout<<"Loading complete" << endl;
+    auto load_start = chrono::steady_clock::now();
+    deserialize("scene.xml", lights, objects, cam, config);
+    string last_write_time = get_write_time("scene.xml");
+    auto load_end = chrono::steady_clock::now();
+    cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
 
+    //Creation of CImg display buffer and window.
     ImageArray img(cam.H_RES, cam.V_RES);
+    CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
+    CImgDisplay display(display_image, "Oke's Path Tracer!");
 
+    //creating filename....
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     ostringstream filename;
-    filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+    filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 
-    CImg<float> image(cam.H_RES, cam.V_RES,1,3,0);
-    CImgDisplay display(image, "Raytracer!");
+    bool looping = true;
 
-    int orw = 20;
-    lights.clear();
-    for (auto p : objects) // we only need this here and not in the main loop because the bvh destructor deletes the objects
+    while(looping)
     {
-        delete p;
-        p = nullptr;
-    }
 
-    objects.clear();
-    while (!display.is_closed())
-    {
-        img.clearArray();
-        numPrimaryRays = 0;
-        numRayTrianglesTests = 0;
-        numRayTrianglesIsect = 0;
-
-        deserialize("scene.xml");
+        //Creation of BoundVolume Hierarchy
+        auto bvh_start = chrono::steady_clock::now();
         BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
         Vector center = Vector(0,0,0);
         for(unsigned int k = 0; k < objects.size(); k++)
         {
             center  = center + objects[k]->position;
         }
+
         center = center / objects.size();
-        bvh = new BoundVolumeHierarchy(scene_bv, center);
+        BoundVolumeHierarchy* bvh = new BoundVolumeHierarchy(scene_bv, center);
+
         for (auto obj: objects)
         {
             bvh->insert_object(obj,0);
         }
         auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
-        auto start = chrono::steady_clock::now();
-        cast_rays_multithread(cam, img);
-        auto ray_end = chrono::steady_clock::now();
+        auto bvh_end = chrono::steady_clock::now();
+        cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/chrono::milliseconds(1)<< " (ms)" << endl;
 
-        cout << "Casting completed in: "<< setw(orw) << (ray_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-        cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
-        cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
-        cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
-        cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
 
-        //display.wait();
-        start = chrono::steady_clock::now();
-        if(config.stretch == "norm")
-        {
-            img.normalise();
-        }else if(config.stretch == "gamma")
-        {
-            img.gammaCorrection();
-            img.normalise();
-        }
+        //Creation of samplers used for montecarlo integration.
+        Sampler* sampler1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
+        Sampler* sampler2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
 
-        for (int y = 0; y < img.HEIGHT; ++y)
+
+    /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
+        auto cast_start = chrono::steady_clock::now();
+        int s;
+        for(s=0;s<config.spp; s++)
         {
-            for (int x = 0; x < img.WIDTH; ++x)
+            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights);
+            for (int y = 0; y < img.HEIGHT; ++y)
             {
-                image(x,y,0) = img.pixelMatrix[x][y].r;
-                image(x,y,1) = img.pixelMatrix[x][y].g;
-                image(x,y,2) = img.pixelMatrix[x][y].b;
+                for (int x = 0; x < img.WIDTH; ++x)
+                {
+                    display_image(x,y,0) = img.pixelMatrix[x][y].r;
+                    display_image(x,y,1) = img.pixelMatrix[x][y].g;
+                    display_image(x,y,2) = img.pixelMatrix[x][y].b;
+                }
+            }
+            display_image.display(display);
+            if (display.is_closed())
+            {
+                looping = false;
+                break;
             }
         }
 
-        image.display(display);
 
-        auto render_end = chrono::steady_clock::now();
-        cout << "Image display completed in: "<< setw(orw-7) <<(render_end - start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-        cout << "----------------------------------------\n\n\n\n" << endl;
+        delete sampler1;
+        delete sampler2;
+        sampler1 = nullptr;
+        sampler2 = nullptr;
+
         lights.clear();
-        for (auto p : objects) // we only need this here and not in the main loop because the bvh destructor deletes the objects
+        for (auto p : objects)
         {
             delete p;
             p = nullptr;
         }
         delete bvh;
         bvh = nullptr;
-
-
         objects.clear();
-        if (display.is_closed())
+        auto cast_end = chrono::steady_clock::now();
+
+        cout << "Casting completed in: "<< setw(orw) << (cast_end - cast_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+        cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
+        cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
+        cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
+        cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
+        cout << "----------------------------------------------------------\n\n\n\n"<<endl;
+        cout<< "Waiting for modification of scene.xml or close window to save" << endl;
+        while(last_write_time == get_write_time("scene.xml"))
         {
-            draw(img, filename.str());
-            cout << "Finished!" << endl;
-            img.deleteArray();
+            if(display.is_closed())
+            {
+                looping = false;
+                break;
+            }
+        }
+        last_write_time = get_write_time("scene.xml");
+        if(looping)
+        {
+            img.clearArray();
+            cout<<"Loading scene from scene.xml..." << endl;
+            auto load_start = chrono::steady_clock::now();
+            deserialize("scene.xml", lights, objects, cam, config);
+            auto load_end = chrono::steady_clock::now();
+            cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
+        }else
+        {
+            filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
         }
     }
+
+    ///// Draw/Save code
+    auto save_start = chrono::steady_clock::now();
+
+    if(config.stretch == "norm")
+    {
+        img.normalise();
+    }else if(config.stretch == "gamma")
+    {
+        img.gammaCorrection();
+        img.normalise();
+    }
+
+    draw(img, filename.str());
+    img.clearArray();//reset for luls;
+
+    auto save_end = chrono::steady_clock::now();
+    cout << "Image Save completed in: "<< setw(orw-7) <<(save_end - save_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+    cout << "----------------------------------------\n\n\n\n" << endl;
+
     getch();
     return 0;
 
@@ -233,23 +304,21 @@ int main()
     */
 }
 
-void cast_rays_multithread(const Camera& cam, const ImageArray& img)
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
     int cores_to_use = config.threads_to_use;//global
-    //uint64_t pixel_count = 0;
     volatile atomic<size_t> pixel_count(0);
     vector<future<void>> future_vector;
+
     for (int i = 0; i<cores_to_use; i++ )
     {
-
         future_vector.emplace_back(
             async(launch::async, [=,&cam, &img, &pixel_count]()
             {
                 while(true)
                 {
-                    int x_index = pixel_count++;//pixel_count;
-                    //__sync_fetch_and_add(&pixel_count, 1);//not sure if this will lead to non atomic behaviour with above line...
+                    int x_index = pixel_count++;
 
                     if (x_index >=total_pixels)
                     {
@@ -258,39 +327,20 @@ void cast_rays_multithread(const Camera& cam, const ImageArray& img)
 
                     int y_index = x_index / cam.H_RES;
                     x_index = x_index%cam.H_RES;
-                    Color c;
 
+                    double x_offset = sampler1->next() - 0.5;
+                    double y_offset = sampler2->next() - 0.5;
+                    Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
+                    Hit hit = intersect(cam.pos, ray_dir, bvh);
+                    Color c = shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
-                    Sampler* ha1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
-                    Sampler* ha2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
-                    Sampler* sampler3 = new RandomSampler();
-                    Sampler* sampler4 = new RandomSampler();
-
-                    for(int s=0;s<config.spp; s++)
-                    {
-                        double x_offset = ha1->next() - 0.5;
-                        double y_offset = ha2->next() - 0.5;
-                        Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
-                        Hit hit = intersect(cam.pos, ray_dir);
-                        c =  c + shade(hit, 0, sampler3, sampler4);
-
-                    }
-                    delete ha1;
-                    delete ha2;
-                    delete sampler3;
-                    delete sampler4;
-                    ha1 = nullptr;
-                    ha2 = nullptr;
-                    sampler3 = nullptr;
-                    sampler4 = nullptr;
-
-                    img.pixelMatrix[x_index][y_index] =  c/config.spp;
+                    img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
                 }
             }));
     }
 }
 
-Hit intersect(const Vector& src, const Vector& ray_dir)
+Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh)
 //Takes a source point and ray direction, checks if it intersects any object
 //returns hit struct which contains 'meta data' about the interection.
 {
@@ -299,7 +349,6 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
     hit.obj = nullptr;
-
 
     GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
     if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
@@ -322,11 +371,9 @@ Hit intersect(const Vector& src, const Vector& ray_dir)
     return hit;
 }
 
-Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
 {
-
     Color c = Color(0, 0, 0);
-    //
 
     if(hit.obj == nullptr || hit.t == -1)
     {
@@ -347,7 +394,6 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
     Vector n = hit.n; //hit.obj->normal(p);
     //Vector v = hit.src - p; //vector from point to viewer
 
-
     if(hit.obj->brdf == 0)
     //diffuse object
     {
@@ -362,13 +408,12 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
         transformed_dir.y = Vector(v1.y, v2.y, n.y).dot(sample_dir);
         transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
         //double cos_t = transformed_dir.dot(n);
-        Hit diffuse_relfec_hit = intersect(p, transformed_dir);
+        Hit diffuse_relfec_hit = intersect(p, transformed_dir, bvh);
         if(diffuse_relfec_hit.t != -1)
         {
-            Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2);
+            Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
             c = c + diffuse_reflec_color*hit.color/255;//idk where 0.1 comes from.cos_t*
         }
-
 
         //direct illumination
         //for(unsigned int i = 0; i < lights.size(); i++)
@@ -381,7 +426,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
                 double dist = s.abs();
                 s = normalise(s);
 
-                Hit shadow = intersect(p, s); //0.001 offset to avoid collision withself //+0.001*s
+                Hit shadow = intersect(p, s, bvh); //0.001 offset to avoid collision withself //+0.001*s
 
                 if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
                 //the object is not occluded from the light.
@@ -393,7 +438,6 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2)
 
                     }
                 }
-
             }
         }
     }
@@ -417,7 +461,7 @@ void draw(ImageArray& img, string filename)
     image.write("renders/"+filename);
 }
 
-void deserialize(string filename)
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
