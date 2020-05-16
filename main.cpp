@@ -273,7 +273,6 @@ int main()
         {
             filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
         }
-
     }
 
     ///// Draw/Save code
