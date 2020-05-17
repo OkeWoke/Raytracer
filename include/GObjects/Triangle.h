@@ -12,7 +12,7 @@ class Triangle: public GObject
 {
     public:
         Triangle();
-        Triangle(Vector p1, Vector p2, Vector p3, Vector vt1, Vector vt2, Vector vt3, Vector vn1, Vector vn2, Vector vn3);
+        Triangle(const Vector& p1, const Vector& p2, const Vector& p3, const Vector& vt1, const Vector& vt2, const Vector& vt3, const Vector& vn1, const Vector& vn2, const Vector& vn3);
         intersection intersect(const Vector& src, const Vector& d, const png::image< png::rgb_pixel >& texture);
         intersection intersect(const Vector& src, const Vector& d);
         std::string to_string();

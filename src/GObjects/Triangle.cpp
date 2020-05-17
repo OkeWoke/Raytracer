@@ -6,7 +6,7 @@ Triangle::Triangle(): GObject()//constructor no longer supported
     //ctor
 }
 
-Triangle::Triangle(Vector p1, Vector p2, Vector p3, Vector vt1, Vector vt2, Vector vt3, Vector vn1, Vector vn2, Vector vn3): GObject(),
+Triangle::Triangle(const Vector& p1, const Vector& p2, const Vector& p3, const Vector& vt1, const Vector& vt2, const Vector& vt3, const Vector& vn1, const Vector& vn2, const Vector& vn3): GObject(),
 v1(p1),
 v2(p2),
 v3(p3),
