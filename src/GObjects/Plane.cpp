@@ -26,7 +26,7 @@ GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
     {
         intersection inter = GObject::intersection();
         double tmp = d.dot(n);
-        if (tmp!=0)
+        if (tmp<0)
         {
             double tmp_t = (position-src).dot(n)/(tmp);
             Vector hit_point = src+tmp_t*d;

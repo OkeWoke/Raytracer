@@ -85,6 +85,25 @@ uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
 uint64_t numRayTrianglesIsect = 0;
 
+Vector snells_law(const Vector& incident_ray, const Vector& normal, double cos_angle, double n_1, double n_2)
+//assume the two rays are normalised, thus dot product returns the cosine of them.
+//takes cos_angle to avoid doing a redundant dot product.
+{
+    Vector ray_hor = incident_ray - cos_angle*normal;
+    double sin_theta_2 = ray_hor.abs()*n_1/n_2;
+    Vector refr_ray = normalise(-1*normal + normalise(ray_hor)*sin_theta_2);
+    return refr_ray;
+}
+
+double schlick_fresnel(double cos_angle, double n_1, double n_2)
+//returns probabibility of reflection based on angle relative to normal. (0 to 90 degrees)
+{
+    double R_0 = (n_1-n_2)/(n_1+ n_2);
+    R_0 = R_0 * R_0;
+
+    double R_theta = R_0 + (1 - R_0)*pow((1-cos_angle),5);
+    return R_theta;
+}
 
 Vector uniform_hemisphere(double u1, double u2) {
 	const double r = sqrt(1.0 - u1*u1);
@@ -95,13 +114,13 @@ Vector uniform_hemisphere(double u1, double u2) {
 Vector cosine_weighted_hemisphere(double u1, double u2)
 // taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
 {
-    const float r = sqrt(u1);
-    const float theta = 2 * PI * u2;
+    const double r = sqrt(u1);
+    const double theta = 2 * PI * u2;
 
-    const float x = r * cos(theta);
-    const float y = r * sin(theta);
-
-    return Vector(x, y, sqrt(max((double)0, 1 - u1)));
+    const double x = r * cos(theta);
+    const double y = r * sin(theta);
+    const double z = 1 - x*x - y*y;
+    return Vector(x, y, z);//sqrt(max((double)0, 1 - u1))
 }
 
 //below function is taken from smallpaint
@@ -380,9 +399,10 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         return c;
     }
 
-    if(hit.obj != nullptr) //bad check to see if emissive. && hit.obj->emission.r >0 && hit.n.dot(hit.ray_dir)<0
+    if(hit.obj != nullptr && hit.obj->emission.r>0) //bad check to see if emissive. && hit.obj->emission.r >0 && hit.n.dot(hit.ray_dir)<0
     {
-        c = c+ (hit.obj->emission)/255;
+        return hit.obj->emission/255;
+        //c = c+ (hit.obj->emission)/255;
     }
 
     if (reflection_count> config.max_reflections)
@@ -394,7 +414,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
     Vector n = hit.n; //hit.obj->normal(p);
     //Vector v = hit.src - p; //vector from point to viewer
 
-    if(hit.obj->brdf == 0)
+    if(hit.obj->brdf == 0 || hit.obj->brdf == 1)
     //diffuse object
     {
         //indirect illumination
@@ -407,7 +427,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
         transformed_dir.y = Vector(v1.y, v2.y, n.y).dot(sample_dir);
         transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
-        //double cos_t = transformed_dir.dot(n);
+        //double cos_t = transformed_dir.dot(n)*M_1_PI;
         Hit diffuse_relfec_hit = intersect(p, transformed_dir, bvh);
         if(diffuse_relfec_hit.t != -1)
         {
@@ -436,6 +456,88 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
                         //diffuse
                         c = c + hit.color * objects[i]->emission * s.dot(n)/(255*255); // lights[i].color
 
+                        if(hit.obj->brdf == 1)
+                        //diffuse object with specular...
+                        {
+                            Vector h = normalise(s + normalise(-1*hit.t * hit.ray_dir));
+                            double val = h.dot(n)/h.abs();
+                            c = c + objects[i]->emission* pow(val, hit.obj->shininess)/(255);
+
+                        }
+                    }
+                }
+            }
+        }
+    }else if (hit.obj->brdf == 2)
+    //glass
+    {
+        double n_1 = 1;
+        double n_2 = 1.6;
+        double cos_angle = hit.n.dot(hit.ray_dir);
+        Vector next_ray;
+        double PR;
+        double crit_angle = -1;
+        if (cos_angle>0)
+        //ray incident on the obj
+        {
+            std::swap(n_1, n_2);
+            crit_angle = asin(n_1/n_2);
+        }
+        double angle = acos(abs(cos_angle));
+        if(crit_angle != -1 && angle > crit_angle)
+        {
+             next_ray = normalise(hit.ray_dir - hit.n * 2  *cos_angle);
+        }else
+        {
+             PR =schlick_fresnel(abs(cos_angle), n_1, n_2);
+
+
+            if(ha1->next() < PR)
+            //reflection
+            {
+                next_ray = normalise(hit.ray_dir - hit.n * 2  *cos_angle);
+            }else
+            //refraction
+            {
+                next_ray = snells_law(hit.ray_dir, hit.n, cos_angle, n_1, n_2);
+            }
+        }
+
+
+        Hit trace_hit = intersect(p, next_ray, bvh);
+        if(trace_hit.t != -1)
+        {
+            Color color = shade(trace_hit, reflection_count+1, ha1, ha2, bvh, config, objects, lights);
+            c = c + 0.9*color*hit.color/255; //factor of 0.9 for attenuation
+        }
+        //copy paste for direct illumination...
+        for(unsigned int i = 0; i < objects.size(); i++)
+        {
+            if(objects[i]->emission.r > 0 || objects[i]->emission.g !=0 || objects[i]->emission.b != 0)
+            {
+                Vector light_point = objects[i]->get_random_point(ha2->next(), ha1->next());//lights[i].position;//
+                Vector s =  light_point- p;
+                double dist = s.abs();
+                s = normalise(s);
+
+                Hit shadow = intersect(p, s, bvh); //0.001 offset to avoid collision withself //+0.001*s
+
+                if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
+                //the object is not occluded from the light.
+                {
+                    if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
+                    {
+                        //diffuse
+                        //c = c + hit.color * objects[i]->emission * s.dot(n)/(255*255); // lights[i].color
+
+
+                        //diffuse object with specular...
+                        {
+                            //Vector h = normalise(s + normalise(-1*hit.t * hit.ray_dir));
+                            //double val = h.dot(n)/h.abs();
+                            //c = c + objects[i]->emission* pow(val, hit.obj->shininess)/(255);
+
+                        }
                     }
                 }
             }
@@ -500,7 +602,6 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objec
         }
         else if(element == "Mesh")
         {
-
             Mesh* m = new Mesh();
             m->deserialize(xml.GetSubDoc());
             objects.push_back(m);
