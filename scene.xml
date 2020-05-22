@@ -1,4 +1,4 @@
-<Config threads="23" max_reflections="5" samplesPP="50" stretch="gamma"/>
+<Config threads="23" max_reflections="11" samplesPP="100" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2">
     <position x="0" y="0" z="19"/><!-- Camera position -->
@@ -29,7 +29,7 @@
 
 <!-- top emissive plane area light-->
 <Plane w="1" l="1" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="2.8" z="4"/>
+    <position x="0" y="2.6" z="4"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->

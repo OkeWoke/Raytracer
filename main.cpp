@@ -399,7 +399,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         return c;
     }
 
-    if(hit.obj != nullptr && hit.obj->emission.r>0) //bad check to see if emissive. && hit.obj->emission.r >0 && hit.n.dot(hit.ray_dir)<0
+    if(hit.obj != nullptr && hit.obj->emission.r>0 && hit.n.dot(hit.ray_dir)< 0) //bad check to see if emissive. && hit.obj->emission.r >0 && hit.n.dot(hit.ray_dir)<0
     {
         return hit.obj->emission/255;
         //c = c+ (hit.obj->emission)/255;
@@ -427,12 +427,12 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
         transformed_dir.y = Vector(v1.y, v2.y, n.y).dot(sample_dir);
         transformed_dir.z = Vector(v1.z, v2.z, n.z).dot(sample_dir);
-        //double cos_t = transformed_dir.dot(n)*M_1_PI;
+        double cos_t = transformed_dir.dot(n);
         Hit diffuse_relfec_hit = intersect(p, transformed_dir, bvh);
-        if(diffuse_relfec_hit.t != -1)
+        if(diffuse_relfec_hit.t != -1 && diffuse_relfec_hit.n.dot(transformed_dir)< 0)//Inbound ray hits correct face (outbound normal vector)
         {
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
-            c = c + diffuse_reflec_color*hit.color/255;//idk where 0.1 comes from.cos_t*
+            c = c + diffuse_reflec_color*hit.color/(255);//idk where 0.1 comes from.cos_t*
         }
 
         //direct illumination
@@ -443,15 +443,19 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
             {
                 Vector light_point = objects[i]->get_random_point(ha2->next(), ha1->next());//lights[i].position;//
                 Vector s =  light_point- p;
+
+                //Inbound ray hits correct face (outbound normal vector)
+
                 double dist = s.abs();
                 s = normalise(s);
 
                 Hit shadow = intersect(p, s, bvh); //0.001 offset to avoid collision withself //+0.001*s
 
-                if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
+                //old if statement back in day of point light source.if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
                 //the object is not occluded from the light.
+                if(shadow.obj == objects[i] && shadow.n.dot(s)<0)
                 {
-                    if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
+                    if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
                         //diffuse
                         c = c + hit.color * objects[i]->emission * s.dot(n)/(255*255); // lights[i].color
@@ -466,6 +470,9 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
                         }
                     }
                 }
+
+
+
             }
         }
     }else if (hit.obj->brdf == 2)
