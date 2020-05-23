@@ -85,20 +85,22 @@ void ImageArray::gammaCorrection()
 {
     auto gam = [this](int x, int y)
     {
-        pixelMatrix[x][y].r =  pow(pixelMatrix[x][y].r,1/2.2);
-        pixelMatrix[x][y].g =  pow(pixelMatrix[x][y].g,1/2.2);
-        pixelMatrix[x][y].b =  pow(pixelMatrix[x][y].b,1/2.2);
+        pixelMatrix[x][y].r =  pow(pixelMatrix[x][y].r, 1/2.2);
+        pixelMatrix[x][y].g =  pow(pixelMatrix[x][y].g, 1/2.2);
+        pixelMatrix[x][y].b =  pow(pixelMatrix[x][y].b, 1/2.2);
     };
     iterate(gam);
 }
 
 void ImageArray::clipTop()
 {
+
     auto  clip = [this](int x, int y)
     {
-        if (pixelMatrix[x][y].r > MAX_VAL){pixelMatrix[x][y].r = MAX_VAL;}
-        if (pixelMatrix[x][y].g > MAX_VAL){pixelMatrix[x][y].g = MAX_VAL;}
-        if (pixelMatrix[x][y].b > MAX_VAL){pixelMatrix[x][y].b = MAX_VAL;}
+        int top_val = 300;
+        if (pixelMatrix[x][y].r >top_val){pixelMatrix[x][y].r = top_val;}
+        if (pixelMatrix[x][y].g > top_val){pixelMatrix[x][y].g = top_val;}
+        if (pixelMatrix[x][y].b > top_val){pixelMatrix[x][y].b = top_val;}
     };
     iterate(clip);
 }

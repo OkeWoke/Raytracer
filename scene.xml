@@ -1,4 +1,4 @@
-<Config threads="23" max_reflections="11" samplesPP="100" stretch="gamma"/>
+<Config threads="23" max_reflections="11" samplesPP="151" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2">
     <position x="0" y="0" z="19"/><!-- Camera position -->
@@ -21,26 +21,26 @@
    
 </Mesh>
 
-<Sphere radius = "1" shininess = "1000" reflectivity = "0" brdf= "1">
+<Sphere radius = "1" shininess = "200" reflectivity = "0" brdf= "1">
     <position x="-1" y="-2" z="4"/>
     <color r="255" g="50" b="55"/>
     <emission r="0" g="0" b="0"/>
 </Sphere>
 
 <!-- top emissive plane area light-->
-<Plane w="1" l="1" shininess="20" reflectivity="0.9" brdf = "0">
+<Plane w="1" l="1" shininess="50" reflectivity="0.9" brdf = "0">
     <position x="0" y="2.6" z="4"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->
     
     <color r="120" g="120" b="222"/>
-    <emission r="100" g="100" b="100"/>
+    <emission r="3000" g="3000" b="3000"/>
 </Plane>
 
 <!-- back Plane -->
-<Plane w="5" l="5" shininess="20" reflectivity="0.9" brdf = "0">
-    <position x="0" y="0" z="-3"/>
+<Plane w="5" l="5" shininess="50" reflectivity="0.9" brdf = "1">
+    <position x="0" y="0" z="0"/>
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
@@ -52,7 +52,7 @@
 
 
 <!-- left Plane -->
-<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "1">
     <position x="-3" y="0" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -63,7 +63,7 @@
 </Plane>
 
 <!-- Right Plane -->
-<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "1">
     <position x="3" y="0" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -74,7 +74,7 @@
 </Plane>
 
 <!-- bottom Plane -->
-<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "1">
     <position x="0" y="-3" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -85,7 +85,7 @@
 </Plane>
 
 <!-- top plane -->
-<Plane w="8" l="8" shininess="20" reflectivity="0.9" brdf = "0">
+<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "1">
     <position x="0" y="3" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->

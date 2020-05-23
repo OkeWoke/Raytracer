@@ -296,9 +296,10 @@ int main()
 
     ///// Draw/Save code
     auto save_start = chrono::steady_clock::now();
-
+    img.clipTop();
     if(config.stretch == "norm")
     {
+        //can remove
         img.normalise();
     }else if(config.stretch == "gamma")
     {
@@ -432,7 +433,8 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         if(diffuse_relfec_hit.t != -1 && diffuse_relfec_hit.n.dot(transformed_dir)< 0)//Inbound ray hits correct face (outbound normal vector)
         {
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
-            c = c + diffuse_reflec_color*hit.color/(255);//idk where 0.1 comes from.cos_t*
+            double divisor = max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
+            c = c + diffuse_reflec_color*hit.color/(divisor*255);//idk where 0.1 comes from.cos_t*
         }
 
         //direct illumination
@@ -458,21 +460,19 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
                     if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
                         //diffuse
-                        c = c + hit.color * objects[i]->emission * s.dot(n)/(255*255); // lights[i].color
+                        double divisor = max(1.0, shadow.t*shadow.t);
+                        c = c + hit.color * objects[i]->emission * s.dot(n)/(divisor * 255 * 255); // lights[i].color
 
                         if(hit.obj->brdf == 1)
                         //diffuse object with specular...
                         {
-                            Vector h = normalise(s + normalise(-1*hit.t * hit.ray_dir));
+                            Vector h = normalise(s + normalise(-1 * hit.t * hit.ray_dir));
                             double val = h.dot(n)/h.abs();
-                            c = c + objects[i]->emission* pow(val, hit.obj->shininess)/(255);
+                            c = c + objects[i]->emission* pow(val, hit.obj->shininess)/(divisor*255);
 
                         }
                     }
                 }
-
-
-
             }
         }
     }else if (hit.obj->brdf == 2)
