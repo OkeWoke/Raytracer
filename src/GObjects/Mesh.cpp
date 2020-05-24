@@ -37,7 +37,7 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
     {
         inter.color = this->color;
     }
-    if(inter.obj_ref != nullptr){inter.obj_ref->brdf = 0;}
+    if(inter.obj_ref != nullptr){inter.obj_ref->brdf = brdf;}
 
     return inter;
 }
