@@ -296,7 +296,7 @@ int main()
 
     ///// Draw/Save code
     auto save_start = chrono::steady_clock::now();
-    img.clipTop();
+    //img.clipTop();
     if(config.stretch == "norm")
     {
         //can remove
@@ -433,7 +433,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         if(diffuse_relfec_hit.t != -1 && diffuse_relfec_hit.n.dot(transformed_dir)< 0)//Inbound ray hits correct face (outbound normal vector)
         {
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
-            double divisor = max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
+            double divisor =1;// max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
             c = c + diffuse_reflec_color*hit.color/(divisor*255);//idk where 0.1 comes from.cos_t*
         }
 
@@ -455,20 +455,21 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
 
                 //old if statement back in day of point light source.if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
                 //the object is not occluded from the light.
-                if(shadow.obj == objects[i] && shadow.n.dot(s)<0)
+                double cosine_term  = shadow.n.dot(s) *-1; //term used to simulate limb darkening?
+                if(shadow.obj == objects[i] && cosine_term>0)
                 {
                     if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
                         //diffuse
-                        double divisor = max(1.0, shadow.t*shadow.t);
-                        c = c + hit.color * objects[i]->emission * s.dot(n)/(divisor * 255 * 255); // lights[i].color
+                        double divisor = 1;//max(1.0, shadow.t*shadow.t);
+                        c = c + hit.color *cosine_term* objects[i]->emission * s.dot(n)/(divisor * 255 * 255); // lights[i].color
 
                         if(hit.obj->brdf == 1)
                         //diffuse object with specular...
                         {
                             Vector h = normalise(s + normalise(-1 * hit.t * hit.ray_dir));
                             double val = h.dot(n)/h.abs();
-                            c = c + objects[i]->emission* pow(val, hit.obj->shininess)/(divisor*255);
+                            c = c + cosine_term*objects[i]->emission* pow(val, hit.obj->shininess)/(divisor*255);
 
                         }
                     }
