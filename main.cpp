@@ -230,18 +230,20 @@ int main()
         for(s=0;s<config.spp; s++)
         {
             cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights);
+            double exponent = 1/2.2;
             for (int y = 0; y < img.HEIGHT; ++y)
             {
                 for (int x = 0; x < img.WIDTH; ++x)
                 {
-                    display_image(x,y,0) = img.pixelMatrix[x][y].r;
-                    display_image(x,y,1) = img.pixelMatrix[x][y].g;
-                    display_image(x,y,2) = img.pixelMatrix[x][y].b;
+                    display_image(x,y,0) = pow(img.pixelMatrix[x][y].r, exponent);
+                    display_image(x,y,1) = pow(img.pixelMatrix[x][y].g, exponent);
+                    display_image(x,y,2) = pow(img.pixelMatrix[x][y].b, exponent);
                 }
             }
             display_image.display(display);
             if (display.is_closed())
             {
+
                 looping = false;
                 break;
             }
@@ -290,6 +292,16 @@ int main()
             cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
         }else
         {
+            //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
+            for (int y = 0; y < img.HEIGHT; ++y)
+            {
+                for (int x = 0; x < img.WIDTH; ++x)
+                {
+                   img.pixelMatrix[x][y].r = img.pixelMatrix[x][y].r/s;
+                   img.pixelMatrix[x][y].g = img.pixelMatrix[x][y].g/s;
+                   img.pixelMatrix[x][y].b = img.pixelMatrix[x][y].b/s;
+                }
+            }
             filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
         }
     }
@@ -305,6 +317,12 @@ int main()
     {
         img.gammaCorrection();
         img.normalise();
+    }else if(config.stretch == "rein")
+    {
+
+        img.reinhardToneMap();
+        //img.normalise();
+        img.clipTop();
     }
 
     draw(img, filename.str());
@@ -433,7 +451,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         if(diffuse_relfec_hit.t != -1 && diffuse_relfec_hit.n.dot(transformed_dir)< 0)//Inbound ray hits correct face (outbound normal vector)
         {
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
-            double divisor =1;// max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
+            double divisor =max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
             c = c + diffuse_reflec_color*hit.color/(divisor*255);//idk where 0.1 comes from.cos_t*
         }
 
@@ -461,7 +479,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
                     if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
                         //diffuse
-                        double divisor = 1;//max(1.0, shadow.t*shadow.t);
+                        double divisor = max(1.0, shadow.t*shadow.t);
                         c = c + hit.color *cosine_term* objects[i]->emission * s.dot(n)/(divisor * 255 * 255); // lights[i].color
 
                         if(hit.obj->brdf == 1)

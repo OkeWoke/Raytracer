@@ -92,12 +92,45 @@ void ImageArray::gammaCorrection()
     iterate(gam);
 }
 
+double ImageArray::logAverage()
+//computes log average of the luminance of the image
+{
+    double avg= 0;
+    for (int y = 0; y < HEIGHT; y++)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            avg = avg + log(1+pixelMatrix[x][y].luminance());
+        }
+    }
+
+    return exp(avg/(WIDTH*HEIGHT));
+}
+
+void ImageArray::reinhardToneMap()
+{
+    double log_avg = logAverage();
+    std::cout <<"Log_avg " << log_avg << std::endl;
+    double a = 0.76;
+    for (int y = 0; y < HEIGHT; y++)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            double L_out = a*pixelMatrix[x][y].luminance()/log_avg;
+            L_out = L_out/(1+L_out);
+            pixelMatrix[x][y].r = pixelMatrix[x][y].r *MAX_VAL*L_out;
+            pixelMatrix[x][y].g = pixelMatrix[x][y].g *MAX_VAL*L_out;
+            pixelMatrix[x][y].b = pixelMatrix[x][y].b *MAX_VAL*L_out;
+        }
+    }
+}
+
 void ImageArray::clipTop()
 {
 
     auto  clip = [this](int x, int y)
     {
-        int top_val = 300;
+        int top_val = MAX_VAL;
         if (pixelMatrix[x][y].r >top_val){pixelMatrix[x][y].r = top_val;}
         if (pixelMatrix[x][y].g > top_val){pixelMatrix[x][y].g = top_val;}
         if (pixelMatrix[x][y].b > top_val){pixelMatrix[x][y].b = top_val;}

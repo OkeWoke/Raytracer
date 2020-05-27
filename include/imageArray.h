@@ -33,7 +33,8 @@ class ImageArray //A class that handles a 2D array of ints.
         //
         void normalise();
         void gammaCorrection();
-
+        void reinhardToneMap();
+        double logAverage();
         void clipTop();
 
 };

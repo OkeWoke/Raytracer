@@ -15,6 +15,11 @@ Color::Color(double r, double g, double b)
     this->b = b;
 }
 
+double Color::luminance()
+{
+    return r*0.299 +  g*0.587 +  b*0.114;
+}
+
 Color operator+(const Color& LHS, const Color& RHS)
 {
     return Color(LHS.r + RHS.r, LHS.g + RHS.g, LHS.b + RHS.b);

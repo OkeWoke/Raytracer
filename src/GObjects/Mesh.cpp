@@ -86,7 +86,7 @@ void Mesh::obj_reader(std::string filename)
 {
     std::vector<Vector> vt;
     std::vector<Vector> vn;
-
+    vt.push_back(Vector());
     std::ifstream file;
     try
     {
@@ -127,15 +127,15 @@ void Mesh::obj_reader(std::string filename)
                 auto vec_stoi = [](const std::vector<std::string>& vec )
                 {
 
-                    return std::vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
+                    return std::vector<int>{stoi(vec[0]), stoi(vec[1])};//, stoi(vec[2])};
                 };
 
                 //this vector should be length 3...
                 std::vector<std::string> face_points = Utility::split(line.substr(2,100)," ");
-                std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
-                std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
-                std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
-                Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
+                std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"//"));
+                std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"//"));
+                std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"//"));
+                Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[0], vt[0],vt[0],vn[i0[1]-1], vn[i1[1]-1], vn[i2[1]-1]);
                 //tri->position = Vector(0,0,0);
                 tri->color = color;
                 tri->shininess = shininess;
