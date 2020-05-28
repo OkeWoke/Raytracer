@@ -250,7 +250,6 @@ int main()
             }
         }
 
-
         delete sampler1;
         delete sampler2;
         sampler1 = nullptr;
@@ -309,21 +308,19 @@ int main()
 
     ///// Draw/Save code
     auto save_start = chrono::steady_clock::now();
-    //img.clipTop();
     if(config.stretch == "norm")
     {
-        //can remove
-        img.normalise();
+        img.normalise(img.MAX_VAL);
     }else if(config.stretch == "gamma")
     {
-        img.gammaCorrection();
-        img.normalise();
+        img.normalise(1.0);
+        img.gammaCorrection(1.0/5.0);
+        img.normalise(img.MAX_VAL);
     }else if(config.stretch == "rein")
     {
-
         img.reinhardToneMap();
-        //img.normalise();
         img.clipTop();
+        img.normalise(img.MAX_VAL);
     }
 
     draw(img, filename.str());
@@ -371,6 +368,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     double y_offset = sampler2->next() - 0.5;
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                     //Hit hit = intersect(cam.pos, ray_dir, bvh);
+                    ray_dir = normalise(ray_dir);
                     Color c = trace_rays(cam.pos, ray_dir, bvh, config, 0, sampler1, sampler2, objects);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
                     img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
@@ -412,25 +410,34 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
 
 Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
 {
-    if(depth >= config.max_reflections)
+    if(depth > config.max_reflections)
     //max reflections reached
     {
         return Color(0,0,0);
     }
 
+
     Hit hit = intersect(origin, ray_dir, bvh); //see if current ray intersects something or not.
 
-    if(hit.obj == nullptr)
+    if(hit.obj == nullptr || hit.t == -1)
     //nothing was hit;
     {
         return Color(0,0,0);
     }
 
-    if((hit.obj->emission.r>0 || hit.obj->emission.g>0 || hit.obj->emission.b>0)&& hit.n.dot(hit.ray_dir))
+    if((hit.obj->emission.r>0 || hit.obj->emission.g>0 || hit.obj->emission.b>0) && hit.n.dot(hit.ray_dir)< 0)
     //we hit an emissive object and our ray is incident on its normal side...
     //may need to add cosine term here.
     {
-        return hit.obj->emission;
+        return hit.obj->emission*-1*ray_dir.dot(hit.n)/255;
+    }
+
+
+
+    if(hit.n.dot(ray_dir) > 0)
+    //we hit the underside of some surface, we do not shade it.
+    {
+        return Color(0,0,0);
     }
 
     Vector hit_point = hit.src + hit.t*hit.ray_dir;
@@ -453,9 +460,8 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
                 transformed_dir.x = Vector(v1.x, v2.x, hit.n.x).dot(sample_dir);
                 transformed_dir.y = Vector(v1.y, v2.y, hit.n.y).dot(sample_dir);
                 transformed_dir.z = Vector(v1.z, v2.z, hit.n.z).dot(sample_dir);
-                out_rays.push_back(transformed_dir);
+                out_rays.push_back(normalise(transformed_dir));
                 break;
-
     }
 
     //compute ray direct to light ray and in future to known points of light reflection (BDPT)
@@ -466,21 +472,23 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
         //if object is emissive
         {
             Vector light_point = objects[i]->get_random_point(ha1->next(), ha2->next());
-            Vector s =  light_point- hit_point;
+            Vector s =  normalise(light_point- hit_point);
             out_rays.push_back(s);
         }
     }
 
     Color c(0,0,0);
+    double divisor = max(1.0,hit.t*hit.t);
     for(int i=0; i< out_rays.size(); i++)
     //now to trace all the rays are effectively compute our monte carlo integral/sum.
     {
-        Color traced = trace_rays(hit_point, out_rays[i],bvh, config, depth+1, ha1, ha2, objects);
+        Color traced = trace_rays(hit_point, out_rays[i], bvh, config, depth+1, ha1, ha2, objects);
         //to add: brdf term
-        c = c + hit.color*traced*(out_rays[i].dot(hit.n));
+        c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255);//(divisor);
     }
-
-    return c;
+    c = c/out_rays.size();
+    c = c + hit.obj->emission*-1*ray_dir.dot(hit.n)/255;
+    return c/divisor;//*abs(hit.n.dot(ray_dir));
 }
 
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
