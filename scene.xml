@@ -1,7 +1,7 @@
-<Config threads="23" max_reflections="8" samplesPP="15" stretch="gamma"/>
+<Config threads="23" max_reflections="5" samplesPP="100" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3.2">
-    <position x="0" y="-1.2" z="20"/><!-- Camera position -->
+    <position x="0" y="-1.2" z="19"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -23,13 +23,13 @@
 
 <!-- top emissive plane area light-->
 <Plane w="1" l="1" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="0.9" z="2"/>
+    <position x="0" y="0.99" z="2"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->
     
     <color r="1" g="1" b="1"/>
-    <emission r="1000" g="1000" b="1000"/>
+    <emission r="10000" g="10000" b="10000"/>
 </Plane>
 
 <!-- back Plane -->
@@ -74,7 +74,7 @@
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
     
-    <color r="255" g="255" b="255"/>
+    <color r="200" g="200" b="200"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
 

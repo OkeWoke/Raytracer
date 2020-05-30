@@ -15,7 +15,7 @@ class ImageArray //A class that handles a 2D array of ints.
 
         int *histogram;
         void updateHistogram();
-        double findMax();
+
         void someFunc(int x, int y);
         void iterate(std::function<void(int x, int y)> func);
 
@@ -32,11 +32,15 @@ class ImageArray //A class that handles a 2D array of ints.
         void deleteArray();
         void clearArray();
         //
+        double findMax();
         void normalise(double max_val);
         void gammaCorrection(double gamma);
         void reinhardToneMap();
         double logAverage();
         void clipTop();
 
+        double get_mean();
+        Color get_median();
+        void linear_scale(double m, double c);
 };
 #endif

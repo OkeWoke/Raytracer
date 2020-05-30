@@ -52,6 +52,25 @@ void ImageArray::deleteArray()
     delete [] histogram;
 }
 
+Color ImageArray::get_median()
+{
+    //need to compute histogram, cumulative histogram, return no.pixels/2 hist.
+    return Color(0,0,0);
+}
+
+double ImageArray::get_mean()
+{
+    double mean=0;
+    auto fmean = [this, &mean](int x, int y)
+    {
+        mean = mean + pixelMatrix[x][y].luminance();
+    };
+
+    iterate(fmean);
+    mean =mean/(WIDTH*HEIGHT);
+    return mean;
+}
+
 double ImageArray::findMax()
 {
     double max_pixel_val = 0;
@@ -68,6 +87,15 @@ double ImageArray::findMax()
     iterate(fMax);
 
     return max_pixel_val;
+}
+
+void ImageArray::linear_scale(double m, double c)
+{
+    auto  fscale = [this, &m, &c](int x, int y)
+    {
+        pixelMatrix[x][y] = pixelMatrix[x][y]*m + Color(c,c,c);
+    };
+    iterate(fscale);
 }
 
 void ImageArray::normalise(double max_val)

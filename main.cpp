@@ -231,7 +231,7 @@ int main()
         for(s=0;s<config.spp; s++)
         {
             cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights);
-            double exponent = 1/2.2;
+            double exponent = 1/4.0;
             for (int y = 0; y < img.HEIGHT; ++y)
             {
                 for (int x = 0; x < img.WIDTH; ++x)
@@ -313,9 +313,12 @@ int main()
         img.normalise(img.MAX_VAL);
     }else if(config.stretch == "gamma")
     {
-        img.normalise(1.0);
-        img.gammaCorrection(1.0/5.0);
-        img.normalise(img.MAX_VAL);
+        img.gammaCorrection(1.0/4.2);
+        double val_to_scale = 500;//img.MAX_VAL/img.get_mean();
+        cout << "Mean: " << img.get_mean() <<endl;
+        img.linear_scale(val_to_scale,0);
+        img.clipTop();
+        //img.normalise(img.MAX_VAL);
     }else if(config.stretch == "rein")
     {
         img.reinhardToneMap();
