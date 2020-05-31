@@ -76,7 +76,8 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objec
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights);
 double double_rand(const double & min, const double & max);
 Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects);
-Vector uniform_hemisphere(double u1, double u2);
+Vector uniform_hemisphere(double u1, double u2, Vector& n);
+Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
 void clear_globals();
@@ -106,14 +107,20 @@ double schlick_fresnel(double cos_angle, double n_1, double n_2)
     return R_theta;
 }
 
-Vector uniform_hemisphere(double u1, double u2) {
+Vector uniform_hemisphere(double u1, double u2, Vector& n) {
 	const double r = sqrt(1.0 - u1*u1);
 	const double phi = 2 * PI * u2;
-	return Vector(cos(phi)*r, sin(phi)*r, u1);
+	Vector ray = Vector(cos(phi)*r, sin(phi)*r, u1);
+	if (ray.dot(n)<0)
+    {
+        return -1*ray;
+    }
+	return ray;
 }
 
-Vector cosine_weighted_hemisphere(double u1, double u2)
+Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n)
 // taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
+//modified to ensure on the correct hemisphere
 {
     const double r = sqrt(u1);
     const double theta = 2 * PI * u2;
@@ -121,7 +128,13 @@ Vector cosine_weighted_hemisphere(double u1, double u2)
     const double x = r * cos(theta);
     const double y = r * sin(theta);
     const double z = 1 - x*x - y*y;
-    return Vector(x, y, z);//sqrt(max((double)0, 1 - u1))
+
+    Vector ray = Vector(x,y,z);
+    if(ray.dot(n)<0)
+    {
+        return -1*ray;
+    }
+    return ray;
 }
 
 //below function is taken from smallpaint
@@ -313,16 +326,12 @@ int main()
         img.normalise(img.MAX_VAL);
     }else if(config.stretch == "gamma")
     {
-        img.gammaCorrection(1.0/4.2);
-        double val_to_scale = 500;//img.MAX_VAL/img.get_mean();
-        cout << "Mean: " << img.get_mean() <<endl;
-        img.linear_scale(val_to_scale,0);
-        img.clipTop();
-        //img.normalise(img.MAX_VAL);
+        img.gammaCorrection(1.0/2.2);
+        img.normalise(img.MAX_VAL);
     }else if(config.stretch == "rein")
     {
+        img.normalise(1.0);
         img.reinhardToneMap();
-        img.clipTop();
         img.normalise(img.MAX_VAL);
     }
 
@@ -428,16 +437,16 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
         return Color(0,0,0);
     }
 
-    if((hit.obj->emission.r>0 || hit.obj->emission.g>0 || hit.obj->emission.b>0) && hit.n.dot(hit.ray_dir)< 0)
+    double n_dot_ray = hit.n.dot(hit.ray_dir);
+    if((hit.obj->emission.r>0 || hit.obj->emission.g>0 || hit.obj->emission.b>0) && n_dot_ray< 0)
     //we hit an emissive object and our ray is incident on its normal side...
     //may need to add cosine term here.
     {
-        return hit.obj->emission*-1*ray_dir.dot(hit.n)/255;
+        double divisor = max(1.0,hit.t*hit.t);
+        return hit.obj->emission*-1*n_dot_ray/(divisor*255);
     }
 
-
-
-    if(hit.n.dot(ray_dir) > 0)
+    if(n_dot_ray > 0)
     //we hit the underside of some surface, we do not shade it.
     {
         return Color(0,0,0);
@@ -447,51 +456,69 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
 
     vector<Vector> out_rays;
 
-
     //generate several rays for indirect lighting.
     switch(hit.obj->brdf)
     //we sample out going rays inside this switch statement depending on the type of brdf
     {
         case 0:
         //diffuse
-                Vector v1, v2;
-                create_orthonormal_basis(hit.n, v1, v2);
-
-                Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next()); ////can replace with halton series etc in the future.
-                Vector transformed_dir;
-                //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
-                transformed_dir.x = Vector(v1.x, v2.x, hit.n.x).dot(sample_dir);
-                transformed_dir.y = Vector(v1.y, v2.y, hit.n.y).dot(sample_dir);
-                transformed_dir.z = Vector(v1.z, v2.z, hit.n.z).dot(sample_dir);
-                out_rays.push_back(normalise(transformed_dir));
-                break;
-    }
-
-    //compute ray direct to light ray and in future to known points of light reflection (BDPT)
-    for(unsigned int i = 0; i < objects.size(); i++)
-    //in future may keep a separate vector for emissive objects (in cases of many objects)
-    {
-        if(objects[i]->emission.r > 0 || objects[i]->emission.g >0 || objects[i]->emission.b > 0)
-        //if object is emissive
         {
-            Vector light_point = objects[i]->get_random_point(ha1->next(), ha2->next());
-            Vector s =  normalise(light_point- hit_point);
-            out_rays.push_back(s);
+                Vector sample_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
+                out_rays.push_back(normalise(sample_dir));
+
+                //compute ray direct to light ray and in future to known points of light reflection (BDPT)
+                for(unsigned int i = 0; i < objects.size(); i++)
+                //in future may keep a separate vector for emissive objects (in cases of many objects)
+                {
+                    if(objects[i]->emission.r > 0 || objects[i]->emission.g >0 || objects[i]->emission.b > 0)
+                    //if object is emissive
+                    {
+                        Vector light_point = objects[i]->get_random_point(ha1->next(), ha2->next());
+                        Vector s =  normalise(light_point- hit_point);
+
+                        //The below is only valid for opaque objects, ensure we have a valid reflection.
+                        if(s.dot(hit.n) >0)
+                        {
+                            out_rays.push_back(s);
+                        }
+                    }
+                }
+                break;
+
         }
+
+        case 1:
+        //diffuse w/ specular, do we create a ray in the direction of specular?
+                break;
+
+        case 2:
+        //mirror
+
+                Vector next_ray = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray); // n_dot_ray being the cos angle
+                out_rays.push_back(next_ray);
+                break;
+
     }
 
     Color c(0,0,0);
     double divisor = max(1.0,hit.t*hit.t);
+
     for(int i=0; i< out_rays.size(); i++)
     //now to trace all the rays are effectively compute our monte carlo integral/sum.
     {
         Color traced = trace_rays(hit_point, out_rays[i], bvh, config, depth+1, ha1, ha2, objects);
         //to add: brdf term
-        c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255);//(divisor);
+        if(hit.obj->brdf==0)
+        {
+            c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255);
+        }else if(hit.obj->brdf ==2)
+        {
+            c = c+hit.color*traced/255;
+        }
     }
     c = c/out_rays.size();
-    c = c + hit.obj->emission*-1*ray_dir.dot(hit.n)/255;
-    return c/divisor;//*abs(hit.n.dot(ray_dir));
+    c = c + hit.obj->emission*-1*n_dot_ray/(255);
+    return c/divisor;
 }
 
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
@@ -525,7 +552,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         Vector v1, v2;
         create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next()); ////can replace with halton series etc in the future.
+        Vector sample_dir = Vector(0,0,0);//cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
