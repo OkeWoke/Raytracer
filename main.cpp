@@ -465,7 +465,7 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
         {
                 Vector sample_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
                 out_rays.push_back(normalise(sample_dir));
-
+                /*
                 //compute ray direct to light ray and in future to known points of light reflection (BDPT)
                 for(unsigned int i = 0; i < objects.size(); i++)
                 //in future may keep a separate vector for emissive objects (in cases of many objects)
@@ -482,7 +482,7 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
                             out_rays.push_back(s);
                         }
                     }
-                }
+                }*/
                 break;
 
         }
@@ -501,7 +501,7 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
     }
 
     Color c(0,0,0);
-    double divisor = max(1.0,hit.t*hit.t);
+    double divisor = max(1.3,hit.t*hit.t);
 
     for(int i=0; i< out_rays.size(); i++)
     //now to trace all the rays are effectively compute our monte carlo integral/sum.
@@ -510,10 +510,10 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
         //to add: brdf term
         if(hit.obj->brdf==0)
         {
-            c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255);
+            c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255.0);
         }else if(hit.obj->brdf ==2)
         {
-            c = c+hit.color*traced/255;
+            c = c+hit.color*traced*0.8/255.0;
         }
     }
     c = c/out_rays.size();
