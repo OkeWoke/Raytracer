@@ -1,7 +1,7 @@
-<Config threads="23" max_reflections="8" samplesPP="3000" stretch="gamma"/>
+<Config threads="23" max_reflections="8" samplesPP="100" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3.2">
-    <position x="0" y="-1.2" z="19"/><!-- Camera position -->
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="5">
+    <position x="0" y="-1.2" z="30"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -9,7 +9,11 @@
 </Camera>
 
 
-
+<Sphere radius = "1.2" shininess = "22" reflectivity = "0" brdf="0">
+    <position x="-0.2" y="-0.8" z="-20"/>
+    <color r="0" g="0" b="200"/>
+    <emission r="0" g="0" b="0"/>
+</Sphere>
 
 <Sphere radius = "1" shininess = "22" reflectivity = "0" brdf="2">
     <position x="0.9" y="-1.8" z="2"/>
@@ -17,8 +21,16 @@
     <emission r="0" g="0" b="0"/>
 </Sphere>
 
+
+<Sphere radius = "0.6" shininess = "22" reflectivity = "0" brdf="0">
+    <position x="-1.2" y="-1.8" z="0.5"/>
+    <color r="255" g="0" b="200"/>
+    <emission r="0" g="0" b="0"/>
+</Sphere>
+
+
 <!-- top emissive plane area light-->
-<Plane w="1" l="1" shininess="50" reflectivity="0.9" brdf = "0">
+<Plane w="150" l="150" shininess="50" reflectivity="0.9" brdf = "0">
     <position x="0" y="0.99" z="2"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -29,8 +41,8 @@
 </Plane>
 
 <!-- back Plane -->
-<Plane w="5" l="5" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="0" z="-3"/>
+<Plane w="15" l="15" shininess="50" reflectivity="0.9" brdf = "0">
+    <position x="0" y="0" z="-25"/>
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->

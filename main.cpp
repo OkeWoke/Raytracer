@@ -390,9 +390,17 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
 
                     double x_offset = sampler1->next() - 0.5;
                     double y_offset = sampler2->next() - 0.5;
+
+
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
+
+                    double aperture_radius = 0.007* sampler1->next();
+                    double aperture_angle = 2* 3.1415 * sampler2->next();
+                    Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * cam.u;
+                    Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
+                    ray_dir = ray_dir + aperture_u_offset + aperture_v_offset;
                     //Hit hit = intersect(cam.pos, ray_dir, bvh);
-                    ray_dir = normalise(ray_dir);
+                    //ray_dir = normalise(ray_dir);
                     Color c = trace_rays(cam.pos, ray_dir, bvh, config, 0, sampler1, sampler2, objects);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
                     img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
