@@ -72,7 +72,7 @@ void draw(ImageArray& img, string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config);
+void deserialize(string filename, vector<Light>& lights, vector<GObject*> gLights, vector<GObject*>& objects, Camera& cam, Config& config);
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights);
 double double_rand(const double & min, const double & max);
 Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects);
@@ -118,7 +118,7 @@ Vector uniform_hemisphere(double u1, double u2, Vector& n) {
 	return ray;
 }
 
-Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n)
+Vector cosine_weighted_hemisphere(double u1, double u2, const Vector& n)
 // taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
 //modified to ensure on the correct hemisphere
 {
@@ -153,6 +153,15 @@ void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
 	v3 = v1 % v2;
 }
 
+bool is_light(GObject* a)
+{
+    if(a->emission.r >0 || a->emission.g > 0 || a->emission.b > 0)
+    {
+        return true;
+    }
+    return false;
+}
+
 void clear_globals()
 {
 
@@ -184,6 +193,8 @@ int main()
 {
     vector<GObject*> objects;
     vector<Light> lights;
+    vector<GObject*> gLights; //GObjects that have emission.
+
     Camera cam;
     Config config;
     int orw = 20;
@@ -191,7 +202,7 @@ int main()
     //initial call to deserialize just so I can define ImageArray...
     cout<<"Loading scene from scene.xml..." << endl;
     auto load_start = chrono::steady_clock::now();
-    deserialize("scene.xml", lights, objects, cam, config);
+    deserialize("scene.xml", lights, gLights, objects, cam, config);
     string last_write_time = get_write_time("scene.xml");
     auto load_end = chrono::steady_clock::now();
     cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
@@ -300,7 +311,8 @@ int main()
             img.clearArray();
             cout<<"Loading scene from scene.xml..." << endl;
             auto load_start = chrono::steady_clock::now();
-            deserialize("scene.xml", lights, objects, cam, config);
+            deserialize("scene.xml", lights, gLights, objects, cam, config);
+
             auto load_end = chrono::steady_clock::now();
             cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
         }else
@@ -418,7 +430,67 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
     }
 
     return hit;
-}
+}/*
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
+{
+    Vector o = origin; //copy
+    Vector d = ray_dir; //copy
+    Color c;
+    bool ignore_direct = false;
+    depth = 0;
+
+    while (true)
+    {
+        if (depth> config.max_reflections)
+        {
+            break;
+        }
+
+        Hit hit = intersect(o, d, bvh); //see if current ray intersects something or not.
+
+        if(hit.obj == nullptr || hit.t == -1)
+        //nothing was hit;
+        {
+            break;
+        }
+
+        double n_dot_ray = hit.n.dot(hit.ray_dir);
+        if(is_light(hit.obj) && n_dot_ray < 0 && !ignore_direct)
+        {
+            c+=hit.obj->emission;
+        }
+
+        //NEE
+        if(hit.obj->brdf != 2)
+        //not specular
+        {
+            auto light_i = int((gLights.size()-1) * ha2.next());
+            auto light = gLights[]
+        }
+        /////////
+        if(is_light(hit.obj) && n_dot_ray < 0)
+        //we hit an emissive object and our ray is incident on its normal side...
+        //may need to add cosine term here.
+        {
+            double divisor = max(1.0,hit.t*hit.t);
+            return hit.obj->emission*-1*n_dot_ray/(divisor*255);
+        }
+
+        if(n_dot_ray > 0)
+        //we hit the underside of some surface, we do not shade it.
+        {
+            return Color(0,0,0);
+        }
+
+        Vector hit_point = hit.src + hit.t*hit.ray_dir;
+
+        vector<Vector> out_rays;
+
+    }
+
+
+    return c;
+}*/
 
 Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
 {
@@ -465,9 +537,9 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
         {
                 Vector sample_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
                 out_rays.push_back(normalise(sample_dir));
-                /*
+
                 //compute ray direct to light ray and in future to known points of light reflection (BDPT)
-                for(unsigned int i = 0; i < objects.size(); i++)
+               /* for(unsigned int i = 0; i < objects.size(); i++)
                 //in future may keep a separate vector for emissive objects (in cases of many objects)
                 {
                     if(objects[i]->emission.r > 0 || objects[i]->emission.g >0 || objects[i]->emission.b > 0)
@@ -552,7 +624,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         Vector v1, v2;
         create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = Vector(0,0,0);//cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
+        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
@@ -701,7 +773,7 @@ void draw(ImageArray& img, string filename)
     image.write("renders/"+filename);
 }
 
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config)
+void deserialize(string filename, vector<Light>& lights, vector<GObject*> gLights, vector<GObject*>& objects, Camera& cam, Config& config)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
@@ -737,12 +809,17 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objec
             Light l = Light();
             l.deserialize(xml.GetSubDoc());
             lights.push_back(l);
+            continue;
         }
         else if(element == "Mesh")
         {
             Mesh* m = new Mesh();
             m->deserialize(xml.GetSubDoc());
             objects.push_back(m);
+        }
+        if(is_light(objects[objects.size()-1]))
+        {
+            gLights.push_back(objects[objects.size()-1]);
         }
     }
 }

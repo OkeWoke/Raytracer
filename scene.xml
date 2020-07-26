@@ -1,4 +1,4 @@
-<Config threads="23" max_reflections="8" samplesPP="100" stretch="gamma"/>
+<Config threads="23" max_reflections="8" samplesPP="3000" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3.2">
     <position x="0" y="-1.2" z="19"/><!-- Camera position -->
