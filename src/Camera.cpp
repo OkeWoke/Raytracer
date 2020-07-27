@@ -18,6 +18,11 @@ void Camera::deserialize(std::string sub, Camera& cam)
     cam.V_RES = std::stoi(xml.GetAttrib("V_Res"));
 
     cam.N = std::stod(xml.GetAttrib("fl"));
+    cam.aperture = std::stod(xml.GetAttrib("aperture"));
+    cam.focus_dist = std::stod(xml.GetAttrib("focus_dist"));
+
+    //cam.H = cam.H*cam.fov*cam.N;
+    //cam.V = cam.V*cam.fov*cam.N;
     xml.IntoElem();
 
     xml.FindElem("position");
@@ -38,6 +43,7 @@ void Camera::deserialize(std::string sub, Camera& cam)
     cam.n = Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]);
     cam.u = Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]);
     cam.v = Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]);
+    std::cout << tmp.to_string() << std::endl;
 }
 
 void Camera::update_camera(Matrix& tmp)
