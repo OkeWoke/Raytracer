@@ -392,11 +392,12 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     int y_index = x_index / cam.H_RES;
                     x_index = x_index%cam.H_RES;
 
+                    //Box Muller Pixel Sampling
                     double x_offset;//= sampler1->next() - 0.5;
                     double y_offset;// = sampler2->next() - 0.5;
 
-                    double u1 = sampler1->next()*0.9 + 0.1;
-                    double u2 = sampler2->next()*0.9 + 0.1;
+                    double u1 = sampler1->next()*0.9 + 0.1; //We scale the box muller distribution radial input to fit within a pixel
+                    double u2 = sampler2->next();//*0.9 + 0.1;
                     double R  = sqrt(-2.0 * log(u1));
                     double angle = 2.0 * M_PI * u2;
                     x_offset = R * cos(angle);
@@ -404,15 +405,13 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
 
 
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
-                    ray_dir = normalise(ray_dir)*cam.focus_dist;
+                    Vector ray_norm = normalise(ray_dir);
+                    ray_dir = ray_norm*cam.focus_dist/(-1*ray_norm.dot(cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
                     double aperture_radius = cam.aperture* sqrt(sampler1->next());
                     double aperture_angle = 2* M_PI * sampler2->next();
                     Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * cam.u;
                     Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
                     ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
-                    //ray_dir = normalise(ray_dir);
-                    //ray_dir = ray_dir - (cam.pos+aperture_u_offset +aperture_u_offset);
-                    //Hit hit = intersect(cam.pos, ray_dir, bvh);
 
                     Color c = trace_rays(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
@@ -447,11 +446,12 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
             hit.color = inter.color;
         }
         hit.n = inter.n;
-
     }
 
     return hit;
-}/*
+}
+
+/*
 Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
 {
     Vector o = origin; //copy
