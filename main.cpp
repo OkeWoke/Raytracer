@@ -76,15 +76,16 @@ void draw(ImageArray& img, string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
-void deserialize(string filename, vector<Light>& lights, vector<GObject*> gLights, vector<GObject*>& objects, Camera& cam, Config& config);
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights);
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config);
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights);
 double double_rand(const double & min, const double & max);
-Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects);
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights);
 Vector uniform_hemisphere(double u1, double u2, Vector& n);
 Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
 void clear_globals();
+bool is_light(GObject* obj);
 
 // global var declaration
 uint64_t numPrimaryRays = 0;
@@ -258,7 +259,7 @@ int main()
         int s;
         for(s=0;s<config.spp; s++)
         {
-            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights);
+            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
             double exponent = 1/4.0;
             for (int y = 0; y < img.HEIGHT; ++y)
             {
@@ -368,7 +369,7 @@ int main()
     */
 }
 
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights)
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
     int cores_to_use = config.threads_to_use;//global
@@ -403,7 +404,6 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     x_offset = R * cos(angle);
                     y_offset = R * sin(angle);
 
-
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                     Vector ray_norm = normalise(ray_dir);
                     ray_dir = ray_norm*cam.focus_dist/(-1*ray_norm.dot(cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
@@ -413,7 +413,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
                     ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
 
-                    Color c = trace_rays(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
+                    Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
                     img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
                 }
@@ -451,12 +451,13 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
     return hit;
 }
 
-/*
-Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
+
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights)
 {
     Vector o = origin; //copy
     Vector d = ray_dir; //copy
     Color c;
+    Color weight = Color(1,1,1);
     bool ignore_direct = false;
     depth = 0;
 
@@ -474,88 +475,78 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
         {
             break;
         }
-
+        Vector hit_point = hit.src + hit.t*hit.ray_dir;
         double n_dot_ray = hit.n.dot(hit.ray_dir);
-        if(is_light(hit.obj) && n_dot_ray < 0 && !ignore_direct)
+        if(is_light(hit.obj) && n_dot_ray < 0)
         {
-            c+=hit.obj->emission;
+            double divisor = 1;//max(1.0,hit.t*hit.t);
+
+            if(!ignore_direct)
+            {
+                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+            }else
+            {
+                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+            }
+            break;
         }
 
         //NEE
+        /*
         if(hit.obj->brdf != 2)
         //not specular
         {
-            auto light_i = int((gLights.size()-1) * ha2.next());
-            auto light = gLights[]
-        }
-        /////////
-        if(is_light(hit.obj) && n_dot_ray < 0)
-        //we hit an emissive object and our ray is incident on its normal side...
-        //may need to add cosine term here.
+            auto light_i = int((gLights.size()-1) * ha2->next());
+            auto light = gLights[light_i];
+            auto prob_choosing_light = 1/gLights.size(); //uniform because idek how to IS this...
+            Vector light_point = light->get_random_point(ha1->next(), ha2->next());
+            Vector NEE_Ray = light_point - hit_point;
+            Hit light_hit = intersect(hit_point, NEE_Ray, bvh);
+            double NEE_Ray_length = NEE_Ray.abs();
+            Vector out = normalise(NEE_Ray);
+            double light_n_dot_NEE = light_hit.n.dot(out);
+            if (NEE_Ray_length -0.0001 < light_hit.t < NEE_Ray_length +0.0001 && light_n_dot_NEE < 0)
+            {
+                Vector in = -1*d;
+
+                auto length = NEE_Ray_length;
+                Color brdf_coef = hit.color/255; //mat.eval(in, out)
+                //c = c+ light->emission/255 * weight * brdf_coef  * hit.n.dot(out) * -1*light_n_dot_NEE  / ( length * length) / (prob_choosing_light);
+            }
+        }*/
+
+        //auto survive_prob = 0.90;
+       // if (ha1->next() > survive_prob) break;
+        if(hit.obj->brdf==2)
         {
-            double divisor = max(1.0,hit.t*hit.t);
-            return hit.obj->emission*-1*n_dot_ray/(divisor*255);
-        }
-
-        if(n_dot_ray > 0)
-        //we hit the underside of some surface, we do not shade it.
+            ignore_direct = false;
+        }else
         {
-            return Color(0,0,0);
+            ignore_direct = true;
         }
-
-        Vector hit_point = hit.src + hit.t*hit.ray_dir;
-
-        vector<Vector> out_rays;
-
+        //ignore_direct = !mat.is_specular;
+        Vector new_ray_dir;
+        if(hit.obj->brdf==0)
+        //diffuse
+        {
+            new_ray_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n);
+        }else if(hit.obj->brdf==2)
+        //mirror
+        {
+           new_ray_dir = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray);
+        }
+        d= new_ray_dir;
+        o = hit_point;
+        weight = weight* hit.color*hit.n.dot(new_ray_dir)/(255.0);
+        depth+=1;
     }
 
 
     return c;
-}*/
 
-Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects)
-{
-    if(depth > config.max_reflections)
-    //max reflections reached
-    {
-        return Color(0,0,0);
-    }
+    //old trace code
 
-
-    Hit hit = intersect(origin, ray_dir, bvh); //see if current ray intersects something or not.
-
-    if(hit.obj == nullptr || hit.t == -1)
-    //nothing was hit;
-    {
-        return Color(0,0,0);
-    }
-
-    double n_dot_ray = hit.n.dot(hit.ray_dir);
-    if((hit.obj->emission.r>0 || hit.obj->emission.g>0 || hit.obj->emission.b>0) && n_dot_ray< 0)
-    //we hit an emissive object and our ray is incident on its normal side...
-    //may need to add cosine term here.
-    {
-        double divisor = max(1.0,hit.t*hit.t);
-        return hit.obj->emission*-1*n_dot_ray/(divisor*255);
-    }
-
-    if(n_dot_ray > 0)
-    //we hit the underside of some surface, we do not shade it.
-    {
-        return Color(0,0,0);
-    }
-
-    Vector hit_point = hit.src + hit.t*hit.ray_dir;
-
-    vector<Vector> out_rays;
-
-    //generate several rays for indirect lighting.
-    switch(hit.obj->brdf)
-    //we sample out going rays inside this switch statement depending on the type of brdf
-    {
-        case 0:
-        //diffuse
-        {
+    /*
                 Vector sample_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
                 out_rays.push_back(normalise(sample_dir));
 
@@ -575,43 +566,12 @@ Color trace_rays(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarc
                             out_rays.push_back(s);
                         }
                     }
-                }*/
-                break;
-
-        }
-
-        case 1:
-        //diffuse w/ specular, do we create a ray in the direction of specular?
-                break;
-
-        case 2:
+                }
         //mirror
 
                 Vector next_ray = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray); // n_dot_ray being the cos angle
                 out_rays.push_back(next_ray);
-                break;
-
-    }
-
-    Color c(0,0,0);
-    double divisor = max(1.3,hit.t*hit.t);
-
-    for(int i=0; i< out_rays.size(); i++)
-    //now to trace all the rays are effectively compute our monte carlo integral/sum.
-    {
-        Color traced = trace_rays(hit_point, out_rays[i], bvh, config, depth+1, ha1, ha2, objects);
-        //to add: brdf term
-        if(hit.obj->brdf==0)
-        {
-            c = c + hit.color*traced*hit.n.dot(out_rays[i])/(255.0);
-        }else if(hit.obj->brdf ==2)
-        {
-            c = c+hit.color*traced*0.8/255.0;
-        }
-    }
-    c = c/out_rays.size();
-    c = c + hit.obj->emission*-1*n_dot_ray/(255);
-    return c/divisor;
+                break;*/
 }
 
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
@@ -794,7 +754,7 @@ void draw(ImageArray& img, string filename)
     image.write("renders/"+filename);
 }
 
-void deserialize(string filename, vector<Light>& lights, vector<GObject*> gLights, vector<GObject*>& objects, Camera& cam, Config& config)
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
@@ -838,9 +798,12 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*> gLight
             m->deserialize(xml.GetSubDoc());
             objects.push_back(m);
         }
-        if(is_light(objects[objects.size()-1]))
+    }
+    for(int i =0;i<objects.size();i++)
+    {
+        if(is_light(objects[i]))
         {
-            gLights.push_back(objects[objects.size()-1]);
+            gLights.push_back(objects[i]);
         }
     }
 }
