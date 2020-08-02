@@ -40,6 +40,10 @@
 #include <tchar.h>
 //#include <strsafe.h>
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 using namespace std;
 using namespace cimg_library;
 
@@ -72,13 +76,16 @@ void draw(ImageArray& img, string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config);
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights);
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config);
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights);
 double double_rand(const double & min, const double & max);
-Vector uniform_hemisphere(double u1, double u2);
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights);
+Vector uniform_hemisphere(double u1, double u2, Vector& n);
+Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Mesh* obj_reader(string filename);
 void clear_globals();
+bool is_light(GObject* obj);
 
 // global var declaration
 uint64_t numPrimaryRays = 0;
@@ -105,14 +112,20 @@ double schlick_fresnel(double cos_angle, double n_1, double n_2)
     return R_theta;
 }
 
-Vector uniform_hemisphere(double u1, double u2) {
+Vector uniform_hemisphere(double u1, double u2, Vector& n) {
 	const double r = sqrt(1.0 - u1*u1);
 	const double phi = 2 * PI * u2;
-	return Vector(cos(phi)*r, sin(phi)*r, u1);
+	Vector ray = Vector(cos(phi)*r, sin(phi)*r, u1);
+	if (ray.dot(n)<0)
+    {
+        return -1*ray;
+    }
+	return ray;
 }
 
-Vector cosine_weighted_hemisphere(double u1, double u2)
+Vector cosine_weighted_hemisphere(double u1, double u2, const Vector& n)
 // taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
+//modified to ensure on the correct hemisphere
 {
     const double r = sqrt(u1);
     const double theta = 2 * PI * u2;
@@ -120,7 +133,13 @@ Vector cosine_weighted_hemisphere(double u1, double u2)
     const double x = r * cos(theta);
     const double y = r * sin(theta);
     const double z = 1 - x*x - y*y;
-    return Vector(x, y, z);//sqrt(max((double)0, 1 - u1))
+
+    Vector ray = Vector(x,y,z);
+    if(ray.dot(n)<0)
+    {
+        return -1*ray;
+    }
+    return ray;
 }
 
 //below function is taken from smallpaint
@@ -137,6 +156,15 @@ void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
 		v2 = Vector(0.0f, v1.z * invLen, -v1.y * invLen);
 	}
 	v3 = v1 % v2;
+}
+
+bool is_light(GObject* a)
+{
+    if(a->emission.r >0 || a->emission.g > 0 || a->emission.b > 0)
+    {
+        return true;
+    }
+    return false;
 }
 
 void clear_globals()
@@ -170,6 +198,8 @@ int main()
 {
     vector<GObject*> objects;
     vector<Light> lights;
+    vector<GObject*> gLights; //GObjects that have emission.
+
     Camera cam;
     Config config;
     int orw = 20;
@@ -177,7 +207,7 @@ int main()
     //initial call to deserialize just so I can define ImageArray...
     cout<<"Loading scene from scene.xml..." << endl;
     auto load_start = chrono::steady_clock::now();
-    deserialize("scene.xml", lights, objects, cam, config);
+    deserialize("scene.xml", lights, gLights, objects, cam, config);
     string last_write_time = get_write_time("scene.xml");
     auto load_end = chrono::steady_clock::now();
     cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
@@ -229,8 +259,8 @@ int main()
         int s;
         for(s=0;s<config.spp; s++)
         {
-            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights);
-            double exponent = 1/2.2;
+            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
+            double exponent = 1/4.0;
             for (int y = 0; y < img.HEIGHT; ++y)
             {
                 for (int x = 0; x < img.WIDTH; ++x)
@@ -248,7 +278,6 @@ int main()
                 break;
             }
         }
-
 
         delete sampler1;
         delete sampler2;
@@ -287,7 +316,8 @@ int main()
             img.clearArray();
             cout<<"Loading scene from scene.xml..." << endl;
             auto load_start = chrono::steady_clock::now();
-            deserialize("scene.xml", lights, objects, cam, config);
+            deserialize("scene.xml", lights, gLights, objects, cam, config);
+
             auto load_end = chrono::steady_clock::now();
             cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
         }else
@@ -308,21 +338,18 @@ int main()
 
     ///// Draw/Save code
     auto save_start = chrono::steady_clock::now();
-    //img.clipTop();
     if(config.stretch == "norm")
     {
-        //can remove
-        img.normalise();
+        img.normalise(img.MAX_VAL);
     }else if(config.stretch == "gamma")
     {
-        img.gammaCorrection();
-        img.normalise();
+        img.gammaCorrection(1.0/2.2);
+        img.normalise(img.MAX_VAL);
     }else if(config.stretch == "rein")
     {
-
+        img.normalise(1.0);
         img.reinhardToneMap();
-        //img.normalise();
-        img.clipTop();
+        img.normalise(img.MAX_VAL);
     }
 
     draw(img, filename.str());
@@ -342,7 +369,7 @@ int main()
     */
 }
 
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights)
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
     int cores_to_use = config.threads_to_use;//global
@@ -366,11 +393,27 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     int y_index = x_index / cam.H_RES;
                     x_index = x_index%cam.H_RES;
 
-                    double x_offset = sampler1->next() - 0.5;
-                    double y_offset = sampler2->next() - 0.5;
+                    //Box Muller Pixel Sampling
+                    double x_offset;//= sampler1->next() - 0.5;
+                    double y_offset;// = sampler2->next() - 0.5;
+
+                    double u1 = sampler1->next()*0.9 + 0.1; //We scale the box muller distribution radial input to fit within a pixel
+                    double u2 = sampler2->next();//*0.9 + 0.1;
+                    double R  = sqrt(-2.0 * log(u1));
+                    double angle = 2.0 * M_PI * u2;
+                    x_offset = R * cos(angle);
+                    y_offset = R * sin(angle);
+
                     Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
-                    Hit hit = intersect(cam.pos, ray_dir, bvh);
-                    Color c = shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
+                    Vector ray_norm = normalise(ray_dir);
+                    ray_dir = ray_norm*cam.focus_dist/(-1*ray_norm.dot(cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
+                    double aperture_radius = cam.aperture* sqrt(sampler1->next());
+                    double aperture_angle = 2* M_PI * sampler2->next();
+                    Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * cam.u;
+                    Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
+                    ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
+
+                    Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
 
                     img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
                 }
@@ -403,10 +446,132 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
             hit.color = inter.color;
         }
         hit.n = inter.n;
-
     }
 
     return hit;
+}
+
+
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights)
+{
+    Vector o = origin; //copy
+    Vector d = ray_dir; //copy
+    Color c;
+    Color weight = Color(1,1,1);
+    bool ignore_direct = false;
+    depth = 0;
+
+    while (true)
+    {
+        if (depth> config.max_reflections)
+        {
+            break;
+        }
+
+        Hit hit = intersect(o, d, bvh); //see if current ray intersects something or not.
+
+        if(hit.obj == nullptr || hit.t == -1)
+        //nothing was hit;
+        {
+            break;
+        }
+        Vector hit_point = hit.src + hit.t*hit.ray_dir;
+        double n_dot_ray = hit.n.dot(hit.ray_dir);
+        if(is_light(hit.obj) && n_dot_ray < 0)
+        {
+            double divisor = 1;//max(1.0,hit.t*hit.t);
+
+            if(!ignore_direct)
+            {
+                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+            }else
+            {
+                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+            }
+            break;
+        }
+
+        //NEE
+        /*
+        if(hit.obj->brdf != 2)
+        //not specular
+        {
+            auto light_i = int((gLights.size()-1) * ha2->next());
+            auto light = gLights[light_i];
+            auto prob_choosing_light = 1/gLights.size(); //uniform because idek how to IS this...
+            Vector light_point = light->get_random_point(ha1->next(), ha2->next());
+            Vector NEE_Ray = light_point - hit_point;
+            Hit light_hit = intersect(hit_point, NEE_Ray, bvh);
+            double NEE_Ray_length = NEE_Ray.abs();
+            Vector out = normalise(NEE_Ray);
+            double light_n_dot_NEE = light_hit.n.dot(out);
+            if (NEE_Ray_length -0.0001 < light_hit.t < NEE_Ray_length +0.0001 && light_n_dot_NEE < 0)
+            {
+                Vector in = -1*d;
+
+                auto length = NEE_Ray_length;
+                Color brdf_coef = hit.color/255; //mat.eval(in, out)
+                //c = c+ light->emission/255 * weight * brdf_coef  * hit.n.dot(out) * -1*light_n_dot_NEE  / ( length * length) / (prob_choosing_light);
+            }
+        }*/
+
+        //auto survive_prob = 0.90;
+       // if (ha1->next() > survive_prob) break;
+        if(hit.obj->brdf==2)
+        {
+            ignore_direct = false;
+        }else
+        {
+            ignore_direct = true;
+        }
+        //ignore_direct = !mat.is_specular;
+        Vector new_ray_dir;
+        if(hit.obj->brdf==0)
+        //diffuse
+        {
+            new_ray_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n);
+        }else if(hit.obj->brdf==2)
+        //mirror
+        {
+           new_ray_dir = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray);
+        }
+        d= new_ray_dir;
+        o = hit_point;
+        weight = weight* hit.color*hit.n.dot(new_ray_dir)/(255.0);
+        depth+=1;
+    }
+
+
+    return c;
+
+    //old trace code
+
+    /*
+                Vector sample_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
+                out_rays.push_back(normalise(sample_dir));
+
+                //compute ray direct to light ray and in future to known points of light reflection (BDPT)
+               /* for(unsigned int i = 0; i < objects.size(); i++)
+                //in future may keep a separate vector for emissive objects (in cases of many objects)
+                {
+                    if(objects[i]->emission.r > 0 || objects[i]->emission.g >0 || objects[i]->emission.b > 0)
+                    //if object is emissive
+                    {
+                        Vector light_point = objects[i]->get_random_point(ha1->next(), ha2->next());
+                        Vector s =  normalise(light_point- hit_point);
+
+                        //The below is only valid for opaque objects, ensure we have a valid reflection.
+                        if(s.dot(hit.n) >0)
+                        {
+                            out_rays.push_back(s);
+                        }
+                    }
+                }
+        //mirror
+
+                Vector next_ray = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray); // n_dot_ray being the cos angle
+                out_rays.push_back(next_ray);
+                break;*/
 }
 
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
@@ -440,7 +605,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         Vector v1, v2;
         create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next()); ////can replace with halton series etc in the future.
+        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
@@ -589,7 +754,7 @@ void draw(ImageArray& img, string filename)
     image.write("renders/"+filename);
 }
 
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objects, Camera& cam, Config& config)
+void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
@@ -625,12 +790,20 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*>& objec
             Light l = Light();
             l.deserialize(xml.GetSubDoc());
             lights.push_back(l);
+            continue;
         }
         else if(element == "Mesh")
         {
             Mesh* m = new Mesh();
             m->deserialize(xml.GetSubDoc());
             objects.push_back(m);
+        }
+    }
+    for(int i =0;i<objects.size();i++)
+    {
+        if(is_light(objects[i]))
+        {
+            gLights.push_back(objects[i]);
         }
     }
 }

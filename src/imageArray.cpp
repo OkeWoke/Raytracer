@@ -52,6 +52,25 @@ void ImageArray::deleteArray()
     delete [] histogram;
 }
 
+Color ImageArray::get_median()
+{
+    //need to compute histogram, cumulative histogram, return no.pixels/2 hist.
+    return Color(0,0,0);
+}
+
+double ImageArray::get_mean()
+{
+    double mean=0;
+    auto fmean = [this, &mean](int x, int y)
+    {
+        mean = mean + pixelMatrix[x][y].luminance();
+    };
+
+    iterate(fmean);
+    mean =mean/(WIDTH*HEIGHT);
+    return mean;
+}
+
 double ImageArray::findMax()
 {
     double max_pixel_val = 0;
@@ -70,24 +89,33 @@ double ImageArray::findMax()
     return max_pixel_val;
 }
 
-void ImageArray::normalise()
+void ImageArray::linear_scale(double m, double c)
+{
+    auto  fscale = [this, &m, &c](int x, int y)
+    {
+        pixelMatrix[x][y] = pixelMatrix[x][y]*m + Color(c,c,c);
+    };
+    iterate(fscale);
+}
+
+void ImageArray::normalise(double max_val)
 {   //this function will scale all pixel values between 0 and max_val, loss of information/quality occurs.
     double max_pixel_val = findMax();
     std::cout << max_pixel_val << std::endl;
-    auto  norm = [this, &max_pixel_val](int x, int y)
+    auto  norm = [this, &max_pixel_val, &max_val](int x, int y)
     {
-        pixelMatrix[x][y] = ((MAX_VAL*pixelMatrix[x][y])/max_pixel_val);
+        pixelMatrix[x][y] = ((max_val*pixelMatrix[x][y])/max_pixel_val);
     };
     iterate(norm);
 }
 
-void ImageArray::gammaCorrection()
+void ImageArray::gammaCorrection(double gamma)
 {
-    auto gam = [this](int x, int y)
+    auto gam = [this, &gamma](int x, int y)
     {
-        pixelMatrix[x][y].r =  pow(pixelMatrix[x][y].r, 1/2.2);
-        pixelMatrix[x][y].g =  pow(pixelMatrix[x][y].g, 1/2.2);
-        pixelMatrix[x][y].b =  pow(pixelMatrix[x][y].b, 1/2.2);
+        pixelMatrix[x][y].r =  pow(pixelMatrix[x][y].r, gamma);
+        pixelMatrix[x][y].g =  pow(pixelMatrix[x][y].g, gamma);
+        pixelMatrix[x][y].b =  pow(pixelMatrix[x][y].b, gamma);
     };
     iterate(gam);
 }
