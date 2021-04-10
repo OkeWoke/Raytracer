@@ -36,9 +36,19 @@
 #include "ext/CImg.h"
 
 //sorry linux, i need these to figure out when the scene.xml file was last written to.
-#include <windows.h>
+
 #include <tchar.h>
 //#include <strsafe.h>
+
+#include <windows.h>
+
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -83,10 +93,11 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
 Vector uniform_hemisphere(double u1, double u2, Vector& n);
 Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
+Vector uniform_sphere(double u1, double u2);
 Mesh* obj_reader(string filename);
 void clear_globals();
 bool is_light(GObject* obj);
-
+void gui(ImageArray& img);
 // global var declaration
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
@@ -112,6 +123,14 @@ double schlick_fresnel(double cos_angle, double n_1, double n_2)
     return R_theta;
 }
 
+Vector uniform_sphere(double u1, double u2)
+{
+    const double r = sqrt(1.0 - u1*u1);
+	const double phi = 2 * PI * u2;
+	Vector ray = Vector(cos(phi)*r, sin(phi)*r, u1);
+
+	return ray;
+}
 Vector uniform_hemisphere(double u1, double u2, Vector& n) {
 	const double r = sqrt(1.0 - u1*u1);
 	const double phi = 2 * PI * u2;
@@ -194,8 +213,22 @@ string get_write_time(string filename)
     return write_time_string.str();
 }
 
+
+static void glfw_error_callback(int error, const char* description)
+{
+    fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
+
+
 int main()
 {
+
+    int window_width = 800;
+    int window_height = 800;
+
+
+
+
     vector<GObject*> objects;
     vector<Light> lights;
     vector<GObject*> gLights; //GObjects that have emission.
@@ -214,9 +247,14 @@ int main()
 
     //Creation of CImg display buffer and window.
     ImageArray img(cam.H_RES, cam.V_RES);
-    CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
-    CImgDisplay display(display_image, "Oke's Path Tracer!");
+    //CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
+    //CImgDisplay display(display_image, "Oke's Path Tracer!");
+    //thread gui_thread(gui, img);
 
+    auto gui_future = async(launch::async, [=, &img]
+    {
+        gui(img);
+    });
     //creating filename....
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
@@ -260,18 +298,16 @@ int main()
         for(s=0;s<config.spp; s++)
         {
             cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
+
             double exponent = 1/4.0;
-            for (int y = 0; y < img.HEIGHT; ++y)
-            {
-                for (int x = 0; x < img.WIDTH; ++x)
-                {
-                    display_image(x,y,0) = pow(img.pixelMatrix[x][y].r, exponent);
-                    display_image(x,y,1) = pow(img.pixelMatrix[x][y].g, exponent);
-                    display_image(x,y,2) = pow(img.pixelMatrix[x][y].b, exponent);
-                }
-            }
-            display_image.display(display);
-            if (display.is_closed())
+            img.gammaCorrection(1.0/2.2);
+            img.normalise(1.0);
+            img.floatArrayUpdate();
+            cout << "Casting Done " << endl;
+            auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
+
+
+            if (gui_status == future_status::ready)
             {
 
                 looping = false;
@@ -304,8 +340,10 @@ int main()
         cout<< "Waiting for modification of scene.xml or close window to save" << endl;
         while(last_write_time == get_write_time("scene.xml"))
         {
-            if(display.is_closed())
+            auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
+            if (gui_status == future_status::ready)
             {
+                cout << "closed window" << endl;
                 looping = false;
                 break;
             }
@@ -323,14 +361,13 @@ int main()
         }else
         {
             //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
-            for (int y = 0; y < img.HEIGHT; ++y)
+            for (int i = 0; i < img.PIXEL_COUNT; ++i)
             {
-                for (int x = 0; x < img.WIDTH; ++x)
-                {
-                   img.pixelMatrix[x][y].r = img.pixelMatrix[x][y].r/s;
-                   img.pixelMatrix[x][y].g = img.pixelMatrix[x][y].g/s;
-                   img.pixelMatrix[x][y].b = img.pixelMatrix[x][y].b/s;
-                }
+                img.pixelMatrix[i] = img.pixelMatrix[i]/s;
+                /*
+                   img.pixelMatrix[i].r = img.pixelMatrix[i].r/s;
+                   img.pixelMatrix[i].g = img.pixelMatrix[i].g/s;
+                   img.pixelMatrix[i].b = img.pixelMatrix[i].b/s;*/
             }
             filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
         }
@@ -352,14 +389,13 @@ int main()
         img.normalise(img.MAX_VAL);
     }
 
-    draw(img, filename.str());
-    img.clearArray();//reset for luls;
-
+    img.clearArray();
     auto save_end = chrono::steady_clock::now();
     cout << "Image Save completed in: "<< setw(orw-7) <<(save_end - save_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
     cout << "----------------------------------------\n\n\n\n" << endl;
 
-    getch();
+
+    //getch();
     return 0;
 
     /* Animation codes
@@ -367,6 +403,184 @@ int main()
     filename << "render" << setfill('0') <<setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
       //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
     */
+}
+
+
+void gui(ImageArray& img)
+{
+     glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit())
+        return;
+
+
+    const char* glsl_version = "#version 150";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+
+    // Create window with graphics context
+    GLFWwindow* window = glfwCreateWindow(800, 800, "Path Tracer", NULL, NULL);
+    if (window == NULL)
+        return;
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+
+    glewExperimental = GL_TRUE;
+    bool err = glewInit() != GLEW_OK;
+    float vertices[] = {
+    //  Position      Color             Texcoords
+        -1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, // Top-left
+         1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // Top-right
+         1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, // Bottom-right
+        -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  // Bottom-left
+    };
+
+    GLuint elements[] = {
+    0, 1, 2,
+    2, 3, 0
+    };
+
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_FLOAT, img.float_array); //2nd param is level of detail, 0 is base img., 3rd is format, 4th and 5th is width/height of the image. 6th should always be a 0.
+    //the following parameters describe the format to be read in, i.e. r g b, and type.
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo); // Generate 1 buffer
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo); //select the buffer for data to be uploaded to
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // upload vertex data to buffer
+
+
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+    ///Loading shaders
+    /// Can compilse shaders from file or thorugh raw string literals
+
+    const char* vertexSource = R"glsl(
+        #version 150 core
+        in vec2 texcoord;
+        in vec3 color;
+        in vec2 position;
+
+        out vec3 Color;
+        out vec2 Texcoord;
+
+
+        void main()
+        {
+            Texcoord = texcoord;
+            Color = color;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    )glsl";
+
+    const char* fragmentSource = R"glsl(
+        /// fragment shader
+        ///output from vertex shader is interpolated over all pixels covered, fragement shader operators on this.
+        //this outputs the colour
+
+        #version 150 core
+        in vec3 Color;
+        in vec2 Texcoord;
+        out vec4 outColor;
+        uniform sampler2D tex;
+        void main()
+        {
+            outColor = texture(tex, Texcoord) * vec4(Color, 1.0);
+        }
+
+    )glsl";
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER); // create shader object
+    glShaderSource(vertexShader, 1, &vertexSource, NULL); //load glsl shader code into it
+    glCompileShader(vertexShader);
+
+    //Checking if shader compiles correctly
+    GLint status;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+    if (status == GL_TRUE){
+        cout <<"success" << endl;
+    }
+
+    //fragment shader compilation
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    glCompileShader(fragmentShader);
+
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
+    if (status == GL_TRUE){
+        cout <<"success" << endl;
+    }
+    //now to connect the two shaders by making a shader program.
+
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+
+    //the fragment shader can write to multiple framebuffers and typically you need to specify this, but in this case the default is 0.
+    //glBindFragDataLocation(shaderProgram, 0, "outColor");
+
+
+    //linking the program, can make changes to the shaderfs after being added to a program, but result does not change until program has been linked.
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    //color attribute
+    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE,
+                           7*sizeof(float), (void*)(2*sizeof(float)));
+
+    //retrieve ref to posisition input of vertex shader
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    //the input, no. vals (dimensionality of vec), component type, normalise -1/1 or 0/1, stride (no. bytes between posisitin), offset (how many bytes from the start, does the attribute occur)
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
+                           7*sizeof(float), 0);
+    glEnableVertexAttribArray(posAttrib);
+
+
+
+    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
+                           7*sizeof(float), (void*)(5*sizeof(float)));
+
+
+    // Main loop
+    while (!glfwWindowShouldClose(window))
+    {
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_FLOAT, img.flat_array);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        glfwPollEvents();
+        glfwSwapBuffers(window);
+    }
+
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    //ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
 
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights)
@@ -414,8 +628,8 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
 
                     Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
-
-                    img.pixelMatrix[x_index][y_index] = img.pixelMatrix[x_index][y_index] + c;
+                    //cout << img.pixelMatrix[0].r << endl;
+                    //img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
                 }
             }));
     }
@@ -517,6 +731,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
 
         //auto survive_prob = 0.90;
        // if (ha1->next() > survive_prob) break;
+        o = hit_point;
         if(hit.obj->brdf==2)
         {
             ignore_direct = false;
@@ -534,10 +749,33 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
         //mirror
         {
            new_ray_dir = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray);
+        }else if(hit.obj->brdf==3)
+        //constant density volume
+        {
+            double density =2;
+            double scatter_prob = ha1->next() + 0.2;
+            Hit volume_hit = intersect(hit_point+(d*0.0001), d, bvh); //we assume d is normalised
+            if(hit.obj == volume_hit.obj && volume_hit.n.dot(d) >0 ) // we are inside the obj, not a tangent.
+            {
+                o = hit_point+(scatter_prob*density*d);
+                if(volume_hit.t > scatter_prob*density) // We should scatter it.
+                {
+
+                    new_ray_dir = uniform_sphere(ha1->next(),ha2->next());
+                }
+                else
+                {
+                    new_ray_dir = d;
+                }
+            }
         }
         d= new_ray_dir;
-        o = hit_point;
+        //o = hit_point;
         weight = weight* hit.color*hit.n.dot(new_ray_dir)/(255.0);
+        if(weight.r <0)
+        {
+            weight= weight*-1; // to account for constant density volume doing back reflection
+        }
         depth+=1;
     }
 
@@ -746,7 +984,7 @@ void draw(ImageArray& img, string filename)
     {
         for (int x = 0; x < img.WIDTH; ++x)
         {
-            Color c = img.pixelMatrix[x][y];
+            Color c = img.pixelMatrix[img.index(x,y)];
             image[y][x] = png::rgb_pixel((int)c.r, (int)c.g,(int) c.b);
         }
     }

@@ -23,8 +23,10 @@ class ImageArray //A class that handles a 2D array of ints.
         const int MAX_VAL = 255;
         const int WIDTH;
         const int HEIGHT;
+        const int PIXEL_COUNT;
 
-        Color **pixelMatrix;
+        Color *pixelMatrix;
+
         ImageArray();
         ~ImageArray();
         ImageArray(int width, int height);
@@ -42,5 +44,8 @@ class ImageArray //A class that handles a 2D array of ints.
         double get_mean();
         Color get_median();
         void linear_scale(double m, double c);
+        float* float_array;
+        void floatArrayUpdate();
+        size_t index(int x, int y) const;
 };
 #endif
