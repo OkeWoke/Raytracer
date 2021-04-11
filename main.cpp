@@ -220,6 +220,53 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 
+static void ShowPlaceholderObject(const char* prefix, int uid)
+{
+    // Use object uid as identifier. Most commonly you could also use the object pointer as a base ID.
+    ImGui::PushID(uid);
+
+    // Text and Tree nodes are less high than framed widgets, using AlignTextToFramePadding() we add vertical spacing to make the tree lines equal high.
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
+    bool node_open = ImGui::TreeNode("Object", "%s_%u", prefix, uid);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::Text("my sailor is rich");
+
+    if (node_open)
+    {
+        static float placeholder_members[8] = { 0.0f, 0.0f, 1.0f, 3.1416f, 100.0f, 999.0f };
+        for (int i = 0; i < 8; i++)
+        {
+            ImGui::PushID(i); // Use field index as identifier.
+            if (i < 2)
+            {
+                ShowPlaceholderObject("Child", 424242);
+            }
+            else
+            {
+                // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
+                ImGui::TreeNodeEx("Field", flags, "Field_%d", i);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                if (i >= 5)
+                    ImGui::InputFloat("##value", &placeholder_members[i], 1.0f);
+                else
+                    ImGui::DragFloat("##value", &placeholder_members[i], 0.01f);
+                ImGui::NextColumn();
+            }
+            ImGui::PopID();
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
+}
+
 int main()
 {
 
@@ -299,11 +346,8 @@ int main()
         {
             cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
 
-            double exponent = 1/4.0;
-            img.gammaCorrection(1.0/2.2);
-            img.normalise(1.0);
+
             img.floatArrayUpdate();
-            cout << "Casting Done " << endl;
             auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
 
 
@@ -364,11 +408,8 @@ int main()
             for (int i = 0; i < img.PIXEL_COUNT; ++i)
             {
                 img.pixelMatrix[i] = img.pixelMatrix[i]/s;
-                /*
-                   img.pixelMatrix[i].r = img.pixelMatrix[i].r/s;
-                   img.pixelMatrix[i].g = img.pixelMatrix[i].g/s;
-                   img.pixelMatrix[i].b = img.pixelMatrix[i].b/s;*/
             }
+
             filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
         }
     }
@@ -388,7 +429,7 @@ int main()
         img.reinhardToneMap();
         img.normalise(img.MAX_VAL);
     }
-
+    draw(img, filename.str());
     img.clearArray();
     auto save_end = chrono::steady_clock::now();
     cout << "Image Save completed in: "<< setw(orw-7) <<(save_end - save_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
@@ -405,6 +446,18 @@ int main()
     */
 }
 
+static void HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
 
 void gui(ImageArray& img)
 {
@@ -563,21 +616,65 @@ void gui(ImageArray& img)
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
                            7*sizeof(float), (void*)(5*sizeof(float)));
 
+    //IMGUI stuff
+    //GLFWwindow* window2 = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+    //glfwMakeContextCurrent(window2);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
+
+
+    bool show_demo_window = true;
+    bool show_another_window = false;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+
+        //glfwMakeContextCurrent(window);
         //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_FLOAT, img.flat_array);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,800,800, GL_RGB, GL_FLOAT, img.float_array);
         glfwPollEvents();
+        //glfwMakeContextCurrent(window2);
+        static float f = 0.0f;
+        static int counter = 0;
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        ImGui::Checkbox("Another Window", &show_another_window);
+
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+
+        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::End();
+
+        ImGui::Render();
         glfwSwapBuffers(window);
+
     }
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
+
     ImGui_ImplGlfw_Shutdown();
-    //ImGui::DestroyContext();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -629,7 +726,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
 
                     Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
                     //cout << img.pixelMatrix[0].r << endl;
-                    //img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
+                    img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
                 }
             }));
     }

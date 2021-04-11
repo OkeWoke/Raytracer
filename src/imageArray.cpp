@@ -155,12 +155,13 @@ void ImageArray::iterate(std::function<void(int x, int y)> func)
 
 void ImageArray::floatArrayUpdate()
 {
+    double max_pixel_val = findMax();
     for (int i = 0; i < PIXEL_COUNT; i++)
     {
         int k = 3*i;
-        float_array[k] = (float)pixelMatrix[i].r;
-        float_array[k+1] = (float)pixelMatrix[i].g;
-        float_array[k+2] = (float)pixelMatrix[i].b;
+        float_array[k] = (float)pixelMatrix[i].r/max_pixel_val;
+        float_array[k+1] = (float)pixelMatrix[i].g/max_pixel_val;
+        float_array[k+2] = (float)pixelMatrix[i].b/max_pixel_val;
     }
 }
 
