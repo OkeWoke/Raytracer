@@ -2,7 +2,7 @@
 
 
 ![Example image of raytraced sphere](https://github.com/OkeWoke/Raytracer/blob/master/example_pathtrace2.png)
-![Example image of raytraced Mesh](https://github.com/OkeWoke/Raytracer/blob/master/example_pathtrace3.jpg)
+![Example image of raytraced Mesh](https://github.com/OkeWoke/Raytracer/blob/master/example_pathtrace3.png)
 
 This is a CPU based pathtracer I initially started over a couple days and have continued adding features and improving it as a learning project in commputer graphics.
 
