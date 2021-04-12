@@ -1,26 +1,23 @@
 #include "imageArray.h"
 #include <string>
 
-ImageArray::ImageArray():WIDTH(500),HEIGHT(500)
+ImageArray::ImageArray():WIDTH(500),HEIGHT(500), PIXEL_COUNT(500*500)
 {
 
 }
 
-ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height)
+ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height), PIXEL_COUNT(width*height)
 {
+    float_array = new float[3*PIXEL_COUNT];
     histogram = new int[MAX_VAL];
-    pixelMatrix = new Color*[WIDTH];
 
-    for(int i=0;i<WIDTH;i++)
+    pixelMatrix = new Color[PIXEL_COUNT]; // Temporary continous allocation of memory
+
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        pixelMatrix[i] = new Color[HEIGHT];
+        pixelMatrix[i] = Color();
     }
-
-    auto fInit = [this](int x, int y)
-    {
-        pixelMatrix[x][y] =Color();
-    };
-    iterate(fInit);
+    std::cout << pixelMatrix[0].r;
 }
 
 ImageArray::~ImageArray()
@@ -30,26 +27,20 @@ ImageArray::~ImageArray()
 
 void ImageArray::clearArray()//resets array to 0
 {
-    auto  fClear = [this](int x, int y)
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        Color* c = &pixelMatrix[x][y];
+        Color* c = &pixelMatrix[i];
         c->r = 0;
         c->g = 0;
         c->b = 0;
-    };
-
-    iterate(fClear);
+    }
 }
 
 void ImageArray::deleteArray()
 {
-    for(int i=0;i<WIDTH;i++)
-    {
-        delete [] pixelMatrix[i];
-    }
-
     delete [] pixelMatrix;
     delete [] histogram;
+    delete [] float_array;
 }
 
 Color ImageArray::get_median()
@@ -60,79 +51,69 @@ Color ImageArray::get_median()
 
 double ImageArray::get_mean()
 {
-    double mean=0;
-    auto fmean = [this, &mean](int x, int y)
+    Color temp;
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        mean = mean + pixelMatrix[x][y].luminance();
-    };
+        temp = temp + pixelMatrix[i];
+    }
 
-    iterate(fmean);
-    mean =mean/(WIDTH*HEIGHT);
-    return mean;
+    return (temp/PIXEL_COUNT).luminance();
 }
 
 double ImageArray::findMax()
 {
     double max_pixel_val = 0;
 
-    auto  fMax = [this, &max_pixel_val](int x, int y)
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        double t_max = std::max(std::max(pixelMatrix[x][y].r,pixelMatrix[x][y].g),pixelMatrix[x][y].b);
+        double t_max = std::max(std::max(pixelMatrix[i].r,pixelMatrix[i].g),pixelMatrix[i].b);
         if (t_max> max_pixel_val)
         {
             max_pixel_val = t_max;
         }
-     };
-
-    iterate(fMax);
+    }
 
     return max_pixel_val;
 }
 
 void ImageArray::linear_scale(double m, double c)
 {
-    auto  fscale = [this, &m, &c](int x, int y)
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        pixelMatrix[x][y] = pixelMatrix[x][y]*m + Color(c,c,c);
-    };
-    iterate(fscale);
+        pixelMatrix[i] = pixelMatrix[i]*m + Color(c,c,c);
+    }
 }
 
 void ImageArray::normalise(double max_val)
 {   //this function will scale all pixel values between 0 and max_val, loss of information/quality occurs.
     double max_pixel_val = findMax();
     std::cout << max_pixel_val << std::endl;
-    auto  norm = [this, &max_pixel_val, &max_val](int x, int y)
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        pixelMatrix[x][y] = ((max_val*pixelMatrix[x][y])/max_pixel_val);
-    };
-    iterate(norm);
+        pixelMatrix[i] = (max_val*(pixelMatrix[i])/max_pixel_val);
+    }
 }
 
 void ImageArray::gammaCorrection(double gamma)
 {
-    auto gam = [this, &gamma](int x, int y)
+    for(int i=0;i<PIXEL_COUNT;i++)
     {
-        pixelMatrix[x][y].r =  pow(pixelMatrix[x][y].r, gamma);
-        pixelMatrix[x][y].g =  pow(pixelMatrix[x][y].g, gamma);
-        pixelMatrix[x][y].b =  pow(pixelMatrix[x][y].b, gamma);
-    };
-    iterate(gam);
+        pixelMatrix[i].r =  pow(pixelMatrix[i].r, gamma);
+        pixelMatrix[i].g =  pow(pixelMatrix[i].g, gamma);
+        pixelMatrix[i].b =  pow(pixelMatrix[i].b, gamma);
+    }
 }
 
 double ImageArray::logAverage()
 //computes log average of the luminance of the image
 {
     double avg= 0;
-    for (int y = 0; y < HEIGHT; y++)
+    for (int i = 0; i < PIXEL_COUNT; i++)
     {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            avg = avg + log(1+pixelMatrix[x][y].luminance());
-        }
+        avg = avg + log(1+pixelMatrix[i].luminance());
     }
 
-    return exp(avg/(WIDTH*HEIGHT));
+    return exp(avg/(PIXEL_COUNT));
 }
 
 void ImageArray::reinhardToneMap()
@@ -140,30 +121,25 @@ void ImageArray::reinhardToneMap()
     double log_avg = logAverage();
     std::cout <<"Log_avg " << log_avg << std::endl;
     double a = 0.76;
-    for (int y = 0; y < HEIGHT; y++)
+    for (int i = 0; i < PIXEL_COUNT; i++)
     {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            double L_out = a*pixelMatrix[x][y].luminance()/log_avg;
-            L_out = L_out/(1+L_out);
-            pixelMatrix[x][y].r = pixelMatrix[x][y].r *MAX_VAL*L_out;
-            pixelMatrix[x][y].g = pixelMatrix[x][y].g *MAX_VAL*L_out;
-            pixelMatrix[x][y].b = pixelMatrix[x][y].b *MAX_VAL*L_out;
-        }
+        double L_out = a*pixelMatrix[i].luminance()/log_avg;
+        L_out = L_out/(1+L_out);
+        pixelMatrix[i].r = pixelMatrix[i].r *MAX_VAL*L_out;
+        pixelMatrix[i].g = pixelMatrix[i].g *MAX_VAL*L_out;
+        pixelMatrix[i].b = pixelMatrix[i].b *MAX_VAL*L_out;
     }
 }
 
 void ImageArray::clipTop()
 {
-
-    auto  clip = [this](int x, int y)
+    for (int i = 0; i < PIXEL_COUNT; i++)
     {
         int top_val = MAX_VAL;
-        if (pixelMatrix[x][y].r >top_val){pixelMatrix[x][y].r = top_val;}
-        if (pixelMatrix[x][y].g > top_val){pixelMatrix[x][y].g = top_val;}
-        if (pixelMatrix[x][y].b > top_val){pixelMatrix[x][y].b = top_val;}
-    };
-    iterate(clip);
+        if (pixelMatrix[i].r >top_val){pixelMatrix[i].r = top_val;}
+        if (pixelMatrix[i].g > top_val){pixelMatrix[i].g = top_val;}
+        if (pixelMatrix[i].b > top_val){pixelMatrix[i].b = top_val;}
+    }
 }
 
 void ImageArray::iterate(std::function<void(int x, int y)> func)
@@ -176,3 +152,22 @@ void ImageArray::iterate(std::function<void(int x, int y)> func)
         }
     }
 }
+
+void ImageArray::floatArrayUpdate()
+{
+    double max_pixel_val =  pow(findMax(), 1/2.2);
+    for (int i = 0; i < PIXEL_COUNT; i++)
+    {
+        int k = 3*i;
+        float_array[k] = (float)pow(pixelMatrix[i].r, 1/2.2)/max_pixel_val;
+        float_array[k+1] = (float)pow(pixelMatrix[i].g, 1/2.2)/max_pixel_val;
+        float_array[k+2] = (float)pow(pixelMatrix[i].b, 1/2.2)/max_pixel_val;
+    }
+}
+
+size_t ImageArray::index(int x, int y) const
+{
+    return x + WIDTH*y;
+}
+
+
