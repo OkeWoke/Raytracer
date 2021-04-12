@@ -31,23 +31,14 @@
 #include "GObjects/Plane.h"
 #include "GObjects/Triangle.h"
 #include "GObjects/Mesh.h"
-
 #include "ext/Markup.h"
-#include "ext/CImg.h"
-
-//sorry linux, i need these to figure out when the scene.xml file was last written to.
+#include "gui.h"
 
 #include <tchar.h>
 //#include <strsafe.h>
 
 #include <windows.h>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 
 #ifndef M_PI
@@ -55,7 +46,7 @@
 #endif
 
 using namespace std;
-using namespace cimg_library;
+
 
 struct Hit
 {
@@ -97,7 +88,7 @@ Vector uniform_sphere(double u1, double u2);
 Mesh* obj_reader(string filename);
 void clear_globals();
 bool is_light(GObject* obj);
-void gui(ImageArray& img);
+extern void gui(ImageArray& img);
 // global var declaration
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
@@ -213,60 +204,6 @@ string get_write_time(string filename)
     return write_time_string.str();
 }
 
-
-static void glfw_error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
-
-
-static void ShowPlaceholderObject(const char* prefix, int uid)
-{
-    // Use object uid as identifier. Most commonly you could also use the object pointer as a base ID.
-    ImGui::PushID(uid);
-
-    // Text and Tree nodes are less high than framed widgets, using AlignTextToFramePadding() we add vertical spacing to make the tree lines equal high.
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::AlignTextToFramePadding();
-    bool node_open = ImGui::TreeNode("Object", "%s_%u", prefix, uid);
-    ImGui::TableSetColumnIndex(1);
-    ImGui::Text("my sailor is rich");
-
-    if (node_open)
-    {
-        static float placeholder_members[8] = { 0.0f, 0.0f, 1.0f, 3.1416f, 100.0f, 999.0f };
-        for (int i = 0; i < 8; i++)
-        {
-            ImGui::PushID(i); // Use field index as identifier.
-            if (i < 2)
-            {
-                ShowPlaceholderObject("Child", 424242);
-            }
-            else
-            {
-                // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
-                ImGui::TreeNodeEx("Field", flags, "Field_%d", i);
-
-                ImGui::TableSetColumnIndex(1);
-                ImGui::SetNextItemWidth(-FLT_MIN);
-                if (i >= 5)
-                    ImGui::InputFloat("##value", &placeholder_members[i], 1.0f);
-                else
-                    ImGui::DragFloat("##value", &placeholder_members[i], 0.01f);
-                ImGui::NextColumn();
-            }
-            ImGui::PopID();
-        }
-        ImGui::TreePop();
-    }
-    ImGui::PopID();
-}
-
 int main()
 {
 
@@ -294,9 +231,7 @@ int main()
 
     //Creation of CImg display buffer and window.
     ImageArray img(cam.H_RES, cam.V_RES);
-    //CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
-    //CImgDisplay display(display_image, "Oke's Path Tracer!");
-    //thread gui_thread(gui, img);
+
 
     auto gui_future = async(launch::async, [=, &img]
     {
@@ -444,240 +379,6 @@ int main()
     filename << "render" << setfill('0') <<setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
       //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
     */
-}
-
-static void HelpMarker(const char* desc)
-{
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-}
-
-void gui(ImageArray& img)
-{
-     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return;
-
-
-    const char* glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
-
-    // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(800, 800, "Path Tracer", NULL, NULL);
-    if (window == NULL)
-        return;
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
-
-    glewExperimental = GL_TRUE;
-    bool err = glewInit() != GLEW_OK;
-    float vertices[] = {
-    //  Position      Color             Texcoords
-        -1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, // Top-left
-         1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // Top-right
-         1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, // Bottom-right
-        -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  // Bottom-left
-    };
-
-    GLuint elements[] = {
-    0, 1, 2,
-    2, 3, 0
-    };
-
-
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_FLOAT, img.float_array); //2nd param is level of detail, 0 is base img., 3rd is format, 4th and 5th is width/height of the image. 6th should always be a 0.
-    //the following parameters describe the format to be read in, i.e. r g b, and type.
-
-    GLuint vbo;
-    glGenBuffers(1, &vbo); // Generate 1 buffer
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo); //select the buffer for data to be uploaded to
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // upload vertex data to buffer
-
-
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
-    ///Loading shaders
-    /// Can compilse shaders from file or thorugh raw string literals
-
-    const char* vertexSource = R"glsl(
-        #version 150 core
-        in vec2 texcoord;
-        in vec3 color;
-        in vec2 position;
-
-        out vec3 Color;
-        out vec2 Texcoord;
-
-
-        void main()
-        {
-            Texcoord = texcoord;
-            Color = color;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )glsl";
-
-    const char* fragmentSource = R"glsl(
-        /// fragment shader
-        ///output from vertex shader is interpolated over all pixels covered, fragement shader operators on this.
-        //this outputs the colour
-
-        #version 150 core
-        in vec3 Color;
-        in vec2 Texcoord;
-        out vec4 outColor;
-        uniform sampler2D tex;
-        void main()
-        {
-            outColor = texture(tex, Texcoord) * vec4(Color, 1.0);
-        }
-
-    )glsl";
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER); // create shader object
-    glShaderSource(vertexShader, 1, &vertexSource, NULL); //load glsl shader code into it
-    glCompileShader(vertexShader);
-
-    //Checking if shader compiles correctly
-    GLint status;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_TRUE){
-        cout <<"success" << endl;
-    }
-
-    //fragment shader compilation
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
-
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-    if (status == GL_TRUE){
-        cout <<"success" << endl;
-    }
-    //now to connect the two shaders by making a shader program.
-
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-
-    //the fragment shader can write to multiple framebuffers and typically you need to specify this, but in this case the default is 0.
-    //glBindFragDataLocation(shaderProgram, 0, "outColor");
-
-
-    //linking the program, can make changes to the shaderfs after being added to a program, but result does not change until program has been linked.
-    glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
-
-    //color attribute
-    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-    glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE,
-                           7*sizeof(float), (void*)(2*sizeof(float)));
-
-    //retrieve ref to posisition input of vertex shader
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    //the input, no. vals (dimensionality of vec), component type, normalise -1/1 or 0/1, stride (no. bytes between posisitin), offset (how many bytes from the start, does the attribute occur)
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
-                           7*sizeof(float), 0);
-    glEnableVertexAttribArray(posAttrib);
-
-
-
-    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
-    glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
-                           7*sizeof(float), (void*)(5*sizeof(float)));
-
-    //IMGUI stuff
-    //GLFWwindow* window2 = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
-    //glfwMakeContextCurrent(window2);
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-
-
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    // Main loop
-    while (!glfwWindowShouldClose(window))
-    {
-
-        //glfwMakeContextCurrent(window);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_FLOAT, img.flat_array);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,800,800, GL_RGB, GL_FLOAT, img.float_array);
-        glfwPollEvents();
-        //glfwMakeContextCurrent(window2);
-        static float f = 0.0f;
-        static int counter = 0;
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::End();
-
-        ImGui::Render();
-        glfwSwapBuffers(window);
-
-    }
-
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
 }
 
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights)
