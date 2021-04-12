@@ -1,5 +1,6 @@
 # Path/Raytracer
 
+
 ![Example image of raytraced sphere](https://github.com/OkeWoke/Raytracer/blob/master/example_pathtrace2.png)
 ![Example image of raytraced Mesh](https://github.com/OkeWoke/Raytracer/blob/master/example_pathtrace3.jpg)
 
@@ -12,13 +13,14 @@ Supports sphere, plane primitives.
 
 A .obj file reader that can read triangular meshes.
 
-XML configuration for iamge processing, core count and scene description.
+XML configuration for iamge processing, core count, samples per pixel, max reflections and scene description.
 
-Uses some form of phong illumination for shading, ambient, diffuse, specular. (reflections but no refraction yet!)
+Uses some form of phong illumination for shading, ambient, diffuse, specular.
 Smooth shading is done for meshes using interpolation of vertex normals.
 Meshes can also be textured!
+Has direct illumination(Next Event Estimation) and indirect illumination via random sampling.
 
-Looping render display window, allowing for changes in the xml to be reflected asap.
+Looping render display window, allowing for changes in the xml to be reflected asap, display shows progress by the sample.
 
 Well distributed multithreading, each thread works on a pixel at a time, and works on the next available pixel when finished.
 
