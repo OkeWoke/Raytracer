@@ -13,6 +13,7 @@ class Color
         double b;
 
         static void deserialize(std::string sub, Color& color);
+        double luminance();
 };
 
 Color operator+(const Color& LHS, const Color& RHS);

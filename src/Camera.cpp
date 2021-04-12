@@ -18,6 +18,11 @@ void Camera::deserialize(std::string sub, Camera& cam)
     cam.V_RES = std::stoi(xml.GetAttrib("V_Res"));
 
     cam.N = std::stod(xml.GetAttrib("fl"));
+    cam.aperture = std::stod(xml.GetAttrib("aperture"));
+    cam.focus_dist = std::stod(xml.GetAttrib("focus_dist"));
+
+    //cam.H = cam.H*cam.fov*cam.N;
+    //cam.V = cam.V*cam.fov*cam.N;
     xml.IntoElem();
 
     xml.FindElem("position");
