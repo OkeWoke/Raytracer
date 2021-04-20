@@ -231,11 +231,11 @@ int main()
 
     //Creation of CImg display buffer and window.
     ImageArray img(cam.H_RES, cam.V_RES);
+    float gamma = 1.0f;
 
-
-    auto gui_future = async(launch::async, [=, &img]
+    auto gui_future = async(launch::async, [=, &img, &gamma]
     {
-        gui(img);
+        gui(img, gamma);
     });
     //creating filename....
     auto t = std::time(nullptr);
@@ -282,7 +282,7 @@ int main()
             cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
 
 
-            img.floatArrayUpdate();
+            img.floatArrayUpdate(gamma);
             auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
 
 
@@ -319,6 +319,7 @@ int main()
         cout<< "Waiting for modification of scene.xml or close window to save" << endl;
         while(last_write_time == get_write_time("scene.xml"))
         {
+            img.floatArrayUpdate(gamma);
             auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
             if (gui_status == future_status::ready)
             {

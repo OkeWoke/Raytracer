@@ -45,7 +45,7 @@ class ImageArray //A class that handles a 2D array of ints.
         Color get_median();
         void linear_scale(double m, double c);
         float* float_array;
-        void floatArrayUpdate();
+        void floatArrayUpdate(float& gamma);
         size_t index(int x, int y) const;
 };
 #endif

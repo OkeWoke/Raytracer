@@ -10,4 +10,4 @@
 
 static void glfw_error_callback(int error, const char* description);
 
-void gui(ImageArray& img);
+void gui(ImageArray& img, float& f);
