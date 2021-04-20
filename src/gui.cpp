@@ -1,4 +1,5 @@
 #include "gui.h"
+
 using namespace std;
 
 static void glfw_error_callback(int error, const char* description)
@@ -6,7 +7,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-void gui(ImageArray& img)
+void gui(ImageArray& img, float& f)
 {
      glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -117,6 +118,9 @@ void gui(ImageArray& img)
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
     if (status == GL_TRUE){
         cout <<"success" << endl;
+    }else
+    {
+        cout <<"Error compiling vertex Shader " << endl;
     }
 
     //fragment shader compilation
@@ -128,6 +132,9 @@ void gui(ImageArray& img)
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
     if (status == GL_TRUE){
         cout <<"success" << endl;
+    }else
+    {
+        cout <<"Error compiling fragment Shader " << endl;
     }
     //now to connect the two shaders by making a shader program.
 
@@ -175,9 +182,10 @@ void gui(ImageArray& img)
 
 
 
-    bool show_demo_window = true;
-    bool show_another_window = false;
+    bool show_window = true;
+
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -188,53 +196,34 @@ void gui(ImageArray& img)
         glfwPollEvents();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,800,800, GL_RGB, GL_FLOAT, img.float_array);
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-         if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+        if (ImGui::IsKeyDown(69)) show_window = !show_window;
+        if (show_window)
         {
-            static float f = 0.0f;
-            static int counter = 0;
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+            ImGui::Begin("Gamma!");                          // Create a window called "Hello, world!" and append into it.
 
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+            ImGui::SliderFloat("Gamma: ", &f, 1.0f, 5.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
             ImGui::End();
+
+            ImGui::Render();
+            int display_w, display_h;
+            glfwGetFramebufferSize(window, &display_w, &display_h);
+            glViewport(0, 0, display_w, display_h);
+            //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+            //glClear(GL_COLOR_BUFFER_BIT);
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
-
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        //glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
 
