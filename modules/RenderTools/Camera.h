@@ -1,10 +1,9 @@
+#pragma once
+
 #include "Vector.h"
-#include "ext/Markup.h"
+#include "Markup-w.h"
 #include "Matrix.h"
 #include <string>
-
-#ifndef CAMERA_H
-#define CAMERA_H
 
 class Camera
 {
@@ -20,4 +19,3 @@ class Camera
         void update_camera(Matrix& tmp);
 };
 
-#endif // CAMERA_H

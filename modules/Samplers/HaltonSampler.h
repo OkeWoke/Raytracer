@@ -1,6 +1,6 @@
+#pragma once
+
 #include "Sampler.h"
-#ifndef HALTONSAMPLER_H
-#define HALTONSAMPLER_H
 #include <cmath>
 
 class HaltonSampler : public Sampler
@@ -11,10 +11,6 @@ class HaltonSampler : public Sampler
         double next();
         double nextI(int index);
 
-
-
         int base;
         int index;
 };
-
-#endif // HALTONSAMPLER_H

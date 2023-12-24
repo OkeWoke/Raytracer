@@ -1,8 +1,7 @@
+#pragma once
 #include "Sampler.h"
-#ifndef RANDOMSAMPLER_H
-#define RANDOMSAMPLER_H
-
 #include <random>
+
 class RandomSampler : public Sampler
 {
     public:
@@ -16,5 +15,3 @@ class RandomSampler : public Sampler
         double min;
         double max;
 };
-
-#endif // RANDOMSAMPLER_H

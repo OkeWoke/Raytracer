@@ -14,8 +14,9 @@ add_library(GObjects
 target_include_directories(
     GObjects
     PUBLIC
-    ${CURRENT_CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(GObjects PRIVATE thirdparty-CMarkup Utility thirdparty-pngpp)
+target_link_libraries(GObjects PRIVATE thirdparty-CMarkup thirdparty-pngpp)
+target_link_libraries(GObjects PUBLIC Utility)
 

@@ -1,7 +1,8 @@
-#ifndef LIGHT_H
-#define LIGHT_H
+#pragma once
+
 #include "Vector.h"
 #include "Color.h"
+
 class Light
 {
     public:
@@ -13,5 +14,3 @@ class Light
 
         void deserialize(std::string strSubDoc);
 };
-
-#endif // LIGHT_H

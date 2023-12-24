@@ -4,8 +4,9 @@
 #include <ctime>
 #include <math.h>
 #include <string>
-#include <png.hpp>
-#include <conio.h>
+#include <pngpp-w.hpp>
+#include "CImg-w.h"
+
 #include <chrono>
 #include <iomanip>
 #include <ctime>
@@ -26,18 +27,13 @@
 #include "BoundVolumeHierarchy.h"
 #include "HaltonSampler.h"
 #include "RandomSampler.h"
-#include "GObjects/Sphere.h"
-#include "GObjects/GObject.h"
-#include "GObjects/Plane.h"
-#include "GObjects/Triangle.h"
-#include "GObjects/Mesh.h"
-#include "ext/Markup.h"
-#include "gui.h"
+#include "Sphere.h"
+#include "GObject.h"
+#include "Plane.h"
+#include "Triangle.h"
+#include "Mesh.h"
+#include "Markup-w.h"
 
-#include <tchar.h>
-//#include <strsafe.h>
-
-#include <windows.h>
 
 
 
@@ -88,7 +84,7 @@ Vector uniform_sphere(double u1, double u2);
 Mesh* obj_reader(string filename);
 void clear_globals();
 bool is_light(GObject* obj);
-extern void gui(ImageArray& img);
+
 // global var declaration
 uint64_t numPrimaryRays = 0;
 uint64_t numRayTrianglesTests = 0;
@@ -185,33 +181,10 @@ void clear_globals()
     numRayTrianglesIsect = 0;
 }
 
-string get_write_time(string filename)
-//returns a string of the last write time of a file
-{
-    char filename_char[filename.length()+1];
-    strcpy(filename_char, filename.c_str());
-
-    HANDLE hFile;
-    FILETIME ftCreate, ftAccess, ftWrite;
-    SYSTEMTIME stUTC, stLocal;
-    hFile = CreateFile(filename_char, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-    if(GetFileTime(hFile, &ftCreate, &ftAccess, &ftWrite)){}
-    FileTimeToSystemTime(&ftWrite, &stUTC);
-    SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
-    CloseHandle(hFile);
-    ostringstream write_time_string;
-    write_time_string << stLocal.wHour << stLocal.wMinute << stLocal.wSecond;
-    return write_time_string.str();
-}
-
 int main()
 {
-
     int window_width = 800;
     int window_height = 800;
-
-
-
 
     vector<GObject*> objects;
     vector<Light> lights;
@@ -225,18 +198,12 @@ int main()
     cout<<"Loading scene from scene.xml..." << endl;
     auto load_start = chrono::steady_clock::now();
     deserialize("scene.xml", lights, gLights, objects, cam, config);
-    string last_write_time = get_write_time("scene.xml");
+
     auto load_end = chrono::steady_clock::now();
     cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
 
-    //Creation of CImg display buffer and window.
     ImageArray img(cam.H_RES, cam.V_RES);
 
-
-    auto gui_future = async(launch::async, [=, &img]
-    {
-        gui(img);
-    });
     //creating filename....
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
@@ -245,111 +212,74 @@ int main()
 
     bool looping = true;
 
-    while(looping)
+    //Creation of BoundVolume Hierarchy
+    auto bvh_start = chrono::steady_clock::now();
+    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < objects.size(); k++)
     {
-
-        //Creation of BoundVolume Hierarchy
-        auto bvh_start = chrono::steady_clock::now();
-        BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
-        Vector center = Vector(0,0,0);
-        for(unsigned int k = 0; k < objects.size(); k++)
-        {
-            center  = center + objects[k]->position;
-        }
-
-        center = center / objects.size();
-        BoundVolumeHierarchy* bvh = new BoundVolumeHierarchy(scene_bv, center);
-
-        for (auto obj: objects)
-        {
-            bvh->insert_object(obj,0);
-        }
-        auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
-        auto bvh_end = chrono::steady_clock::now();
-        cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/chrono::milliseconds(1)<< " (ms)" << endl;
-
-
-        //Creation of samplers used for montecarlo integration.
-        Sampler* sampler1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
-        Sampler* sampler2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
-
-
-    /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
-        auto cast_start = chrono::steady_clock::now();
-        int s;
-        for(s=0;s<config.spp; s++)
-        {
-            cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
-
-
-            img.floatArrayUpdate();
-            auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
-
-
-            if (gui_status == future_status::ready)
-            {
-
-                looping = false;
-                break;
-            }
-        }
-
-        delete sampler1;
-        delete sampler2;
-        sampler1 = nullptr;
-        sampler2 = nullptr;
-
-        lights.clear();
-        for (auto p : objects)
-        {
-            delete p;
-            p = nullptr;
-        }
-        delete bvh;
-        bvh = nullptr;
-        objects.clear();
-        auto cast_end = chrono::steady_clock::now();
-
-        cout << "Casting completed in: "<< setw(orw) << (cast_end - cast_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-        cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
-        cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
-        cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
-        cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
-        cout << "----------------------------------------------------------\n\n\n\n"<<endl;
-        cout<< "Waiting for modification of scene.xml or close window to save" << endl;
-        while(last_write_time == get_write_time("scene.xml"))
-        {
-            auto gui_status = gui_future.wait_for(chrono::milliseconds(0));
-            if (gui_status == future_status::ready)
-            {
-                cout << "closed window" << endl;
-                looping = false;
-                break;
-            }
-        }
-        last_write_time = get_write_time("scene.xml");
-        if(looping)
-        {
-            img.clearArray();
-            cout<<"Loading scene from scene.xml..." << endl;
-            auto load_start = chrono::steady_clock::now();
-            deserialize("scene.xml", lights, gLights, objects, cam, config);
-
-            auto load_end = chrono::steady_clock::now();
-            cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
-        }else
-        {
-            //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
-            for (int i = 0; i < img.PIXEL_COUNT; ++i)
-            {
-                img.pixelMatrix[i] = img.pixelMatrix[i]/s;
-            }
-
-            filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
-        }
+        center  = center + objects[k]->position;
     }
 
-    ///// Draw/Save code
+    center = center / objects.size();
+    BoundVolumeHierarchy* bvh = new BoundVolumeHierarchy(scene_bv, center);
+
+    for (auto obj: objects)
+    {
+        bvh->insert_object(obj,0);
+    }
+    auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
+    auto bvh_end = chrono::steady_clock::now();
+    cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/chrono::milliseconds(1)<< " (ms)" << endl;
+
+    //Creation of samplers used for montecarlo integration.
+    Sampler* sampler1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
+    Sampler* sampler2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
+
+    /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
+    auto cast_start = chrono::steady_clock::now();
+    int s;
+    for(s=0;s<config.spp; s++)
+    {
+        cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
+        //CImg here
+        img.floatArrayUpdate();
+    }
+
+    delete sampler1;
+    delete sampler2;
+    sampler1 = nullptr;
+    sampler2 = nullptr;
+
+    lights.clear();
+    for (auto p : objects)
+    {
+        delete p;
+        p = nullptr;
+    }
+    delete bvh;
+    bvh = nullptr;
+    objects.clear();
+    auto cast_end = chrono::steady_clock::now();
+
+    cout << "Casting completed in: "<< setw(orw) << (cast_end - cast_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
+    cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
+    cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
+    cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
+    cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
+    cout << "----------------------------------------------------------\n\n\n\n"<<endl;
+    cout << "Waiting for modification of scene.xml or close window to save" << endl;
+
+    //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
+    for (int i = 0; i < img.PIXEL_COUNT; ++i)
+    {
+        img.pixelMatrix[i] = img.pixelMatrix[i]/s;
+    }
+
+    filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
+
+
+    // Draw/Save code
     auto save_start = chrono::steady_clock::now();
     if(config.stretch == "norm")
     {

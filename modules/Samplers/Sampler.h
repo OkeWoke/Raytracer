@@ -1,6 +1,4 @@
-#ifndef SAMPLER_H
-#define SAMPLER_H
-
+#pragma once
 
 class Sampler
 {
@@ -9,5 +7,3 @@ class Sampler
         virtual double next() = 0;
         virtual double nextI(int index) = 0;
 };
-
-#endif // SAMPLER_H

@@ -1,14 +1,13 @@
+#pragma once
 
-
-#ifndef IMAGE_ARRAY
-#define IMAGE_ARRAY
 #include <string>
 #include <ctime>
 #include <cmath>
-#include "Color.h"
-#include<iostream>
+#include <iostream>
+#include <functional>
 
-#include<functional>
+#include "Color.h"
+
 class ImageArray //A class that handles a 2D array of ints.
 {
     private:
@@ -48,4 +47,3 @@ class ImageArray //A class that handles a 2D array of ints.
         void floatArrayUpdate();
         size_t index(int x, int y) const;
 };
-#endif

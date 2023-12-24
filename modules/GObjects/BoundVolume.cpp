@@ -173,5 +173,5 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
 Vector BoundVolume::get_random_point(double val, double val2)
 {
-
+    return Vector(0,0,0);
 }
