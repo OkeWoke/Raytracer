@@ -4,6 +4,7 @@ include(FetchContent)
 FetchContent_Declare(
     pngpp
     URL https://download.savannah.nongnu.org/releases/pngpp/png++-0.2.9.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
 )
 FetchContent_GetProperties(pngpp)
 if(NOT pngpp_POPULATED)

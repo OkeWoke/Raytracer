@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 
-add_library(thirdparty-CMarkup thirdparty/Markup.cpp)
+include(FetchContent)
+FetchContent_Declare(
+        cmarkup
+        URL https://www.firstobject.com/Markup115.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+)
+FetchContent_MakeAvailable(cmarkup)
+
+add_library(thirdparty-CMarkup ${cmarkup_SOURCE_DIR}/Markup.cpp)
 
 target_include_directories(
     thirdparty-CMarkup
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty
+    PUBLIC
+     ${cmarkup_SOURCE_DIR}
 )
 
 target_include_directories(
