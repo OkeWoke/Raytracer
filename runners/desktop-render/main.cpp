@@ -197,7 +197,10 @@ int main()
     //initial call to deserialize just so I can define ImageArray...
     cout<<"Loading scene from scene.xml..." << endl;
     auto load_start = chrono::steady_clock::now();
-    deserialize("scene.xml", lights, gLights, objects, cam, config);
+    std::string rootPath = RootPath;
+    std::string renderDest = rootPath + "/renders/";
+
+    deserialize(rootPath + "/data/scenes/scene.xml", lights, gLights, objects, cam, config);
 
     auto load_end = chrono::steady_clock::now();
     cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
@@ -208,7 +211,7 @@ int main()
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     ostringstream filename;
-    filename << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    filename << renderDest << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 
     bool looping = true;
 
@@ -717,7 +720,7 @@ void draw(ImageArray& img, string filename)
         }
     }
 
-    image.write("renders/"+filename);
+    image.write(filename);
 }
 
 void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config)
