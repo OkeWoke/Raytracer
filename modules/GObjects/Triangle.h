@@ -4,7 +4,7 @@
 #include <string>
 #include <math.h>
 
-#include "libpng-w.h"
+#include "pngpp-w.hpp"
 #include "GObject.h"
 #include "Utility.h"
 

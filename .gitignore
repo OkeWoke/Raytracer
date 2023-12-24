@@ -3,4 +3,6 @@ thirdparty/CMarkup/thirdparty/Markup.cpp
 cmake-build/
 .vscode/
 build/
-cmake-debug-build/
+cmake-build-debug/
+.DS_Store
+.idea/

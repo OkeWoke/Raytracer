@@ -5,7 +5,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "png-w.hpp"
+#include "pngpp-w.hpp"
 #include "Matrix.h"
 #include "Sphere.h"
 #include "Utility.h"

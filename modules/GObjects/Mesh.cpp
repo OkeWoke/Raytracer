@@ -186,7 +186,7 @@ void Mesh::obj_reader(std::string filename)
                 triangles.push_back(tri);
             }
 
-        }catch(out_of_range)
+        }catch(std::out_of_range)
         {
             std::cout << "Error reading .obj file!" << std::endl;
             return;

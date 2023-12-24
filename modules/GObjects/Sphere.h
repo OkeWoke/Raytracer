@@ -4,8 +4,7 @@
 #include <iostream>
 
 #include "GObject.h"
-#include "Markup.h"
-#include "BoundVolume.h"
+
 
 class Sphere: public GObject
 {
@@ -19,6 +18,4 @@ class Sphere: public GObject
         void deserialize(std::string strSubDoc);
         double radius;
         Vector get_random_point(double val1, double val2);
-    //private:
-
 };

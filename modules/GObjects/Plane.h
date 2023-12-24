@@ -1,8 +1,7 @@
 #pragma once
 
-#include <String>
+#include <string>
 
-#include "BoundVolume.h"
 #include "Matrix.h"
 #include "GObject.h"
 #include "Markup-w.h"

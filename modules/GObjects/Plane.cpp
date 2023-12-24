@@ -1,5 +1,6 @@
 #include "Plane.h"
 #include <iostream>
+#include "BoundVolume.h"
 
 Plane::Plane(): GObject()
 {
