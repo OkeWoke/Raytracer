@@ -1,4 +1,6 @@
-thirdparty/CMarkup/Markup.h
-thirdparty/CMarkup/Markup.cpp
+thirdparty/CMarkup/thirdparty/Markup.h
+thirdparty/CMarkup/thirdparty/Markup.cpp
 cmake-build/
 .vscode/
+build/
+cmake-debug-build/
