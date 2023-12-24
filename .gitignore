@@ -1,11 +1,4 @@
-bin/*
-obj/*
-RayTracer.cbp
-RayTracer.depend
-RayTracer.layout
-*.dll
-renders/*
-ffmpeg.exe
-include/ext/Markup.h
-src/ext/Markup.cpp
-include/ext/CImg.h
+thirdparty/CMarkup/Markup.h
+thirdparty/CMarkup/Markup.cpp
+cmake-build/
+.vscode/
