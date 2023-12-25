@@ -206,7 +206,8 @@ int main()
     cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
 
     ImageArray img(cam.H_RES, cam.V_RES);
-
+    cimg_library::CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
+    cimg_library::CImgDisplay display(display_image, "Oke's Path Tracer!");
     //creating filename....
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
@@ -242,10 +243,25 @@ int main()
     /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
     auto cast_start = chrono::steady_clock::now();
     int s;
+    double exponent = 1/4.0;
     for(s=0;s<config.spp; s++)
     {
         cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
-        //CImg here
+        for (int i = 0; i < img.HEIGHT * img.WIDTH; ++i)
+        {
+            int x = i % img.WIDTH;
+            int y = i / img.WIDTH;
+            display_image(x,y,0) = pow(img.pixelMatrix[i].r, exponent); // TODO: Verify this.
+            display_image(x,y,1) = pow(img.pixelMatrix[i].g, exponent);
+            display_image(x,y,2) = pow(img.pixelMatrix[i].b, exponent);
+
+        }
+        display_image.display(display);
+        if (display.is_closed())
+        {
+            looping = false;
+            break;
+        }
         img.floatArrayUpdate();
     }
 
