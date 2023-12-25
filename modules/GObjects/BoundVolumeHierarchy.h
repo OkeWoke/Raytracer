@@ -1,0 +1,36 @@
+#pragma once
+
+#include <vector>
+#include <queue>
+#include <functional>
+
+#include "Triangle.h"
+#include "BoundVolume.h"
+#include "GObject.h"
+#include "Sphere.h"
+
+class BoundVolumeHierarchy
+{
+    public:
+        BoundVolumeHierarchy();
+        BoundVolumeHierarchy(GObject* bv,  Vector center);
+        BoundVolumeHierarchy(Vector& diameter, Vector& center);
+        virtual ~BoundVolumeHierarchy();
+
+        BoundVolumeHierarchy* children[8];
+        std::vector<GObject*> objects;
+
+        BoundVolume* bv = nullptr;
+
+        void insert_object(GObject* tri, int depth);
+        BoundVolume* build_BVH();
+        GObject::intersection intersect(const Vector& src, const Vector& d, int depth);
+        GObject::intersection bv_intersect(const Vector& src, const Vector& d);
+        GObject::intersection priority_intersect(const Vector& src, const Vector& d, int depth);
+        Vector center;
+        Vector diameter;
+
+    private:
+        int MAX_DEPTH= 15;
+        bool is_leaf = true;
+};
