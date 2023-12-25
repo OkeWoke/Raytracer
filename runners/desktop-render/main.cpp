@@ -34,15 +34,9 @@
 #include "Mesh.h"
 #include "Markup-w.h"
 
-
-
-
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
-
-using namespace std;
-
 
 struct Hit
 {
@@ -65,23 +59,23 @@ struct Config
     int threads_to_use;
     int max_reflections;
     int spp;
-    string stretch;
+    std::string stretch;
 };
 
 // function prototypes
-void draw(ImageArray& img, string filename);
+void draw(ImageArray& img, std::string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
-Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights);
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const std::vector<GObject*>& objects, const std::vector<Light>& lights);
 void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config);
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights);
+void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config);
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const std::vector<GObject*>& objects, const std::vector<Light>& lights, const std::vector<GObject*>& gLights);
 double double_rand(const double & min, const double & max);
-Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights);
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const std::vector<GObject*>& objects, const std::vector<GObject*>& gLights);
 Vector uniform_hemisphere(double u1, double u2, Vector& n);
 Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
 void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
 Vector uniform_sphere(double u1, double u2);
-Mesh* obj_reader(string filename);
+Mesh* obj_reader(std::string filename);
 void clear_globals();
 bool is_light(GObject* obj);
 
@@ -186,24 +180,24 @@ int main()
     int window_width = 800;
     int window_height = 800;
 
-    vector<GObject*> objects;
-    vector<Light> lights;
-    vector<GObject*> gLights; //GObjects that have emission.
+    std::vector<GObject*> objects;
+    std::vector<Light> lights;
+    std::vector<GObject*> gLights; //GObjects that have emission.
 
     Camera cam;
     Config config;
     int orw = 20;
 
     //initial call to deserialize just so I can define ImageArray...
-    cout<<"Loading scene from scene.xml..." << endl;
-    auto load_start = chrono::steady_clock::now();
+    std::cout<<"Loading scene from scene.xml..." << std::endl;
+    auto load_start = std::chrono::steady_clock::now();
     std::string rootPath = RootPath;
     std::string renderDest = rootPath + "/renders/";
 
     deserialize(rootPath + "/data/scenes/scene.xml", lights, gLights, objects, cam, config);
 
-    auto load_end = chrono::steady_clock::now();
-    cout<<"Loading completed in: " << (load_end-load_start)/chrono::milliseconds(1)<< " (ms)" << endl;
+    auto load_end = std::chrono::steady_clock::now();
+    std::cout<<"Loading completed in: " << (load_end-load_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 
     ImageArray img(cam.H_RES, cam.V_RES);
     cimg_library::CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
@@ -211,13 +205,13 @@ int main()
     //creating filename....
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
-    ostringstream filename;
+    std::ostringstream filename;
     filename << renderDest << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 
     bool looping = true;
 
     //Creation of BoundVolume Hierarchy
-    auto bvh_start = chrono::steady_clock::now();
+    auto bvh_start = std::chrono::steady_clock::now();
     BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
     Vector center = Vector(0,0,0);
     for(unsigned int k = 0; k < objects.size(); k++)
@@ -233,15 +227,15 @@ int main()
         bvh->insert_object(obj,0);
     }
     auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
-    auto bvh_end = chrono::steady_clock::now();
-    cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/chrono::milliseconds(1)<< " (ms)" << endl;
+    auto bvh_end = std::chrono::steady_clock::now();
+    std::cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 
     //Creation of samplers used for montecarlo integration.
     Sampler* sampler1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
     Sampler* sampler2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
 
     /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
-    auto cast_start = chrono::steady_clock::now();
+    auto cast_start = std::chrono::steady_clock::now();
     int s;
     double exponent = 1/4.0;
     for(s=0;s<config.spp; s++)
@@ -279,15 +273,15 @@ int main()
     delete bvh;
     bvh = nullptr;
     objects.clear();
-    auto cast_end = chrono::steady_clock::now();
+    auto cast_end = std::chrono::steady_clock::now();
 
-    cout << "Casting completed in: "<< setw(orw) << (cast_end - cast_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-    cout << "Number of primary rays: " << setw(orw+1) << numPrimaryRays << endl;
-    cout << "Number of Triangle Tests: " << setw(orw) << numRayTrianglesTests << endl;
-    cout << "Number of Triangle Intersections: " <<setw(orw-11) << numRayTrianglesIsect << endl;
-    cout << "Percentage of sucesful triangle tests: " << setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << endl;
-    cout << "----------------------------------------------------------\n\n\n\n"<<endl;
-    cout << "Waiting for modification of scene.xml or close window to save" << endl;
+    std::cout << "Casting completed in: "<< std::setw(orw) << (cast_end - cast_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
+    std::cout << "Number of primary rays: " << std::setw(orw+1) << numPrimaryRays << std::endl;
+    std::cout << "Number of Triangle Tests: " << std::setw(orw) << numRayTrianglesTests << std::endl;
+    std::cout << "Number of Triangle Intersections: " <<std::setw(orw-11) << numRayTrianglesIsect << std::endl;
+    std::cout << "Percentage of sucesful triangle tests: " << std::setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << std::endl;
+    std::cout << "----------------------------------------------------------\n\n\n\n"<<std::endl;
+    std::cout << "Waiting for modification of scene.xml or close window to save" << std::endl;
 
     //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
     for (int i = 0; i < img.PIXEL_COUNT; ++i)
@@ -295,11 +289,11 @@ int main()
         img.pixelMatrix[i] = img.pixelMatrix[i]/s;
     }
 
-    filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/chrono::seconds(1)<<".png";
+    filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/std::chrono::seconds(1)<<".png";
 
 
     // Draw/Save code
-    auto save_start = chrono::steady_clock::now();
+    auto save_start = std::chrono::steady_clock::now();
     if(config.stretch == "norm")
     {
         img.normalise(img.MAX_VAL);
@@ -315,32 +309,32 @@ int main()
     }
     draw(img, filename.str());
     img.clearArray();
-    auto save_end = chrono::steady_clock::now();
-    cout << "Image Save completed in: "<< setw(orw-7) <<(save_end - save_start)/chrono::milliseconds(1)<< " (ms)"<<endl;
-    cout << "----------------------------------------\n\n\n\n" << endl;
+    auto save_end = std::chrono::steady_clock::now();
+    std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
+    std::cout << "----------------------------------------\n\n\n\n" << std::endl;
 
 
     //getch();
     return 0;
 
     /* Animation codes
-    ostringstream filename;
-    filename << "render" << setfill('0') <<setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
+    std::ostringstream filename;
+    filename << "render" << setfill('0') <<std::setw(3)<< i << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<".png";
       //system("D:\Programming\Raytracer\ffmpeg -f image2 -framerate 24 -i D:\Programming\Raytracer\renders\test%03d.png -pix_fmt yuv420p -b:v 0 -crf 30 -s 1000x1000 render2.webm");
     */
 }
 
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const vector<GObject*>& objects, const vector<Light>& lights, const vector<GObject*>& gLights)
+void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const std::vector<GObject*>& objects, const std::vector<Light>& lights, const std::vector<GObject*>& gLights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
     int cores_to_use = config.threads_to_use;//global
-    volatile atomic<size_t> pixel_count(0);
-    vector<future<void>> future_vector;
+    volatile std::atomic<size_t> pixel_count(0);
+    std::vector<std::future<void>> future_vector;
 
     for (int i = 0; i<cores_to_use; i++ )
     {
         future_vector.emplace_back(
-            async(launch::async, [=,&cam, &img, &pixel_count]()
+            async(std::launch::async, [=,&cam, &img, &pixel_count]()
             {
                 while(true)
                 {
@@ -375,7 +369,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                     ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
 
                     Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
-                    //cout << img.pixelMatrix[0].r << endl;
+                    //std::cout << img.pixelMatrix[0].r << std::endl;
                     img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
                 }
             }));
@@ -413,7 +407,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
 }
 
 
-Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const vector<GObject*>& objects, const vector<GObject*>& gLights)
+Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const std::vector<GObject*>& objects, const std::vector<GObject*>& gLights)
 {
     Vector o = origin; //copy
     Vector d = ray_dir; //copy
@@ -559,7 +553,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
                 break;*/
 }
 
-Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const vector<GObject*>& objects, const vector<Light>& lights)
+Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const std::vector<GObject*>& objects, const std::vector<Light>& lights)
 {
     Color c = Color(0, 0, 0);
 
@@ -601,7 +595,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         if(diffuse_relfec_hit.t != -1 && diffuse_relfec_hit.n.dot(transformed_dir)< 0)//Inbound ray hits correct face (outbound normal vector)
         {
             Color diffuse_reflec_color = shade(diffuse_relfec_hit,reflection_count+1, ha1, ha2, bvh, config, objects, lights);
-            double divisor =max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
+            double divisor =std::max(1.0,diffuse_relfec_hit.t*diffuse_relfec_hit.t);
             c = c + diffuse_reflec_color*hit.color/(divisor*255);//idk where 0.1 comes from.cos_t*
         }
 
@@ -629,7 +623,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
                     if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
                         //diffuse
-                        double divisor = max(1.0, shadow.t*shadow.t);
+                        double divisor = std::max(1.0, shadow.t*shadow.t);
                         c = c + hit.color *cosine_term* objects[i]->emission * s.dot(n)/(divisor * 255 * 255); // lights[i].color
 
                         if(hit.obj->brdf == 1)
@@ -723,7 +717,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
     return c;
 }
 
-void draw(ImageArray& img, string filename)
+void draw(ImageArray& img, std::string filename)
 {
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
@@ -739,7 +733,7 @@ void draw(ImageArray& img, string filename)
     image.write(filename);
 }
 
-void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLights, vector<GObject*>& objects, Camera& cam, Config& config)
+void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
@@ -757,7 +751,7 @@ void deserialize(string filename, vector<Light>& lights, vector<GObject*>& gLigh
 
     while(xml.FindElem())
     {
-        string element = xml.GetTagName();
+        std::string element = xml.GetTagName();
         if(element == "Sphere")
         {
             Sphere* sp = new Sphere();
