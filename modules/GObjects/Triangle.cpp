@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Triangle.h"
+#include <atomic>
 
 Triangle::Triangle(): GObject()//constructor no longer supported
 {
@@ -26,7 +27,7 @@ vn3(vn3)
 
 GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
 {
-    __sync_fetch_and_add(&numRayTrianglesTests, 1);
+    numRayTrianglesTests.fetch_add(1); // __sync_fetch_and_add(&numRayTrianglesTests, 1);
     intersection inter = intersection();
     double d_dot_n = d.dot(n);
 
@@ -42,8 +43,8 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
         if ((bary_u>=0 && bary_v>=0 && c>=0) || (bary_u<0 && bary_v <0&& c < 0))
         {
             //intersection within triangle
-            __sync_fetch_and_add(&numRayTrianglesIsect, 1);
-
+            //__sync_fetch_and_add(&numRayTrianglesIsect, 1);
+            numRayTrianglesIsect.fetch_add(1);
             bary_u/=area;
             bary_v/=area;
             double bary_w = 1 - bary_u - bary_v;

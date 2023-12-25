@@ -81,8 +81,8 @@ bool is_light(GObject* obj);
 
 // global var declaration
 uint64_t numPrimaryRays = 0;
-uint64_t numRayTrianglesTests = 0;
-uint64_t numRayTrianglesIsect = 0;
+extern std::atomic<uint64_t> numRayTrianglesTests(0);
+extern std::atomic<uint64_t> numRayTrianglesIsect(0);
 
 Vector snells_law(const Vector& incident_ray, const Vector& normal, double cos_angle, double n_1, double n_2)
 //assume the two rays are normalised, thus dot product returns the cosine of them.
@@ -171,8 +171,8 @@ void clear_globals()
 {
 
     numPrimaryRays = 0;
-    numRayTrianglesTests = 0;
-    numRayTrianglesIsect = 0;
+    numRayTrianglesTests.store(0);
+    numRayTrianglesIsect.store(0);
 }
 
 int main()
@@ -277,9 +277,9 @@ int main()
 
     std::cout << "Casting completed in: "<< std::setw(orw) << (cast_end - cast_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "Number of primary rays: " << std::setw(orw+1) << numPrimaryRays << std::endl;
-    std::cout << "Number of Triangle Tests: " << std::setw(orw) << numRayTrianglesTests << std::endl;
-    std::cout << "Number of Triangle Intersections: " <<std::setw(orw-11) << numRayTrianglesIsect << std::endl;
-    std::cout << "Percentage of sucesful triangle tests: " << std::setw(orw-12) << 100*(float) numRayTrianglesIsect/numRayTrianglesTests<< "%" << std::endl;
+    std::cout << "Number of Triangle Tests: " << std::setw(orw) << numRayTrianglesTests.load() << std::endl;
+    std::cout << "Number of Triangle Intersections: " <<std::setw(orw-11) << numRayTrianglesIsect.load() << std::endl;
+    std::cout << "Percentage of sucesful triangle tests: " << std::setw(orw-12) << 100*(float) numRayTrianglesIsect.load()/numRayTrianglesTests.load()<< "%" << std::endl;
     std::cout << "----------------------------------------------------------\n\n\n\n"<<std::endl;
     std::cout << "Waiting for modification of scene.xml or close window to save" << std::endl;
 

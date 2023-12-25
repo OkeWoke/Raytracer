@@ -1,11 +1,12 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
+#include <atomic>
 
 #pragma once
 
-extern uint64_t numRayTrianglesTests;
-extern uint64_t numRayTrianglesIsect;
+extern std::atomic<uint64_t> numRayTrianglesTests;
+extern std::atomic<uint64_t> numRayTrianglesIsect;
 extern uint64_t numPrimaryRays;
 
 class Utility

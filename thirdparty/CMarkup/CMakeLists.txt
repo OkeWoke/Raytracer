@@ -9,7 +9,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cmarkup)
 
 add_library(thirdparty-CMarkup ${cmarkup_SOURCE_DIR}/Markup.cpp)
-
+#set_source_files_properties(${cmarkup_SOURCE_DIR}/Markup.cpp PROPERTIES COMPILE_FLAGS /Y-)
 target_include_directories(
     thirdparty-CMarkup
     PUBLIC
@@ -24,9 +24,11 @@ target_include_directories(
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(thirdparty-CMarkup PRIVATE "-Wno-deprecated-declarations")
+    find_package(Iconv REQUIRED)
+    target_link_libraries(thirdparty-CMarkup PRIVATE Iconv::Iconv)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_definitions(thirdparty-CMarkup PRIVATE MARKUP_STL MARKUP_WINCONV)
     target_compile_options(thirdparty-CMarkup PRIVATE "/wd4996")
 endif()
 
-find_package(Iconv REQUIRED)
-target_link_libraries(thirdparty-CMarkup PRIVATE Iconv::Iconv)
+

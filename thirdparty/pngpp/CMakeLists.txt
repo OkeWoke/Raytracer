@@ -18,3 +18,6 @@ add_library(thirdparty-pngpp INTERFACE)
 target_include_directories(thirdparty-pngpp INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${pngpp_SOURCE_DIR} )
 target_link_libraries(thirdparty-pngpp INTERFACE thirdparty-libpng)
 
+if(MSVC)
+target_compile_definitions(thirdparty-pngpp INTERFACE __STDC_LIB_EXT1__)
+endif()
