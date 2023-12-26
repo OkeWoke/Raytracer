@@ -1,6 +1,6 @@
 <Config threads="23" max_reflections="8" samplesPP="10" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="50" aperture="1" focus_dist="200.5">
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="50" aperture="0.01" focus_dist="200.5">
     <position x="0" y="-1" z="200"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
@@ -9,17 +9,15 @@
 </Camera>
 
 
-<!--<Mesh filename="andypants-nurse.obj" shininess="100" reflectivity="0.1" brdf="0">-->
-<!--    <position x="0" y="-4" z="0"/>-->
-<!--    <x_rot angle="0"/> &lt;!&ndash; Tilt  + is down, - is up &ndash;&gt;-->
-
-<!--    <y_rot angle="0"/> &lt;!&ndash; pan &ndash;&gt;-->
-<!--    <z_rot angle="0"/> &lt;!&ndash; roll &ndash;&gt;-->
-<!--    <scale factor=".7"/> &lt;!&ndash; This scales the model up by factor &ndash;&gt;-->
-<!--    <color r="200" g="5" b="5"/>-->
-<!--    <texture filename ="space.png"/>-->
-<!--   -->
-<!--</Mesh>-->
+<Mesh filename="torus-2.obj" shininess="100" reflectivity="0.1" brdf="0">
+    <position x="0" y="-4" z="0"/>
+    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="0"/>  <!-- pan -->
+    <z_rot angle="0"/> <!-- roll -->
+    <scale factor=".7"/> <!-- This scales the model up by factor -->
+    <color r="200" g="5" b="5"/>
+    <texture filename ="space.png"/>
+</Mesh>
 
 
 <Sphere radius = "1.5" shininess = "22" reflectivity = "0" brdf="0">

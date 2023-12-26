@@ -7,8 +7,6 @@
 
 #include "Vector.h"
 
-#define PI 3.14159265
-
 //4x4 matrix containing doubles, used for affine transformations.
 class Matrix
 {

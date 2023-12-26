@@ -66,16 +66,9 @@ struct Config
 void draw(ImageArray& img, std::string filename);
 Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh);
 Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const std::vector<GObject*>& objects, const std::vector<Light>& lights);
-void cast_rays(const Camera& cam, const ImageArray& img, int row_start, int row_end);
 void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config);
 void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const std::vector<GObject*>& objects, const std::vector<Light>& lights, const std::vector<GObject*>& gLights);
-double double_rand(const double & min, const double & max);
 Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const std::vector<GObject*>& objects, const std::vector<GObject*>& gLights);
-Vector uniform_hemisphere(double u1, double u2, Vector& n);
-Vector cosine_weighted_hemisphere(double u1, double u2, Vector& n);
-void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);
-Vector uniform_sphere(double u1, double u2);
-Mesh* obj_reader(std::string filename);
 void clear_globals();
 bool is_light(GObject* obj);
 
@@ -84,79 +77,7 @@ uint64_t numPrimaryRays = 0;
 extern std::atomic<uint64_t> numRayTrianglesTests(0);
 extern std::atomic<uint64_t> numRayTrianglesIsect(0);
 
-Vector snells_law(const Vector& incident_ray, const Vector& normal, double cos_angle, double n_1, double n_2)
-//assume the two rays are normalised, thus dot product returns the cosine of them.
-//takes cos_angle to avoid doing a redundant dot product.
-{
-    Vector ray_hor = incident_ray - cos_angle*normal;
-    double sin_theta_2 = ray_hor.abs()*n_1/n_2;
-    Vector refr_ray = normalise(-1*normal + normalise(ray_hor)*sin_theta_2);
-    return refr_ray;
-}
 
-double schlick_fresnel(double cos_angle, double n_1, double n_2)
-//returns probabibility of reflection based on angle relative to normal. (0 to 90 degrees)
-{
-    double R_0 = (n_1-n_2)/(n_1+ n_2);
-    R_0 = R_0 * R_0;
-
-    double R_theta = R_0 + (1 - R_0)*pow((1-cos_angle),5);
-    return R_theta;
-}
-
-Vector uniform_sphere(double u1, double u2)
-{
-    const double r = sqrt(1.0 - u1*u1);
-	const double phi = 2 * PI * u2;
-	Vector ray = Vector(cos(phi)*r, sin(phi)*r, u1);
-
-	return ray;
-}
-Vector uniform_hemisphere(double u1, double u2, Vector& n) {
-	const double r = sqrt(1.0 - u1*u1);
-	const double phi = 2 * PI * u2;
-	Vector ray = Vector(cos(phi)*r, sin(phi)*r, u1);
-	if (ray.dot(n)<0)
-    {
-        return -1*ray;
-    }
-	return ray;
-}
-
-Vector cosine_weighted_hemisphere(double u1, double u2, const Vector& n)
-// taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
-//modified to ensure on the correct hemisphere
-{
-    const double r = sqrt(u1);
-    const double theta = 2 * PI * u2;
-
-    const double x = r * cos(theta);
-    const double y = r * sin(theta);
-    const double z = 1 - x*x - y*y;
-
-    Vector ray = Vector(x,y,z);
-    if(ray.dot(n)<0)
-    {
-        return -1*ray;
-    }
-    return ray;
-}
-
-//below function is taken from smallpaint
-// given v1, set v2 and v3 so they form an orthonormal system
-// (we assume v1 is already normalized)
-void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
-	if (std::abs(v1.x) > std::abs(v1.y)) {
-		// project to the y = 0 plane and construct a normalized orthogonal vector in this plane
-		double invLen = 1.f / sqrtf(v1.x * v1.x + v1.z * v1.z);
-		v2 = Vector(-v1.z * invLen, 0.0f, v1.x * invLen);
-	} else {
-		// project to the x = 0 plane and construct a normalized orthogonal vector in this plane
-		double invLen = 1.0f / sqrtf(v1.y * v1.y + v1.z * v1.z);
-		v2 = Vector(0.0f, v1.z * invLen, -v1.y * invLen);
-	}
-	v3 = v1 % v2;
-}
 
 bool is_light(GObject* a)
 {
@@ -485,7 +406,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
         if(hit.obj->brdf==0)
         //diffuse
         {
-            new_ray_dir = uniform_hemisphere(ha1->next(), ha2->next(), hit.n);
+            new_ray_dir = Utility::uniform_hemisphere(ha1->next(), ha2->next(), hit.n);
         }else if(hit.obj->brdf==2)
         //mirror
         {
@@ -502,7 +423,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
                 if(volume_hit.t > scatter_prob*density) // We should scatter it.
                 {
 
-                    new_ray_dir = uniform_sphere(ha1->next(),ha2->next());
+                    new_ray_dir = Utility::uniform_sphere(ha1->next(),ha2->next());
                 }
                 else
                 {
@@ -582,9 +503,9 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
     {
         //indirect illumination
         Vector v1, v2;
-        create_orthonormal_basis(n, v1, v2);
+        Utility::create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
+        Vector sample_dir = Utility::cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
@@ -659,7 +580,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
              next_ray = normalise(hit.ray_dir - hit.n * 2  *cos_angle);
         }else
         {
-             PR =schlick_fresnel(abs(cos_angle), n_1, n_2);
+             PR = Utility::schlick_fresnel(abs(cos_angle), n_1, n_2);
 
 
             if(ha1->next() < PR)
@@ -669,7 +590,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
             }else
             //refraction
             {
-                next_ray = snells_law(hit.ray_dir, hit.n, cos_angle, n_1, n_2);
+                next_ray = Utility::snells_law(hit.ray_dir, hit.n, cos_angle, n_1, n_2);
             }
         }
 
@@ -740,10 +661,10 @@ void deserialize(std::string filename, std::vector<Light>& lights, std::vector<G
     xml.Load(filename);
 
     xml.FindElem(); //config
-    config.threads_to_use = stoi(xml.GetAttrib("threads"));
+    config.threads_to_use = std::stoi(xml.GetAttrib("threads"));
     if (config.threads_to_use < 1){config.threads_to_use=1;}
-    config.max_reflections = stoi(xml.GetAttrib("max_reflections"));
-    config.spp = stoi(xml.GetAttrib("samplesPP"));
+    config.max_reflections = std::stoi(xml.GetAttrib("max_reflections"));
+    config.spp = std::stoi(xml.GetAttrib("samplesPP"));
     config.stretch = xml.GetAttrib("stretch");
 
     xml.FindElem(); //camera
