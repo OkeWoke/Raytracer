@@ -48,7 +48,8 @@ void Mesh::deserialize(std::string strSubDoc)
     CMarkup xml(strSubDoc);
 
     xml.FindElem();
-    std::string filename = xml.GetAttrib("filename");
+    std::string rootPath = RootPath;
+    std::string filename = rootPath + "/data/3dmodels/"+ xml.GetAttrib("filename");
 
     shininess = std::stod(xml.GetAttrib("shininess"));
     reflectivity = std::stod(xml.GetAttrib("reflectivity"));
@@ -75,7 +76,7 @@ void Mesh::deserialize(std::string strSubDoc)
     Color::deserialize(xml.GetSubDoc(), color);
 
     xml.FindElem("texture");
-    std::string texture_filename = xml.GetAttrib("filename");
+    std::string texture_filename = rootPath + "/data/textures/" + xml.GetAttrib("filename");
 
     obj_reader(filename);//must be called last here.
     texture = png::image< png::rgb_pixel >(texture_filename);
