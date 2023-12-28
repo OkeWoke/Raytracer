@@ -9,10 +9,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-extern std::atomic<uint64_t> numRayTrianglesTests;
-extern std::atomic<uint64_t> numRayTrianglesIsect;
-extern uint64_t numPrimaryRays;
-
 namespace Utility {
 	std::vector<std::string> split(const std::string& s, const std::string& delim);
 	void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3);

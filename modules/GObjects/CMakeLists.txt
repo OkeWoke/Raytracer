@@ -18,5 +18,5 @@ target_include_directories(
 )
 
 target_link_libraries(GObjects PRIVATE thirdparty-CMarkup thirdparty-pngpp)
-target_link_libraries(GObjects PUBLIC Utility)
+target_link_libraries(GObjects PUBLIC Utility Stats)
 target_compile_definitions(GObjects PRIVATE -DRootPath="${CMAKE_SOURCE_DIR}")
