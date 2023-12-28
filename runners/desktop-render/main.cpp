@@ -35,18 +35,32 @@
 void draw(ImageArray& img, std::string filename);
 void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config);
 
-
 extern Stats stats;
 
-int main()
+struct Scene
 {
     std::vector<GObject*> objects;
     std::vector<Light> lights;
     std::vector<GObject*> gLights; //GObjects that have emission.
-
     Camera cam;
     Config config;
-    int orw = 20;
+
+    ~Scene()
+    {
+        for (auto p : objects)
+        {
+            delete p;
+            p = nullptr;
+        }
+
+        objects.clear();
+        lights.clear();
+    }
+};
+
+int main()
+{
+    Scene scene;
 
     //initial call to deserialize just so I can define ImageArray...
     std::cout<<"Loading scene from scene.xml..." << std::endl;
@@ -54,13 +68,13 @@ int main()
     std::string rootPath = RootPath;
     std::string renderDest = rootPath + "/renders/";
 
-    deserialize(rootPath + "/data/scenes/scene.xml", lights, gLights, objects, cam, config);
+    deserialize(rootPath + "/data/scenes/scene.xml", scene.lights, scene.gLights, scene.objects, scene.cam, scene.config);
 
     auto load_end = std::chrono::steady_clock::now();
     std::cout<<"Loading completed in: " << (load_end-load_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 
-    ImageArray img(cam.H_RES, cam.V_RES);
-    cimg_library::CImg<float> display_image(cam.H_RES, cam.V_RES,1,3,0);
+    ImageArray img(scene.cam.H_RES, scene.cam.V_RES);
+    cimg_library::CImg<float> display_image(scene.cam.H_RES, scene.cam.V_RES,1,3,0);
     cimg_library::CImgDisplay display(display_image, "Oke's Path Tracer!");
     //creating filename....
     auto t = std::time(nullptr);
@@ -68,21 +82,19 @@ int main()
     std::ostringstream filename;
     filename << renderDest << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 
-    bool looping = true;
-
     //Creation of BoundVolume Hierarchy
     auto bvh_start = std::chrono::steady_clock::now();
-    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(scene.objects);
     Vector center = Vector(0,0,0);
-    for(unsigned int k = 0; k < objects.size(); k++)
+    for(unsigned int k = 0; k < scene.objects.size(); k++)
     {
-        center  = center + objects[k]->position;
+        center  = center + scene.objects[k]->position;
     }
 
-    center = center / objects.size();
+    center = center / scene.objects.size();
     BoundVolumeHierarchy* bvh = new BoundVolumeHierarchy(scene_bv, center);
 
-    for (auto obj: objects)
+    for (auto obj: scene.objects)
     {
         bvh->insert_object(obj,0);
     }
@@ -91,16 +103,17 @@ int main()
     std::cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 
     //Creation of samplers used for montecarlo integration.
-    Sampler* sampler1 = new RandomSampler();//HaltonSampler(7, rand()%5000 + 1503);//
-    Sampler* sampler2 = new RandomSampler();//HaltonSampler(3, rand()%5000 + 5000); //
+    RandomSampler smplObj, smplObj2;
+    Sampler* sampler1 = &smplObj;//HaltonSampler(7, rand()%5000 + 1503);//
+    Sampler* sampler2 = &smplObj2;//HaltonSampler(3, rand()%5000 + 5000); //
 
     /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
     auto cast_start = std::chrono::steady_clock::now();
     int s;
     double exponent = 1/4.0;
-    for(s=0;s<config.spp; s++)
+    for(s=0;s<scene.config.spp; s++)
     {
-        cast_rays_multithread(config, cam, img, sampler1, sampler2, bvh, objects, lights, gLights);
+        cast_rays_multithread(scene.config, scene.cam, img, sampler1, sampler2, bvh, scene.objects, scene.lights, scene.gLights);
         for (int i = 0; i < img.HEIGHT * img.WIDTH; ++i)
         {
             int x = i % img.WIDTH;
@@ -113,28 +126,17 @@ int main()
         display_image.display(display);
         if (display.is_closed())
         {
-            looping = false;
             break;
         }
         img.floatArrayUpdate();
     }
 
-    delete sampler1;
-    delete sampler2;
-    sampler1 = nullptr;
-    sampler2 = nullptr;
 
-    lights.clear();
-    for (auto p : objects)
-    {
-        delete p;
-        p = nullptr;
-    }
     delete bvh;
     bvh = nullptr;
-    objects.clear();
     auto cast_end = std::chrono::steady_clock::now();
 
+    const int orw = 20;
     std::cout << "Casting completed in: "<< std::setw(orw) << (cast_end - cast_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "Number of primary rays: " << std::setw(orw+1) << stats.numPrimaryRays << std::endl;
     std::cout << "Number of Triangle Tests: " << std::setw(orw) << stats.numRayTrianglesTests.load() << std::endl;
@@ -154,14 +156,14 @@ int main()
 
     // Draw/Save code
     auto save_start = std::chrono::steady_clock::now();
-    if(config.stretch == "norm")
+    if(scene.config.stretch == "norm")
     {
         img.normalise(img.MAX_VAL);
-    }else if(config.stretch == "gamma")
+    }else if(scene.config.stretch == "gamma")
     {
         img.gammaCorrection(1.0/2.2);
         img.normalise(img.MAX_VAL);
-    }else if(config.stretch == "rein")
+    }else if(scene.config.stretch == "rein")
     {
         img.normalise(1.0);
         img.reinhardToneMap();
