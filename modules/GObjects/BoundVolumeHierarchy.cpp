@@ -181,7 +181,7 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
 }
 
 
-GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth)
+GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth) const
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
 {
     GObject::intersection bv_inter = GObject::intersection();

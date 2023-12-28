@@ -8,7 +8,7 @@ RandomSampler::RandomSampler(double min, double max): min(min), max(max)
 {
 }
 
-double RandomSampler::next()
+double RandomSampler::next() const
 //returns double value between min and max
 {
     static std::mt19937 generator; //Removing thread local makes it slower but also removes the bias.
@@ -16,7 +16,7 @@ double RandomSampler::next()
     return distribution(generator);
 }
 
-double RandomSampler::nextI(int i)
+double RandomSampler::nextI(int i) const
 {
     return 0;
 }

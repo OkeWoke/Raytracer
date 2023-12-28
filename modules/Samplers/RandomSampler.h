@@ -8,8 +8,8 @@ class RandomSampler : public Sampler
         RandomSampler();
         RandomSampler(double min, double max);
 
-        double next();
-        double nextI(int i);
+        double next() const override;
+        double nextI(int i) const override;
 
     private:
         double min;

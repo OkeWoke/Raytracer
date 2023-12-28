@@ -32,7 +32,7 @@
 #endif
 
 // function prototypes
-void draw(ImageArray& img, std::string filename);
+void draw(ImageArray& img, const std::string& filename, const std::string& stretch);
 void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config);
 
 extern Stats stats;
@@ -92,20 +92,20 @@ int main()
     }
 
     center = center / scene.objects.size();
-    BoundVolumeHierarchy* bvh = new BoundVolumeHierarchy(scene_bv, center);
+    BoundVolumeHierarchy bvh = BoundVolumeHierarchy(scene_bv, center);
 
     for (auto obj: scene.objects)
     {
-        bvh->insert_object(obj,0);
+        bvh.insert_object(obj,0);
     }
-    auto top_node_bv = bvh->build_BVH();  // the obj this pointer points to self deletes.
+    auto top_node_bv = bvh.build_BVH();  // the obj this pointer points to self deletes.
     auto bvh_end = std::chrono::steady_clock::now();
     std::cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 
     //Creation of samplers used for montecarlo integration.
-    RandomSampler smplObj, smplObj2;
-    Sampler* sampler1 = &smplObj;//HaltonSampler(7, rand()%5000 + 1503);//
-    Sampler* sampler2 = &smplObj2;//HaltonSampler(3, rand()%5000 + 5000); //
+    RandomSampler sampler1, sampler2;
+    //HaltonSampler(7, rand()%5000 + 1503);
+    //HaltonSampler(3, rand()%5000 + 5000);
 
     /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
     auto cast_start = std::chrono::steady_clock::now();
@@ -131,9 +131,6 @@ int main()
         img.floatArrayUpdate();
     }
 
-
-    delete bvh;
-    bvh = nullptr;
     auto cast_end = std::chrono::steady_clock::now();
 
     const int orw = 20;
@@ -156,20 +153,8 @@ int main()
 
     // Draw/Save code
     auto save_start = std::chrono::steady_clock::now();
-    if(scene.config.stretch == "norm")
-    {
-        img.normalise(img.MAX_VAL);
-    }else if(scene.config.stretch == "gamma")
-    {
-        img.gammaCorrection(1.0/2.2);
-        img.normalise(img.MAX_VAL);
-    }else if(scene.config.stretch == "rein")
-    {
-        img.normalise(1.0);
-        img.reinhardToneMap();
-        img.normalise(img.MAX_VAL);
-    }
-    draw(img, filename.str());
+
+    draw(img, filename.str(), scene.config.stretch);
     img.clearArray();
     auto save_end = std::chrono::steady_clock::now();
     std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
@@ -188,8 +173,21 @@ int main()
 
 
 
-void draw(ImageArray& img, std::string filename)
+void draw(ImageArray& img, const std::string& filename, const std::string& stretch)
 {
+    if(stretch == "norm")
+    {
+        img.normalise(img.MAX_VAL);
+    }else if(stretch == "gamma")
+    {
+        img.gammaCorrection(1.0/2.2);
+        img.normalise(img.MAX_VAL);
+    }else if(stretch == "rein")
+    {
+        img.normalise(1.0);
+        img.reinhardToneMap();
+        img.normalise(img.MAX_VAL);
+    }
     png::image< png::rgb_pixel > image(img.WIDTH, img.HEIGHT);
 
     for (int y = 0; y < img.HEIGHT; ++y)

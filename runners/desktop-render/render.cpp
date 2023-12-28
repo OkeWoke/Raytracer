@@ -11,7 +11,15 @@ bool is_light(GObject* a)
     return false;
 }
 
-void cast_rays_multithread(const Config& config, const Camera& cam, const ImageArray& img, Sampler* sampler1, Sampler* sampler2, BoundVolumeHierarchy* bvh, const std::vector<GObject*>& objects, const std::vector<Light>& lights, const std::vector<GObject*>& gLights)
+void cast_rays_multithread(const Config& config,
+                           const Camera& cam,
+                           const ImageArray& img,
+                           const Sampler& sampler1,
+                           const Sampler& sampler2,
+                           const BoundVolumeHierarchy& bvh,
+                           const std::vector<GObject*>& objects,
+                           const std::vector<Light>& lights,
+                           const std::vector<GObject*>& gLights)
 {
     int total_pixels = cam.V_RES*cam.H_RES;
     int cores_to_use = config.threads_to_use;//global
@@ -21,7 +29,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
     for (int i = 0; i<cores_to_use; i++ )
     {
         future_vector.emplace_back(
-                async(std::launch::async, [=,&cam, &img, &pixel_count]()
+                async(std::launch::async, [=,&cam, &img, &pixel_count, &sampler1, &sampler2, &bvh]()
                 {
                     while(true)
                     {
@@ -39,8 +47,8 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                         double x_offset;//= sampler1->next() - 0.5;
                         double y_offset;// = sampler2->next() - 0.5;
 
-                        double u1 = sampler1->next()*0.9 + 0.1; //We scale the box muller distribution radial input to fit within a pixel
-                        double u2 = sampler2->next();//*0.9 + 0.1;
+                        double u1 = sampler1.next()*0.9 + 0.1; //We scale the box muller distribution radial input to fit within a pixel
+                        double u2 = sampler2.next();//*0.9 + 0.1;
                         double R  = sqrt(-2.0 * log(u1));
                         double angle = 2.0 * M_PI * u2;
                         x_offset = R * cos(angle);
@@ -49,13 +57,21 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
                         Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
                         Vector ray_norm = normalise(ray_dir);
                         ray_dir = ray_norm*cam.focus_dist/(-1*ray_norm.dot(cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
-                        double aperture_radius = cam.aperture* sqrt(sampler1->next());
-                        double aperture_angle = 2* M_PI * sampler2->next();
+                        double aperture_radius = cam.aperture* sqrt(sampler1.next());
+                        double aperture_angle = 2* M_PI * sampler2.next();
                         Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * cam.u;
                         Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
                         ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
 
-                        Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset, ray_dir, bvh, config, 0, sampler1, sampler2, objects, gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
+                        Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset,
+                                                       ray_dir,
+                                                       bvh,
+                                                       config,
+                                                       0,
+                                                       sampler1,
+                                                       sampler2,
+                                                       objects,
+                                                       gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
                         //std::cout << img.pixelMatrix[0].r << std::endl;
                         img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
                     }
@@ -63,7 +79,7 @@ void cast_rays_multithread(const Config& config, const Camera& cam, const ImageA
     }
 }
 
-Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bvh)
+Hit intersect(const Vector& src, const Vector& ray_dir, const BoundVolumeHierarchy& bvh)
 //Takes a source point and ray direction, checks if it intersects any object
 //returns hit struct which contains 'meta data' about the interection.
 {
@@ -73,7 +89,7 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
     hit.t=-1;
     hit.obj = nullptr;
 
-    GObject::intersection inter = bvh->intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
+    GObject::intersection inter = bvh.intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
     if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
     {
         //yes the below is pretty shit, why do two so simillar structs exist....
@@ -93,7 +109,14 @@ Hit intersect(const Vector& src, const Vector& ray_dir, BoundVolumeHierarchy* bv
     return hit;
 }
 
-Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, BoundVolumeHierarchy* bvh, const Config& config, const std::vector<GObject*>& objects, const std::vector<Light>& lights)
+Color shade(const Hit& hit,
+            int reflection_count,
+            const Sampler& ha1,
+            const Sampler& ha2,
+            const BoundVolumeHierarchy& bvh,
+            const Config& config,
+            const std::vector<GObject*>& objects,
+            const std::vector<Light>& lights)
 {
     Color c = Color(0, 0, 0);
 
@@ -124,7 +147,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         Vector v1, v2;
         Utility::create_orthonormal_basis(n, v1, v2);
 
-        Vector sample_dir = Utility::cosine_weighted_hemisphere(ha1->next(), ha2->next(), hit.n); ////can replace with halton series etc in the future.
+        Vector sample_dir = Utility::cosine_weighted_hemisphere(ha1.next(), ha2.next(), hit.n); ////can replace with halton series etc in the future.
         Vector transformed_dir;
         //I could use my matrix class here but this will save some time on construction/arithmetic maybe...
         transformed_dir.x = Vector(v1.x, v2.x, n.x).dot(sample_dir);
@@ -145,7 +168,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         {
             if(objects[i]->emission.r > 0 || objects[i]->emission.g !=0 || objects[i]->emission.b != 0)
             {
-                Vector light_point = objects[i]->get_random_point(ha2->next(), ha1->next());//lights[i].position;//
+                Vector light_point = objects[i]->get_random_point(ha2.next(), ha1.next());//lights[i].position;//
                 Vector s =  light_point- p;
 
                 //Inbound ray hits correct face (outbound normal vector)
@@ -202,7 +225,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
             PR = Utility::schlick_fresnel(abs(cos_angle), n_1, n_2);
 
 
-            if(ha1->next() < PR)
+            if(ha1.next() < PR)
                 //reflection
             {
                 next_ray = normalise(hit.ray_dir - hit.n * 2  *cos_angle);
@@ -225,7 +248,7 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
         {
             if(objects[i]->emission.r > 0 || objects[i]->emission.g !=0 || objects[i]->emission.b != 0)
             {
-                Vector light_point = objects[i]->get_random_point(ha2->next(), ha1->next());//lights[i].position;//
+                Vector light_point = objects[i]->get_random_point(ha2.next(), ha1.next());//lights[i].position;//
                 Vector s =  light_point- p;
                 double dist = s.abs();
                 s = normalise(s);
@@ -257,7 +280,15 @@ Color shade(const Hit& hit, int reflection_count, Sampler* ha1, Sampler* ha2, Bo
     return c;
 }
 
-Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVolumeHierarchy* bvh, const Config& config, int depth, Sampler* ha1, Sampler* ha2, const std::vector<GObject*>& objects, const std::vector<GObject*>& gLights)
+Color trace_rays_iterative(const Vector& origin,
+                           const Vector& ray_dir,
+                           const BoundVolumeHierarchy& bvh,
+                           const Config& config,
+                           int depth,
+                           const Sampler& ha1,
+                           const Sampler& ha2,
+                           const std::vector<GObject*>& objects,
+                           const std::vector<GObject*>& gLights)
 {
     Vector o = origin; //copy
     Vector d = ray_dir; //copy
@@ -335,7 +366,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
         if(hit.obj->brdf==0)
             //diffuse
         {
-            new_ray_dir = Utility::uniform_hemisphere(ha1->next(), ha2->next(), hit.n);
+            new_ray_dir = Utility::uniform_hemisphere(ha1.next(), ha2.next(), hit.n);
         }else if(hit.obj->brdf==2)
             //mirror
         {
@@ -344,7 +375,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
             //constant density volume
         {
             double density =2;
-            double scatter_prob = ha1->next() + 0.2;
+            double scatter_prob = ha1.next() + 0.2;
             Hit volume_hit = intersect(hit_point+(d*0.0001), d, bvh); //we assume d is normalised
             if(hit.obj == volume_hit.obj && volume_hit.n.dot(d) >0 ) // we are inside the obj, not a tangent.
             {
@@ -352,7 +383,7 @@ Color trace_rays_iterative(const Vector& origin, const Vector& ray_dir, BoundVol
                 if(volume_hit.t > scatter_prob*density) // We should scatter it.
                 {
 
-                    new_ray_dir = Utility::uniform_sphere(ha1->next(),ha2->next());
+                    new_ray_dir = Utility::uniform_sphere(ha1.next(), ha2.next());
                 }
                 else
                 {
