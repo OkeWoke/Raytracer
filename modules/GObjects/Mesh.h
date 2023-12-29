@@ -25,7 +25,7 @@ class Mesh : public GObject
         intersection intersect(const Vector& src, const  Vector& d);
         Vector center;
 
-        std::vector<Triangle*> triangles;
+        std::vector<std::shared_ptr<Triangle>> triangles;
         std::vector<Vector> vertices;
 
         void obj_reader(std::string filename);

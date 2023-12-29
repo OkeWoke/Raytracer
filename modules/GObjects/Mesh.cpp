@@ -7,15 +7,8 @@ Mesh::Mesh()
 
 }
 
-
 Mesh::~Mesh()
 {
-
-    for (auto p : triangles)
-    {
-        delete p;
-        p = nullptr;
-    }
     triangles.clear();
     vertices.clear();
 }
@@ -101,52 +94,10 @@ void Mesh::obj_reader(std::string filename)
     std::string line;
     while(getline(file, line))
     {
-        /*
-        double x, y, z;
         if(line.length() < 3){continue;}
         try
         {
-            std::istringstream iss(line.substr(2,36));
-            if (line.substr(0,2) == "v ")
-            {
-                iss >> x >> y >> z;
-                vertices.push_back(mat.mult_vec(Vector(x,y,z),1));
-            }else if (line.substr(0,2) == "vt")
-            {
-                iss >> x >> y;
-                vt.push_back(Vector(x,y,0));
-            }else if (line.substr(0,2) == "vn")
-            {
-                iss >> x >> y >> z;
-
-                vn.push_back(mat.mult_vec(Vector(x,y,z),0));
-            }else if (line.substr(0,2) == "f ")
-            {
-                auto vec_stoi = [](const std::vector<std::string>& vec )
-                {
-
-                    //return std::vector<int>{stoi(vec[0]), stoi(vec[1])};
-                    return std::vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
-                };
-
-                //this vector should be length 3...
-                std::vector<std::string> face_points = Utility::split(line.substr(2,100)," ");
-                std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"//"));
-                std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"//"));
-                std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"//"));
-                //Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[0], vt[0],vt[0],vn[i0[1]-1], vn[i1[1]-1], vn[i2[1]-1]);
-                Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
-                //tri->position = Vector(0,0,0);
-                tri->color = color;
-                tri->shininess = shininess;
-                tri->reflectivity = reflectivity;
-                triangles.push_back(tri);
-            }*/
-
-         double x, y, z;
-        if(line.length() < 3){continue;}
-        try
-        {
+            double x, y, z;
             std::istringstream iss(line.substr(2,36));
             if (line.substr(0,2) == "v ")
             {
@@ -174,8 +125,8 @@ void Mesh::obj_reader(std::string filename)
                 std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
                 std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
                 std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
-                Triangle* tri = new Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]);
-                //tri->position = Vector(0,0,0);
+                std::shared_ptr<Triangle> tri = std::make_shared<Triangle>(Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]));
+
                 tri->color = color;
                 tri->shininess = shininess;
                 tri->reflectivity = reflectivity;
@@ -193,7 +144,7 @@ void Mesh::obj_reader(std::string filename)
     this->bvh = BoundVolumeHierarchy(this->vertices);
     for (auto tri: triangles)
     {
-        bvh.insert_object(tri,0);
+        bvh.insert_object(tri.get(),0);
     }
     (void) bvh.build_BVH();
     this->bv = bvh.bv;
