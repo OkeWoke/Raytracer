@@ -18,13 +18,11 @@ Mesh::~Mesh()
     }
     triangles.clear();
     vertices.clear();
-    delete bvh;
-    bvh = nullptr;
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
 {
-    intersection inter = bvh->intersect(src, d, 0);//priority_intersect(src,d,0);
+    intersection inter = bvh.intersect(src, d, 0);//priority_intersect(src,d,0);
     if (inter.color.b == -939)
     {
         int t_x  = int((texture.get_width()-1)*inter.color.r);
@@ -192,13 +190,13 @@ void Mesh::obj_reader(std::string filename)
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
 
-    this->bvh = new BoundVolumeHierarchy(this->vertices);
+    this->bvh = BoundVolumeHierarchy(this->vertices);
     for (auto tri: triangles)
     {
-        bvh->insert_object(tri,0);
+        bvh.insert_object(tri,0);
     }
-    (void) bvh->build_BVH();
-    this->bv = bvh->bv;
+    (void) bvh.build_BVH();
+    this->bv = bvh.bv;
 }
 
 Vector Mesh::get_random_point(double val, double val2)

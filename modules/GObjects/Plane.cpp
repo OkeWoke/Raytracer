@@ -96,6 +96,4 @@ void Plane::deserialize(std::string strSubDoc)
     xml.FindElem("emission");
     Color::deserialize(xml.GetSubDoc(), emission);
     this->bv = BoundVolume::compute_bound_volume(this);
-
-
 }

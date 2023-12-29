@@ -13,7 +13,7 @@ bool is_light(GObject* a)
 
 void cast_rays_multithread(const Config& config,
                            const Camera& cam,
-                           const ImageArray& img,
+                           ImageArray& img,
                            const Sampler& sampler1,
                            const Sampler& sampler2,
                            const BoundVolumeHierarchy& bvh,

@@ -103,7 +103,7 @@ int main()
         {
             break;
         }
-        img.floatArrayUpdate();
+
     }
 
     auto cast_end = std::chrono::steady_clock::now();
@@ -133,7 +133,7 @@ int main()
     auto save_start = std::chrono::steady_clock::now();
 
     draw(img, filename.str(), scene.config.stretch);
-    img.clearArray();
+
     auto save_end = std::chrono::steady_clock::now();
     std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "----------------------------------------\n\n\n\n" << std::endl;

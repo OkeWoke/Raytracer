@@ -8,21 +8,13 @@ ImageArray::ImageArray():WIDTH(500),HEIGHT(500), PIXEL_COUNT(500*500)
 
 ImageArray::ImageArray(int width, int height):WIDTH(width),HEIGHT(height), PIXEL_COUNT(width*height)
 {
-    float_array = new float[3*PIXEL_COUNT];
-    histogram = new int[MAX_VAL];
-
-    pixelMatrix = new Color[PIXEL_COUNT]; // Temporary continous allocation of memory
+    pixelMatrix = std::vector<Color>(PIXEL_COUNT);
 
     for(int i=0;i<PIXEL_COUNT;i++)
     {
         pixelMatrix[i] = Color();
     }
     std::cout << pixelMatrix[0].r;
-}
-
-ImageArray::~ImageArray()
-{
-    deleteArray();
 }
 
 void ImageArray::clearArray()//resets array to 0
@@ -34,19 +26,6 @@ void ImageArray::clearArray()//resets array to 0
         c->g = 0;
         c->b = 0;
     }
-}
-
-void ImageArray::deleteArray()
-{
-    delete [] pixelMatrix;
-    delete [] histogram;
-    delete [] float_array;
-}
-
-Color ImageArray::get_median()
-{
-    //need to compute histogram, cumulative histogram, return no.pixels/2 hist.
-    return Color(0,0,0);
 }
 
 double ImageArray::get_mean()
@@ -139,29 +118,6 @@ void ImageArray::clipTop()
         if (pixelMatrix[i].r >top_val){pixelMatrix[i].r = top_val;}
         if (pixelMatrix[i].g > top_val){pixelMatrix[i].g = top_val;}
         if (pixelMatrix[i].b > top_val){pixelMatrix[i].b = top_val;}
-    }
-}
-
-void ImageArray::iterate(std::function<void(int x, int y)> func)
-{
-    for (int y = 0; y < HEIGHT; y++)
-    {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            func(x,y);
-        }
-    }
-}
-
-void ImageArray::floatArrayUpdate()
-{
-    double max_pixel_val =  pow(findMax(), 1/2.2);
-    for (int i = 0; i < PIXEL_COUNT; i++)
-    {
-        int k = 3*i;
-        float_array[k] = (float)pow(pixelMatrix[i].r, 1/2.2)/max_pixel_val;
-        float_array[k+1] = (float)pow(pixelMatrix[i].g, 1/2.2)/max_pixel_val;
-        float_array[k+2] = (float)pow(pixelMatrix[i].b, 1/2.2)/max_pixel_val;
     }
 }
 
