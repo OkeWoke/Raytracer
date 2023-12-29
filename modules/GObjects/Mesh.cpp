@@ -20,9 +20,6 @@ Mesh::~Mesh()
     vertices.clear();
     delete bvh;
     bvh = nullptr;
-    delete bv;
-    bv = nullptr;
-
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
@@ -194,19 +191,14 @@ void Mesh::obj_reader(std::string filename)
         }
     }
     std::cout << "Triangle count: " << triangles.size() << std::endl;
-    bv = BoundVolume::compute_bound_volume(this->vertices); //this is deleted by bvh destructor?
-    Vector center = Vector(0,0,0);
-    for(unsigned int k = 0; k < vertices.size(); k++)
-    {
-        center  = center + vertices[k];
-    }
-    center = center / vertices.size();
-    this->bvh = new BoundVolumeHierarchy(bv, center);
+
+    this->bvh = new BoundVolumeHierarchy(this->vertices);
     for (auto tri: triangles)
     {
         bvh->insert_object(tri,0);
     }
     auto aaa = bvh->build_BVH();
+    this->bv = aaa;
     //delete aaa;
     //aaa =nullptr;//deleting bvh will delete this.
 }

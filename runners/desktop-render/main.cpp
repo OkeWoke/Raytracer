@@ -60,14 +60,12 @@ struct Scene
 
 int main()
 {
-    Scene scene;
-
-    //initial call to deserialize just so I can define ImageArray...
     std::cout<<"Loading scene from scene.xml..." << std::endl;
     auto load_start = std::chrono::steady_clock::now();
     std::string rootPath = RootPath;
     std::string renderDest = rootPath + "/renders/";
 
+    Scene scene;
     deserialize(rootPath + "/data/scenes/scene.xml", scene.lights, scene.gLights, scene.objects, scene.cam, scene.config);
 
     auto load_end = std::chrono::steady_clock::now();
@@ -76,23 +74,11 @@ int main()
     ImageArray img(scene.cam.H_RES, scene.cam.V_RES);
     cimg_library::CImg<float> display_image(scene.cam.H_RES, scene.cam.V_RES,1,3,0);
     cimg_library::CImgDisplay display(display_image, "Oke's Path Tracer!");
-    //creating filename....
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    std::ostringstream filename;
-    filename << renderDest << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 
     //Creation of BoundVolume Hierarchy
     auto bvh_start = std::chrono::steady_clock::now();
-    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(scene.objects);
-    Vector center = Vector(0,0,0);
-    for(unsigned int k = 0; k < scene.objects.size(); k++)
-    {
-        center  = center + scene.objects[k]->position;
-    }
 
-    center = center / scene.objects.size();
-    BoundVolumeHierarchy bvh = BoundVolumeHierarchy(scene_bv, center);
+    BoundVolumeHierarchy bvh = BoundVolumeHierarchy(scene.objects);
 
     for (auto obj: scene.objects)
     {
@@ -148,8 +134,11 @@ int main()
         img.pixelMatrix[i] = img.pixelMatrix[i]/s;
     }
 
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    std::ostringstream filename;
+    filename << renderDest << "render-"  << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     filename << "_spp-" << s <<"_cast-"<<(cast_end-cast_start)/std::chrono::seconds(1)<<".png";
-
 
     // Draw/Save code
     auto save_start = std::chrono::steady_clock::now();

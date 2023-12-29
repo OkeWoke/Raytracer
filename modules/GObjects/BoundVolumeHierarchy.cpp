@@ -5,7 +5,33 @@ BoundVolumeHierarchy::BoundVolumeHierarchy( )
     //ctor
 }
 
-BoundVolumeHierarchy::BoundVolumeHierarchy(GObject* bv, Vector center)
+BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<GObject*>& objects)
+{
+    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < objects.size(); k++)
+    {
+        center  = center + objects[k]->position;
+    }
+    center = center / objects.size();
+
+    BoundSetup(scene_bv, center);
+}
+
+BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<Vector>& vertices)
+{
+    auto bv = BoundVolume::compute_bound_volume(vertices); //this is deleted by bvh destructor?
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < vertices.size(); k++)
+    {
+        center  = center + vertices[k];
+    }
+    center = center / vertices.size();
+
+    BoundSetup(bv, center);
+}
+
+void BoundVolumeHierarchy::BoundSetup(BoundVolume* bv, Vector& center)
 {
     this->bv = (BoundVolume*)bv;
     this->center = center;
@@ -13,8 +39,6 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(GObject* bv, Vector center)
     diameter.x = abs(this->bv->d_max_vals[0] - this->bv->d_min_vals[0]);
     diameter.y = abs(this->bv->d_max_vals[1] - this->bv->d_min_vals[1]);
     diameter.z = abs(this->bv->d_max_vals[2] - this->bv->d_min_vals[2]);
-    //std::cout<<diameter.to_string() <<std::endl;
-    //std::cout<<center.to_string() << std::endl;
 
     for (int i=0;i<8;i++)
     {
@@ -35,11 +59,6 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
-    /*for (auto p : objects)
-    {
-        delete p; // triangles deleted by mesh, double delete results in seg fault for some reason.
-        p = nullptr;
-    }*/
     objects.clear();
     for (auto p : children)
     {

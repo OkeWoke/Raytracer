@@ -31,7 +31,7 @@ class Mesh : public GObject
         void obj_reader(std::string filename);
         void deserialize(std::string strSubDoc);
 
-        //BoundVolume* bv;
+
         BoundVolumeHierarchy* bvh;
         Vector get_random_point(double val1, double val2);
     private:

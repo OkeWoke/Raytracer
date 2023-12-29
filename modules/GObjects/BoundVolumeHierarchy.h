@@ -13,12 +13,14 @@ class BoundVolumeHierarchy
 {
     public:
         BoundVolumeHierarchy();
-        BoundVolumeHierarchy(GObject* bv,  Vector center);
+        BoundVolumeHierarchy(std::vector<GObject*>& objects);
+        BoundVolumeHierarchy(std::vector<Vector>& vertices);
+
         BoundVolumeHierarchy(Vector& diameter, Vector& center);
         virtual ~BoundVolumeHierarchy();
 
         BoundVolumeHierarchy* children[8];
-        std::vector<GObject*> objects;
+        std::vector<GObject*> objects = {};
 
         BoundVolume* bv = nullptr;
 
@@ -31,6 +33,7 @@ class BoundVolumeHierarchy
         Vector diameter;
 
     private:
+        void BoundSetup(BoundVolume* bv, Vector& center);
         int MAX_DEPTH= 15;
         bool is_leaf = true;
 };
