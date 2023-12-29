@@ -13,6 +13,11 @@ Mesh::Mesh(std::vector<Vector>& vertices, std::vector<std::shared_ptr<Triangle>>
 
         bvh.insert_object(tri.get(),0);
     }
+
+    this->color = config.color;
+    this->shininess = config.shininess;
+    this->brdf = config.brdf;
+    this->reflectivity = config.reflectivity;
     (void) bvh.build_BVH();
     this->bv = bvh.bv;
     texture = png::image< png::rgb_pixel >(config.texture_filename);

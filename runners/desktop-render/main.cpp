@@ -200,7 +200,7 @@ void deserialize(const std::string& filename,
             std::string rootPath = RootPath;
             if(meshConfig.filename.find(".obj") != std::string::npos){
                 std::string fullPath = rootPath + "/data/3dmodels/"+ meshConfig.filename;
-                ObjContents obj = obj_reader(fullPath);
+                ObjContents obj = obj_reader(fullPath, meshConfig.mat);
 
                 if(meshConfig.texture_filename.find(".png") != std::string::npos)
                 {
