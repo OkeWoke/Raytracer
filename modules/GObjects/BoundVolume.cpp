@@ -130,7 +130,6 @@ BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
     return new_bv;
 }
 
-
 GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 {
     double largest_t_near = std::numeric_limits<double>::lowest();

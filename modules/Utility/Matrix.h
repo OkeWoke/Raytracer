@@ -22,9 +22,8 @@ class Matrix
         static Matrix rot_z(double theta);
         static Matrix scale(double factor);
 
-
         //computations
-        Vector mult_vec(Vector lhs, double w);
+        Vector mult_vec(Vector lhs, double w) const;
         static Matrix translate(Vector vec);
         Matrix inverse();
 

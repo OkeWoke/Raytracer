@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-add_library(GObjects 
-            GObject.cpp
+add_library(GObjects
             Mesh.cpp
             Plane.cpp
             Sphere.cpp

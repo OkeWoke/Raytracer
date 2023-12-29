@@ -13,8 +13,8 @@ class GObject
         double reflectivity;
         Color emission;
         int brdf;
-        GObject();
-        virtual ~GObject();
+        GObject(){};
+        virtual ~GObject() {};
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
 

@@ -9,6 +9,7 @@
 #include "CImg-w.h"
 #include "pngpp-w.hpp"
 
+#include "deserialize.h"
 #include "render.h"
 #include "Camera.h"
 #include "Light.h"
@@ -20,6 +21,7 @@
 #include "Plane.h"
 #include "Mesh.h"
 #include "stats.h"
+#include "ObjReader.h"
 
 extern Stats stats;
 
@@ -78,7 +80,6 @@ int main()
         {
             break;
         }
-
     }
 
     auto cast_end = std::chrono::steady_clock::now();
@@ -195,9 +196,20 @@ void deserialize(const std::string& filename,
         }
         else if(element == "Mesh")
         {
-            std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
-            mesh->deserialize(xml.GetSubDoc());
-            scene.objects.push_back(mesh);
+            MeshConfig meshConfig = deserializeMesh(xml.GetSubDoc());
+            std::string rootPath = RootPath;
+            if(meshConfig.filename.find(".obj") != std::string::npos){
+                std::string fullPath = rootPath + "/data/3dmodels/"+ meshConfig.filename;
+                ObjContents obj = obj_reader(fullPath);
+
+                if(meshConfig.texture_filename.find(".png") != std::string::npos)
+                {
+                    meshConfig.texture_filename = rootPath + "/data/textures/" + meshConfig.texture_filename;
+                }
+
+                std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(obj.vertices, obj.triangles, meshConfig);
+                scene.objects.push_back(mesh);
+            }
         }
     }
     for(int i =0;i<scene.objects.size();i++)
@@ -208,3 +220,4 @@ void deserialize(const std::string& filename,
         }
     }
 }
+

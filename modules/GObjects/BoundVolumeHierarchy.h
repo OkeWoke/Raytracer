@@ -19,7 +19,7 @@ class BoundVolumeHierarchy
         BoundVolumeHierarchy(Vector& diameter, Vector& center);
         virtual ~BoundVolumeHierarchy();
 
-        BoundVolumeHierarchy* children[8];
+        std::unique_ptr<BoundVolumeHierarchy> children[8];
         std::vector<GObject*> objects = {};
 
         BoundVolume* bv = nullptr;

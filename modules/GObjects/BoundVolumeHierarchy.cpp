@@ -46,10 +46,7 @@ void BoundVolumeHierarchy::BoundSetup(BoundVolume* bv, Vector& center)
     diameter.y = abs(this->bv->d_max_vals[1] - this->bv->d_min_vals[1]);
     diameter.z = abs(this->bv->d_max_vals[2] - this->bv->d_min_vals[2]);
 
-    for (int i=0;i<8;i++)
-    {
-        this->children[i] = nullptr;
-    }
+
 }
 
 BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
@@ -66,16 +63,8 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 BoundVolumeHierarchy::~BoundVolumeHierarchy()
 {
     objects.clear();
-    for (auto p : children)
-    {
-        delete p;
-        p = nullptr;
-    }
-
     delete bv;
     bv = nullptr;
-
-
 }
 
 void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
@@ -140,7 +129,7 @@ void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
             center.x = this->center.x - diameter.x/2;
         }
 
-        children[key] = new BoundVolumeHierarchy(diameter, center);
+        children[key] = std::make_unique<BoundVolumeHierarchy>(diameter, center);
     }
 
     children[key]->insert_object(tri, depth+1);

@@ -2,15 +2,20 @@
 
 #include "Mesh.h"
 
-Mesh::Mesh()
+Mesh::Mesh(std::vector<Vector>& vertices, std::vector<std::shared_ptr<Triangle>>& triangles,  const MeshConfig& config): bvh(vertices), vertices(vertices), triangles(triangles)
 {
+    for (auto tri: triangles)
+    {
+        tri->color = config.color;
+        tri->shininess = config.shininess;
+        tri->brdf = config.brdf;
+        tri->reflectivity = config.reflectivity;
 
-}
-
-Mesh::~Mesh()
-{
-    triangles.clear();
-    vertices.clear();
+        bvh.insert_object(tri.get(),0);
+    }
+    (void) bvh.build_BVH();
+    this->bv = bvh.bv;
+    texture = png::image< png::rgb_pixel >(config.texture_filename);
 }
 
 GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
@@ -29,125 +34,6 @@ GObject::intersection Mesh::intersect(const Vector& src, const  Vector& d)
     if(inter.obj_ref != nullptr){inter.obj_ref->brdf = brdf;}
 
     return inter;
-}
-
-void Mesh::deserialize(std::string strSubDoc)
-{
-    CMarkup xml(strSubDoc);
-
-    xml.FindElem();
-    std::string rootPath = RootPath;
-    std::string filename = rootPath + "/data/3dmodels/"+ xml.GetAttrib("filename");
-
-    shininess = std::stod(xml.GetAttrib("shininess"));
-    reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    brdf = std::stod(xml.GetAttrib("brdf"));
-    xml.IntoElem();
-
-    xml.FindElem("position");
-    Vector::deserialize(xml.GetSubDoc(), position);
-    mat = mat * Matrix::translate(position);
-
-    xml.FindElem("x_rot");
-    mat = mat * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
-
-    xml.FindElem("y_rot");
-    mat = mat * Matrix::rot_y(std::stod(xml.GetAttrib("angle")));
-
-    xml.FindElem("z_rot");
-    mat = mat * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
-
-    xml.FindElem("scale");
-    mat = mat * Matrix::scale(std::stod(xml.GetAttrib("factor")));
-
-    xml.FindElem("color");
-    Color::deserialize(xml.GetSubDoc(), color);
-
-    xml.FindElem("texture");
-    std::string texture_filename = rootPath + "/data/textures/" + xml.GetAttrib("filename");
-
-    obj_reader(filename);//must be called last here.
-    texture = png::image< png::rgb_pixel >(texture_filename);
-}
-
-void Mesh::obj_reader(std::string filename)
-//takes string file name of .obj file that is triangulated.
-//loads triangles vector up
-{
-    std::vector<Vector> vt;
-    std::vector<Vector> vn;
-    vt.push_back(Vector());
-    std::ifstream file;
-    try
-    {
-        file.open(filename);
-    }catch(std::system_error)
-    {
-        std::cout<<"Error reading file" << std::endl;
-    }
-    if(!file)
-    {
-        std::cout << "Unable to open .obj file" << std::endl;
-        return;
-    }
-
-    std::string line;
-    while(getline(file, line))
-    {
-        if(line.length() < 3){continue;}
-        try
-        {
-            double x, y, z;
-            std::istringstream iss(line.substr(2,36));
-            if (line.substr(0,2) == "v ")
-            {
-                iss >> x >> y >> z;
-                vertices.push_back(mat.mult_vec(Vector(x,y,z),1));
-            }else if (line.substr(0,2) == "vt")
-            {
-                iss >> x >> y;
-                vt.push_back(Vector(x,y,0));
-            }else if (line.substr(0,2) == "vn")
-            {
-                iss >> x >> y >> z;
-
-                vn.push_back(mat.mult_vec(Vector(x,y,z),0));
-            }else if (line.substr(0,2) == "f ")
-            {
-                auto vec_stoi = [](const std::vector<std::string>& vec )
-                {
-
-                    return std::vector<int>{stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
-                };
-
-                //this vector should be length 3...
-                std::vector<std::string> face_points = Utility::split(line.substr(2,100)," ");
-                std::vector<int> i0 = vec_stoi(Utility::split(face_points[0],"/"));
-                std::vector<int> i1 = vec_stoi(Utility::split(face_points[1],"/"));
-                std::vector<int> i2 = vec_stoi(Utility::split(face_points[2],"/"));
-                std::shared_ptr<Triangle> tri = std::make_shared<Triangle>(Triangle(vertices[i0[0]-1], vertices[i1[0]-1], vertices[i2[0]-1], vt[i0[1]-1], vt[i1[1]-1], vt[i2[1]-1],vn[i0[2]-1], vn[i1[2]-1], vn[i2[2]-1]));
-
-                tri->color = color;
-                tri->shininess = shininess;
-                tri->reflectivity = reflectivity;
-                triangles.push_back(tri);
-            }
-
-        }catch(std::out_of_range)
-        {
-            std::cout << "Error reading .obj file!" << std::endl;
-            return;
-        }
-    }
-    std::cout << "Triangle count: " << triangles.size() << std::endl;
-
-    this->bvh = BoundVolumeHierarchy(this->vertices);
-    for (auto tri: triangles)
-    {
-        bvh.insert_object(tri.get(),0);
-    }
-    (void) bvh.build_BVH();
-    this->bv = bvh.bv;
 }
 
 Vector Mesh::get_random_point(double val, double val2)

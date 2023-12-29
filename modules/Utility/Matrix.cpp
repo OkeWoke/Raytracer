@@ -185,7 +185,7 @@ Matrix Matrix::scale(double factor)
     return Matrix(factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor);
 }
 
-Vector Matrix::mult_vec(Vector lhs, double w)
+Vector Matrix::mult_vec(Vector lhs, double w) const
 //transform a 3 dim vec with 4th homogenous coordinate w
 {
     return Vector(
