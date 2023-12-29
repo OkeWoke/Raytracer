@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iomanip>
 
-//#include <math.h>
 #include <string>
 #include <pngpp-w.hpp>
 #include "CImg-w.h"
@@ -15,9 +14,6 @@
 #include "Camera.h"
 #include "Light.h"
 
-#include "Vector.h"
-
-#include "BoundVolume.h"
 #include "BoundVolumeHierarchy.h"
 #include "HaltonSampler.h"
 #include "RandomSampler.h"
@@ -77,14 +73,7 @@ int main()
 
     //Creation of BoundVolume Hierarchy
     auto bvh_start = std::chrono::steady_clock::now();
-
     BoundVolumeHierarchy bvh = BoundVolumeHierarchy(scene.objects);
-
-    for (auto obj: scene.objects)
-    {
-        bvh.insert_object(obj,0);
-    }
-    auto top_node_bv = bvh.build_BVH();  // the obj this pointer points to self deletes.
     auto bvh_end = std::chrono::steady_clock::now();
     std::cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 

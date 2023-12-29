@@ -16,6 +16,12 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<GObject*>& objects)
     center = center / objects.size();
 
     BoundSetup(scene_bv, center);
+
+    for (auto obj: objects)
+    {
+        this->insert_object(obj,0);
+    }
+    (void) this->build_BVH();
 }
 
 BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<Vector>& vertices)

@@ -197,10 +197,8 @@ void Mesh::obj_reader(std::string filename)
     {
         bvh->insert_object(tri,0);
     }
-    auto aaa = bvh->build_BVH();
-    this->bv = aaa;
-    //delete aaa;
-    //aaa =nullptr;//deleting bvh will delete this.
+    (void) bvh->build_BVH();
+    this->bv = bvh->bv;
 }
 
 Vector Mesh::get_random_point(double val, double val2)
