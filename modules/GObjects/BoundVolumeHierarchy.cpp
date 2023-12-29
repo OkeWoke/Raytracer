@@ -5,7 +5,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy( )
     //ctor
 }
 
-BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<GObject*>& objects)
+BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<std::shared_ptr<GObject>>& objects)
 {
     BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
     Vector center = Vector(0,0,0);
@@ -19,7 +19,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<GObject*>& objects)
 
     for (auto obj: objects)
     {
-        this->insert_object(obj,0);
+        this->insert_object((GObject*)obj.get(),0);
     }
     (void) this->build_BVH();
 }
@@ -210,11 +210,6 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
 {
     GObject::intersection bv_inter = GObject::intersection();
-    if(this->bv == nullptr)
-        //this case shouldnt happen?
-    {
-        //return bv_inter;
-    }
 
     bv_inter = bv->intersect(src,d);
     if (depth >= 2)

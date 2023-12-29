@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "Color.h"
+#include <memory>
 
 class GObject
 {
@@ -27,10 +28,6 @@ class GObject
             {
             };
 
-            ~intersection()
-            {
-                //obj_ref = nullptr;
-            }
         };
 
         virtual intersection intersect(const Vector& src, const Vector& d) = 0;

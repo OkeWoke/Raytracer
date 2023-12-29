@@ -43,7 +43,7 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
     return bv;
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes)
+BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*>& volumes)
 //compute a BV around a collection of several BV...
 {
     //since all bv share the same vectors, I guess we just compare d_max and d-min vals or soemthing? and get the most bounding of em all? yee
@@ -81,7 +81,7 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes
     return new_bv;
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(std::vector<GObject*> objects)
+BoundVolume* BoundVolume::compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects)
 {
     std::vector<BoundVolume*> volumes;
     for (int i=0;i<objects.size();i++)

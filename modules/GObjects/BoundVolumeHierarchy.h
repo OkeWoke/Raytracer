@@ -13,7 +13,7 @@ class BoundVolumeHierarchy
 {
     public:
         BoundVolumeHierarchy();
-        BoundVolumeHierarchy(std::vector<GObject*>& objects);
+        BoundVolumeHierarchy(std::vector<std::shared_ptr<GObject>>& objects);
         BoundVolumeHierarchy(std::vector<Vector>& vertices);
 
         BoundVolumeHierarchy(Vector& diameter, Vector& center);

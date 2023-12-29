@@ -1,36 +1,35 @@
 #include "render.h"
 #include <future>
 #include "math.h"
-
-bool is_light(GObject* a)
+//#define DEBUG_SINGLE_THREAD
+bool is_light(GObject* obj)
 {
-    if(a->emission.r >0 || a->emission.g > 0 || a->emission.b > 0)
+    if(obj->emission.r >0 || obj->emission.g > 0 || obj->emission.b > 0)
     {
         return true;
     }
     return false;
 }
 
-void cast_rays_multithread(const Config& config,
-                           const Camera& cam,
+
+void cast_rays_multithread(const Scene& scene,
                            ImageArray& img,
                            const Sampler& sampler1,
                            const Sampler& sampler2,
-                           const BoundVolumeHierarchy& bvh,
-                           const std::vector<GObject*>& objects,
-                           const std::vector<Light>& lights,
-                           const std::vector<GObject*>& gLights)
+                           const BoundVolumeHierarchy& bvh)
 {
-    int total_pixels = cam.V_RES*cam.H_RES;
-    int cores_to_use = config.threads_to_use;//global
+    int total_pixels = scene.cam.V_RES*scene.cam.H_RES;
+    int cores_to_use = scene.config.threads_to_use;//global
     volatile std::atomic<size_t> pixel_count(0);
     std::vector<std::future<void>> future_vector;
 
     for (int i = 0; i<cores_to_use; i++ )
     {
+#ifndef DEBUG_SINGLE_THREAD
         future_vector.emplace_back(
-                async(std::launch::async, [=,&cam, &img, &pixel_count, &sampler1, &sampler2, &bvh]()
+                async(std::launch::async, [=, &scene, &img, &pixel_count, &sampler1, &sampler2, &bvh]()
                 {
+#endif
                     while(true)
                     {
                         int x_index = pixel_count++;
@@ -40,8 +39,8 @@ void cast_rays_multithread(const Config& config,
                             break;
                         }
 
-                        int y_index = x_index / cam.H_RES;
-                        x_index = x_index%cam.H_RES;
+                        int y_index = x_index / scene.cam.H_RES;
+                        x_index = x_index%scene.cam.H_RES;
 
                         //Box Muller Pixel Sampling
                         double x_offset;//= sampler1->next() - 0.5;
@@ -54,28 +53,21 @@ void cast_rays_multithread(const Config& config,
                         x_offset = R * cos(angle);
                         y_offset = R * sin(angle);
 
-                        Vector ray_dir = -cam.N*cam.n + cam.H*(((double)2*(x_index+x_offset)/(cam.H_RES-1)) -1)*cam.u + cam.V*(((double)2*(y_index+y_offset)/(cam.V_RES-1)) -1)*cam.v;
+                        Vector ray_dir = -scene.cam.N*scene.cam.n + scene.cam.H*(((double)2*(x_index+x_offset)/(scene.cam.H_RES-1)) -1)*scene.cam.u + scene.cam.V*(((double)2*(y_index+y_offset)/(scene.cam.V_RES-1)) -1)*scene.cam.v;
                         Vector ray_norm = normalise(ray_dir);
-                        ray_dir = ray_norm*cam.focus_dist/(-1*ray_norm.dot(cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
-                        double aperture_radius = cam.aperture* sqrt(sampler1.next());
+                        ray_dir = ray_norm*scene.cam.focus_dist/(-1*ray_norm.dot(scene.cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
+                        double aperture_radius = scene.cam.aperture* sqrt(sampler1.next());
                         double aperture_angle = 2* M_PI * sampler2.next();
-                        Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * cam.u;
-                        Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * cam.v;
+                        Vector aperture_u_offset = aperture_radius * cos(aperture_angle) * scene.cam.u;
+                        Vector aperture_v_offset = aperture_radius * sin(aperture_angle) * scene.cam.v;
                         ray_dir = ray_dir -(aperture_u_offset + aperture_v_offset);
 
-                        Color c = trace_rays_iterative(cam.pos+aperture_u_offset+aperture_v_offset,
-                                                       ray_dir,
-                                                       bvh,
-                                                       config,
-                                                       0,
-                                                       sampler1,
-                                                       sampler2,
-                                                       objects,
-                                                       gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
-                        //std::cout << img.pixelMatrix[0].r << std::endl;
+                        Color c = trace_rays_iterative(scene.cam.pos+aperture_u_offset+aperture_v_offset, ray_dir,bvh,scene.config,0, sampler1,sampler2,scene.objects,scene.gLights);//shade(hit, 0, sampler1, sampler2, bvh, config, objects, lights);
                         img.pixelMatrix[img.index(x_index, y_index)] = (img.pixelMatrix[img.index(x_index, y_index)]) + c;
                     }
-                }));
+#ifndef DEBUG_SINGLE_THREAD
+        }));
+#endif
     }
 }
 
@@ -115,7 +107,7 @@ Color shade(const Hit& hit,
             const Sampler& ha2,
             const BoundVolumeHierarchy& bvh,
             const Config& config,
-            const std::vector<GObject*>& objects,
+            const std::vector<std::shared_ptr<GObject>>& objects,
             const std::vector<Light>& lights)
 {
     Color c = Color(0, 0, 0);
@@ -181,7 +173,7 @@ Color shade(const Hit& hit,
                 //old if statement back in day of point light source.if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
                 //the object is not occluded from the light.
                 double cosine_term  = shadow.n.dot(s) *-1; //term used to simulate limb darkening?
-                if(shadow.obj == objects[i] && cosine_term>0)
+                if(shadow.obj == objects[i].get() && cosine_term>0)
                 {
                     if(s.dot(n)> 0 ) // light is on right side of the face of obj normal
                     {
@@ -255,7 +247,7 @@ Color shade(const Hit& hit,
 
                 Hit shadow = intersect(p, s, bvh); //0.001 offset to avoid collision withself //+0.001*s
 
-                if(shadow.obj == nullptr || shadow.obj == objects[i] || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
+                if(shadow.obj == nullptr || shadow.obj == objects[i].get() || shadow.t < 0.0001 || shadow.t > dist-0.0001)//
                     //the object is not occluded from the light.
                 {
                     if(s.dot(n)>= 0 ) // light is on right side of the face of obj normal
@@ -287,8 +279,8 @@ Color trace_rays_iterative(const Vector& origin,
                            int depth,
                            const Sampler& ha1,
                            const Sampler& ha2,
-                           const std::vector<GObject*>& objects,
-                           const std::vector<GObject*>& gLights)
+                           const std::vector<std::shared_ptr<GObject>>& objects,
+                           const std::vector<std::shared_ptr<GObject>>& gLights)
 {
     Vector o = origin; //copy
     Vector d = ray_dir; //copy

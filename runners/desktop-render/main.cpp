@@ -27,32 +27,10 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-// function prototypes
-void draw(ImageArray& img, const std::string& filename, const std::string& stretch);
-void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config);
-
 extern Stats stats;
 
-struct Scene
-{
-    std::vector<GObject*> objects;
-    std::vector<Light> lights;
-    std::vector<GObject*> gLights; //GObjects that have emission.
-    Camera cam;
-    Config config;
-
-    ~Scene()
-    {
-        for (auto p : objects)
-        {
-            delete p;
-            p = nullptr;
-        }
-
-        objects.clear();
-        lights.clear();
-    }
-};
+void draw(ImageArray& img, const std::string& filename, const std::string& stretch);
+void deserialize(const std::string& filename, Scene& scene);
 
 int main()
 {
@@ -62,7 +40,7 @@ int main()
     std::string renderDest = rootPath + "/renders/";
 
     Scene scene;
-    deserialize(rootPath + "/data/scenes/scene.xml", scene.lights, scene.gLights, scene.objects, scene.cam, scene.config);
+    deserialize(rootPath + "/data/scenes/scene.xml", scene);
 
     auto load_end = std::chrono::steady_clock::now();
     std::cout<<"Loading completed in: " << (load_end-load_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
@@ -88,7 +66,11 @@ int main()
     double exponent = 1/4.0;
     for(s=0;s<scene.config.spp; s++)
     {
-        cast_rays_multithread(scene.config, scene.cam, img, sampler1, sampler2, bvh, scene.objects, scene.lights, scene.gLights);
+        cast_rays_multithread(scene,
+                              img,
+                              sampler1,
+                              sampler2,
+                              bvh);
         for (int i = 0; i < img.HEIGHT * img.WIDTH; ++i)
         {
             int x = i % img.WIDTH;
@@ -180,56 +162,57 @@ void draw(ImageArray& img, const std::string& filename, const std::string& stret
     image.write(filename);
 }
 
-void deserialize(std::string filename, std::vector<Light>& lights, std::vector<GObject*>& gLights, std::vector<GObject*>& objects, Camera& cam, Config& config)
+void deserialize(const std::string& filename,
+                 Scene& scene)
 //Deserialises the scene/config.xml, modifies global structures and vectors
 {
     CMarkup xml;
     xml.Load(filename);
 
     xml.FindElem(); //config
-    config.threads_to_use = std::stoi(xml.GetAttrib("threads"));
-    if (config.threads_to_use < 1){config.threads_to_use=1;}
-    config.max_reflections = std::stoi(xml.GetAttrib("max_reflections"));
-    config.spp = std::stoi(xml.GetAttrib("samplesPP"));
-    config.stretch = xml.GetAttrib("stretch");
+    scene.config.threads_to_use = std::stoi(xml.GetAttrib("threads"));
+    if (scene.config.threads_to_use < 1){scene.config.threads_to_use=1;}
+    scene.config.max_reflections = std::stoi(xml.GetAttrib("max_reflections"));
+    scene.config.spp = std::stoi(xml.GetAttrib("samplesPP"));
+    scene.config.stretch = xml.GetAttrib("stretch");
 
-    xml.FindElem(); //camera
-    Camera::deserialize(xml.GetSubDoc(),cam);
+    xml.FindElem(); //scene.camera
+    Camera::deserialize(xml.GetSubDoc(),scene.cam);
 
     while(xml.FindElem())
     {
         std::string element = xml.GetTagName();
         if(element == "Sphere")
         {
-            Sphere* sp = new Sphere();
+            std::shared_ptr<Sphere> sp = std::make_shared<Sphere>();
             sp->deserialize(xml.GetSubDoc());
-            objects.push_back(sp);
+            scene.objects.push_back(sp);
         }
         else if(element == "Plane")
         {
-            Plane* pl = new Plane();
+            std::shared_ptr<Plane> pl = std::make_shared<Plane>();
             pl->deserialize(xml.GetSubDoc());
-            objects.push_back(pl);
+            scene.objects.push_back(pl);
         }
         else if(element == "Light")
         {
             Light l = Light();
             l.deserialize(xml.GetSubDoc());
-            lights.push_back(l);
+            scene.lights.push_back(l);
             continue;
         }
         else if(element == "Mesh")
         {
-            Mesh* m = new Mesh();
-            m->deserialize(xml.GetSubDoc());
-            objects.push_back(m);
+            std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
+            mesh->deserialize(xml.GetSubDoc());
+            scene.objects.push_back(mesh);
         }
     }
-    for(int i =0;i<objects.size();i++)
+    for(int i =0;i<scene.objects.size();i++)
     {
-        if(is_light(objects[i]))
+        if(is_light(scene.objects[i].get()))
         {
-            gLights.push_back(objects[i]);
+            scene.gLights.push_back(scene.objects[i]);
         }
     }
 }

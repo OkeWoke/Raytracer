@@ -16,12 +16,6 @@ struct Hit
     double t;
     GObject* obj;
     Color color;
-
-
-    ~Hit()
-    {
-        obj = nullptr;
-    }
 };
 
 struct Config
@@ -32,17 +26,23 @@ struct Config
     std::string stretch;
 };
 
+struct Scene
+{
+    std::vector<std::shared_ptr<GObject>> objects;
+    std::vector<Light> lights;
+    std::vector<std::shared_ptr<GObject>> gLights; //GObjects that have emission.
+    Camera cam;
+    Config config;
+};
+
 bool is_light(GObject* obj);
 Hit intersect(const Vector& src, const Vector& ray_dir, const BoundVolumeHierarchy& bvh);
-void cast_rays_multithread(const Config& config,
-                           const Camera& cam,
+void cast_rays_multithread(const Scene& scene,
                            ImageArray& img,
                            const Sampler& sampler1,
                            const Sampler& sampler2,
-                           const BoundVolumeHierarchy& bvh,
-                           const std::vector<GObject*>& objects,
-                           const std::vector<Light>& lights,
-                           const std::vector<GObject*>& gLights);
+                           const BoundVolumeHierarchy& bvh
+                           );
 
 Color trace_rays_iterative(const Vector& origin,
                            const Vector& ray_dir,
@@ -51,8 +51,8 @@ Color trace_rays_iterative(const Vector& origin,
                            int depth,
                            const Sampler& ha1,
                            const Sampler& ha2,
-                           const std::vector<GObject*>& objects,
-                           const std::vector<GObject*>& gLights);
+                           const std::vector<std::shared_ptr<GObject>>& objects,
+                           const std::vector<std::shared_ptr<GObject>>& gLights);
 
 Color shade(const Hit& hit,
             int reflection_count,
@@ -60,5 +60,5 @@ Color shade(const Hit& hit,
             const Sampler& ha2,
             const BoundVolumeHierarchy& bvh,
             const Config& config,
-            const std::vector<GObject*>& objects,
+            const std::vector<std::shared_ptr<GObject>>& objects,
             const std::vector<Light>& lights);

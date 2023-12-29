@@ -1,6 +1,7 @@
 #include "Sphere.h"
 #include "Markup-w.h"
 #include "BoundVolume.h"
+#include <memory>
 
 Sphere::Sphere(): GObject()
 {
