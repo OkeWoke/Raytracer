@@ -1,19 +1,17 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-
 #include <string>
-#include <pngpp-w.hpp>
-#include "CImg-w.h"
-
 #include <functional>
-
 #include <time.h>
+
+#include "Markup-w.h"
+#include "CImg-w.h"
+#include "pngpp-w.hpp"
 
 #include "render.h"
 #include "Camera.h"
 #include "Light.h"
-
 #include "BoundVolumeHierarchy.h"
 #include "HaltonSampler.h"
 #include "RandomSampler.h"
@@ -21,11 +19,7 @@
 #include "GObject.h"
 #include "Plane.h"
 #include "Mesh.h"
-#include "Markup-w.h"
 #include "stats.h"
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
 
 extern Stats stats;
 
@@ -78,7 +72,6 @@ int main()
             display_image(x,y,0) = pow(img.pixelMatrix[i].r, exponent); // TODO: Verify this.
             display_image(x,y,1) = pow(img.pixelMatrix[i].g, exponent);
             display_image(x,y,2) = pow(img.pixelMatrix[i].b, exponent);
-
         }
         display_image.display(display);
         if (display.is_closed())
@@ -119,7 +112,6 @@ int main()
     auto save_end = std::chrono::steady_clock::now();
     std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "----------------------------------------\n\n\n\n" << std::endl;
-
 
     //getch();
     return 0;
