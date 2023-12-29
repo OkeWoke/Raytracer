@@ -47,7 +47,7 @@ int main()
 
     //Creation of BoundVolume Hierarchy
     auto bvh_start = std::chrono::steady_clock::now();
-    BoundVolumeHierarchy bvh = BoundVolumeHierarchy(scene.objects);
+    BoundVolumeHierarchy bvh(scene.objects);
     auto bvh_end = std::chrono::steady_clock::now();
     std::cout<<"BVH Constructed in: " << (bvh_end-bvh_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;
 

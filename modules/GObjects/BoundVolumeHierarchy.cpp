@@ -1,13 +1,8 @@
 #include "BoundVolumeHierarchy.h"
 
-BoundVolumeHierarchy::BoundVolumeHierarchy( )
-{
-    //ctor
-}
-
 BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<std::shared_ptr<GObject>>& objects)
 {
-    BoundVolume* scene_bv = BoundVolume::compute_bound_volume(objects);
+    std::shared_ptr<BoundVolume> scene_bv = BoundVolume::compute_bound_volume(objects);
     Vector center = Vector(0,0,0);
     for(unsigned int k = 0; k < objects.size(); k++)
     {
@@ -37,16 +32,14 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<Vector>& vertices)
     BoundSetup(bv, center);
 }
 
-void BoundVolumeHierarchy::BoundSetup(BoundVolume* bv, Vector& center)
+void BoundVolumeHierarchy::BoundSetup(std::shared_ptr<BoundVolume> bv, Vector& center)
 {
-    this->bv = (BoundVolume*)bv;
+    this->bv = bv;
     this->center = center;
 
     diameter.x = abs(this->bv->d_max_vals[0] - this->bv->d_min_vals[0]);
     diameter.y = abs(this->bv->d_max_vals[1] - this->bv->d_min_vals[1]);
     diameter.z = abs(this->bv->d_max_vals[2] - this->bv->d_min_vals[2]);
-
-
 }
 
 BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
@@ -60,12 +53,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
     this->bv = nullptr;
 }
 
-BoundVolumeHierarchy::~BoundVolumeHierarchy()
-{
-    objects.clear();
-    delete bv;
-    bv = nullptr;
-}
+
 
 void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
 {
@@ -135,14 +123,14 @@ void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
     children[key]->insert_object(tri, depth+1);
 }
 
-BoundVolume* BoundVolumeHierarchy::build_BVH()
+std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
 {
-    std::vector<BoundVolume*> child_volumes;
+    std::vector<std::shared_ptr<BoundVolume>> child_volumes;
     for (int i=0;i<8;i++)
     {
         if (children[i]!= nullptr)
         {
-            BoundVolume* bv = children[i]->build_BVH();
+            std::shared_ptr<BoundVolume> bv = children[i]->build_BVH();
             if (bv!= nullptr)
             //if child contains something...
             {
@@ -174,16 +162,13 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
                 this->bv = BoundVolume::compute_bound_volume(vertices);
             }else
             {
-                std::vector<BoundVolume*> volumes;
+                std::vector<std::shared_ptr<BoundVolume>> volumes;
                 for(int i=0; i<objects.size();i++)
                 {
-                    BoundVolume* obj_bv_pointer = (BoundVolume*)objects[i]->bv;
-                    volumes.push_back(obj_bv_pointer);
+                    volumes.push_back(std::dynamic_pointer_cast<BoundVolume>(objects[i]->bv));
                 }
                 this->bv = BoundVolume::compute_bound_volume(volumes);
             }
-            //at this point we could clear memory of objects as the instance doesn't need it anymore..., although...
-            //although what?
         }
     }else
     //We have child bounded volumes, create bvh around this

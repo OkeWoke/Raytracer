@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <cmath>
@@ -13,8 +12,8 @@
 class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane normals, computes 14 t values for intersections.
 {
     public:
-        BoundVolume();
-        ~BoundVolume();
+        BoundVolume(){};
+        ~BoundVolume(){};
 
         intersection intersect(const Vector& src, const Vector& d);
 
@@ -23,11 +22,11 @@ class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane
 
         Vector center;
         static const Vector plane_normals[7];
-        static BoundVolume* compute_bound_volume(std::vector<Vector>& vertices);
-        static BoundVolume* compute_bound_volume(std::vector<BoundVolume*>& volumes);
-        static BoundVolume* compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(std::vector<Vector>& vertices);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(std::vector<std::shared_ptr<BoundVolume>>& volumes);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects);
 
-        static BoundVolume* compute_bound_volume(Sphere* sphere);
-        static BoundVolume* compute_bound_volume(Plane* plane);
+        static std::shared_ptr<BoundVolume>  compute_bound_volume(Sphere* sphere);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(Plane* plane);
         Vector get_random_point(double val1, double val2);
 };

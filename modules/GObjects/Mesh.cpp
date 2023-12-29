@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "Mesh.h"
 
 Mesh::Mesh(std::vector<Vector>& vertices, std::vector<std::shared_ptr<Triangle>>& triangles,  const MeshConfig& config): bvh(vertices), vertices(vertices), triangles(triangles)
