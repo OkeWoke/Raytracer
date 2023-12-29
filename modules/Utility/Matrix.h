@@ -7,8 +7,6 @@
 
 #include "Vector.h"
 
-#define PI 3.14159265
-
 //4x4 matrix containing doubles, used for affine transformations.
 class Matrix
 {
@@ -24,9 +22,8 @@ class Matrix
         static Matrix rot_z(double theta);
         static Matrix scale(double factor);
 
-
         //computations
-        Vector mult_vec(Vector lhs, double w);
+        Vector mult_vec(Vector lhs, double w) const;
         static Matrix translate(Vector vec);
         Matrix inverse();
 

@@ -2,18 +2,10 @@
 
 const Vector BoundVolume::plane_normals[7]= {Vector(1,0,0), Vector(0,1,0), Vector(0,0,1), Vector(sqrt(3)/3,sqrt(3)/3,sqrt(3)/3), Vector(-sqrt(3)/3,sqrt(3)/3,sqrt(3)/3), Vector(-sqrt(3)/3,-sqrt(3)/3,sqrt(3)/3), Vector(sqrt(3)/3,-sqrt(3)/3,sqrt(3)/3)};
 
-BoundVolume::BoundVolume()
-{
-}
 
-BoundVolume::~BoundVolume()
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
 {
-
-}
-
-BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
-{
-    BoundVolume* bv = new BoundVolume();
+    std::shared_ptr<BoundVolume> bv = std::make_shared<BoundVolume>();
     bv->color = Color(0,255,0);
 
     for(int i=0; i < 7; i++)
@@ -43,12 +35,12 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<Vector>& vertices)
     return bv;
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::shared_ptr<BoundVolume>>& volumes)
 //compute a BV around a collection of several BV...
 {
     //since all bv share the same vectors, I guess we just compare d_max and d-min vals or soemthing? and get the most bounding of em all? yee
     // out of all max values
-    BoundVolume* new_bv = new BoundVolume();
+    std::shared_ptr<BoundVolume> new_bv = std::make_shared<BoundVolume>();
     new_bv->color = Color(0,255,0);
 
     //maximum
@@ -81,20 +73,21 @@ BoundVolume* BoundVolume::compute_bound_volume(std::vector<BoundVolume*> volumes
     return new_bv;
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(std::vector<GObject*> objects)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects)
+// pleas enote this is only for surface level objects, not meant for objects's bv, please cast objects bv to BoundVolume and call other method.
 {
-    std::vector<BoundVolume*> volumes;
+    std::vector<std::shared_ptr<BoundVolume>> volumes;
     for (int i=0;i<objects.size();i++)
     {
-        volumes.push_back((BoundVolume*)objects[i]->bv);
+        volumes.push_back(std::dynamic_pointer_cast<BoundVolume>( objects[i]->bv));
     }
     return compute_bound_volume(volumes);
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(Sphere* sphere)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Sphere* sphere)
 //Compute a BV around a sphere
 {
-    BoundVolume* new_bv = new BoundVolume();
+    std::shared_ptr<BoundVolume> new_bv = std::make_shared<BoundVolume>();
     new_bv->color = Color(0,255,0);
 
     for(int i=0; i<7; i++)
@@ -106,7 +99,7 @@ BoundVolume* BoundVolume::compute_bound_volume(Sphere* sphere)
     return new_bv;
 }
 
-BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Plane* plane)
 {
     Vector h_offset = plane->u*plane->w;
     Vector v_offset = plane->v*plane->l;
@@ -125,11 +118,8 @@ BoundVolume* BoundVolume::compute_bound_volume(Plane* plane)
         vertices_to_send.push_back(vec - 0.2*plane->n);
     }
 
-    BoundVolume* new_bv = compute_bound_volume(vertices_to_send);
-
-    return new_bv;
+   return compute_bound_volume(vertices_to_send);
 }
-
 
 GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 {
@@ -166,7 +156,7 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
     inter.t = largest_t_near;
     inter.n = this->plane_normals[plane_index];
-    inter.obj_ref = this;
+    inter.obj_ref = (GObject*)this;
 
     return inter;
 }

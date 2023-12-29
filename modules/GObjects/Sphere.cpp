@@ -1,6 +1,7 @@
 #include "Sphere.h"
 #include "Markup-w.h"
 #include "BoundVolume.h"
+#include <memory>
 
 Sphere::Sphere(): GObject()
 {
@@ -8,8 +9,7 @@ Sphere::Sphere(): GObject()
 
 Sphere::~Sphere()
 {
-    delete bv;
-    bv = nullptr;
+
 }
 
 Sphere::Sphere(Vector pos, double radius): GObject(position),
@@ -24,7 +24,7 @@ radius(radius)
 
 GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 {
-    intersection bv_inter = ((BoundVolume*)this->bv)->intersect(src, d);
+    intersection bv_inter = ((BoundVolume*)this->bv.get())->intersect(src, d);
     if(bv_inter.obj_ref != nullptr)
     {
         intersection inter = intersection();

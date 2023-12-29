@@ -1,5 +1,7 @@
 #include "Matrix.h"
-
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 Matrix::Matrix() : Matrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
 
@@ -154,7 +156,7 @@ Matrix Matrix::translate(Vector vec)
 Matrix Matrix::rot_x(double theta)
 //takes an angle in degrees, returns rotation around x axis matrix
 {
-    theta = PI * theta/180;
+    theta = M_PI * theta/180;
     double s = sin(theta);
     double c = cos(theta);
     return Matrix(1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1);
@@ -163,7 +165,7 @@ Matrix Matrix::rot_x(double theta)
 Matrix Matrix::rot_y(double theta)
 //takes an angle in degrees, returns rotation around y axis matrix
 {
-    theta = PI * theta/180;
+    theta = M_PI * theta/180;
     double s = sin(theta);
     double c = cos(theta);
     return Matrix(c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1);
@@ -172,7 +174,7 @@ Matrix Matrix::rot_y(double theta)
 Matrix Matrix::rot_z(double theta)
 //takes an angle in degrees, returns rotation around z axis matrix
 {
-    theta = PI * theta/180;
+    theta = M_PI * theta/180;
     double s = sin(theta);
     double c = cos(theta);
     return Matrix(c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
@@ -183,7 +185,7 @@ Matrix Matrix::scale(double factor)
     return Matrix(factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor);
 }
 
-Vector Matrix::mult_vec(Vector lhs, double w)
+Vector Matrix::mult_vec(Vector lhs, double w) const
 //transform a 3 dim vec with 4th homogenous coordinate w
 {
     return Vector(

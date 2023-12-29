@@ -1,25 +1,45 @@
 #include "BoundVolumeHierarchy.h"
 
-BoundVolumeHierarchy::BoundVolumeHierarchy( )
+BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<std::shared_ptr<GObject>>& objects)
 {
-    //ctor
+    std::shared_ptr<BoundVolume> scene_bv = BoundVolume::compute_bound_volume(objects);
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < objects.size(); k++)
+    {
+        center  = center + objects[k]->position;
+    }
+    center = center / objects.size();
+
+    BoundSetup(scene_bv, center);
+
+    for (auto obj: objects)
+    {
+        this->insert_object((GObject*)obj.get(),0);
+    }
+    (void) this->build_BVH();
 }
 
-BoundVolumeHierarchy::BoundVolumeHierarchy(GObject* bv, Vector center)
+BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<Vector>& vertices)
 {
-    this->bv = (BoundVolume*)bv;
+    auto bv = BoundVolume::compute_bound_volume(vertices); //this is deleted by bvh destructor?
+    Vector center = Vector(0,0,0);
+    for(unsigned int k = 0; k < vertices.size(); k++)
+    {
+        center  = center + vertices[k];
+    }
+    center = center / vertices.size();
+
+    BoundSetup(bv, center);
+}
+
+void BoundVolumeHierarchy::BoundSetup(std::shared_ptr<BoundVolume> bv, Vector& center)
+{
+    this->bv = bv;
     this->center = center;
 
     diameter.x = abs(this->bv->d_max_vals[0] - this->bv->d_min_vals[0]);
     diameter.y = abs(this->bv->d_max_vals[1] - this->bv->d_min_vals[1]);
     diameter.z = abs(this->bv->d_max_vals[2] - this->bv->d_min_vals[2]);
-    //std::cout<<diameter.to_string() <<std::endl;
-    //std::cout<<center.to_string() << std::endl;
-
-    for (int i=0;i<8;i++)
-    {
-        this->children[i] = nullptr;
-    }
 }
 
 BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
@@ -33,25 +53,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
     this->bv = nullptr;
 }
 
-BoundVolumeHierarchy::~BoundVolumeHierarchy()
-{
-    /*for (auto p : objects)
-    {
-        delete p; // triangles deleted by mesh, double delete results in seg fault for some reason.
-        p = nullptr;
-    }*/
-    objects.clear();
-    for (auto p : children)
-    {
-        delete p;
-        p = nullptr;
-    }
 
-    delete bv;
-    bv = nullptr;
-
-
-}
 
 void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
 {
@@ -115,20 +117,20 @@ void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
             center.x = this->center.x - diameter.x/2;
         }
 
-        children[key] = new BoundVolumeHierarchy(diameter, center);
+        children[key] = std::make_unique<BoundVolumeHierarchy>(diameter, center);
     }
 
     children[key]->insert_object(tri, depth+1);
 }
 
-BoundVolume* BoundVolumeHierarchy::build_BVH()
+std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
 {
-    std::vector<BoundVolume*> child_volumes;
+    std::vector<std::shared_ptr<BoundVolume>> child_volumes;
     for (int i=0;i<8;i++)
     {
         if (children[i]!= nullptr)
         {
-            BoundVolume* bv = children[i]->build_BVH();
+            std::shared_ptr<BoundVolume> bv = children[i]->build_BVH();
             if (bv!= nullptr)
             //if child contains something...
             {
@@ -160,16 +162,13 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
                 this->bv = BoundVolume::compute_bound_volume(vertices);
             }else
             {
-                std::vector<BoundVolume*> volumes;
+                std::vector<std::shared_ptr<BoundVolume>> volumes;
                 for(int i=0; i<objects.size();i++)
                 {
-                    BoundVolume* obj_bv_pointer = (BoundVolume*)objects[i]->bv;
-                    volumes.push_back(obj_bv_pointer);
+                    volumes.push_back(std::dynamic_pointer_cast<BoundVolume>(objects[i]->bv));
                 }
                 this->bv = BoundVolume::compute_bound_volume(volumes);
             }
-            //at this point we could clear memory of objects as the instance doesn't need it anymore..., although...
-            //although what?
         }
     }else
     //We have child bounded volumes, create bvh around this
@@ -181,15 +180,10 @@ BoundVolume* BoundVolumeHierarchy::build_BVH()
 }
 
 
-GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth)
+GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth) const
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
 {
     GObject::intersection bv_inter = GObject::intersection();
-    if(this->bv == nullptr)
-        //this case shouldnt happen?
-    {
-        //return bv_inter;
-    }
 
     bv_inter = bv->intersect(src,d);
     if (depth >= 2)
