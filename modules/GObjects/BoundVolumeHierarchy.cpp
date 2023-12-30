@@ -155,9 +155,9 @@ std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
                 for (int i =0; i<objects.size();i++)
                 {
                     Triangle* tri_pointer = (Triangle*)objects[i];
-                    vertices.push_back(tri_pointer->v1);
-                    vertices.push_back(tri_pointer->v2);
-                    vertices.push_back(tri_pointer->v3);
+                    vertices.push_back(tri_pointer->v[0]);
+                    vertices.push_back(tri_pointer->v[1]);
+                    vertices.push_back(tri_pointer->v[2]);
                 }
                 this->bv = BoundVolume::compute_bound_volume(vertices);
             }else
