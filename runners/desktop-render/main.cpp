@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <time.h>
+#include <chrono>
 
 #include "Markup-w.h"
 #include "CImg-w.h"
@@ -114,7 +115,8 @@ int main()
     std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "----------------------------------------\n\n\n\n" << std::endl;
 
-    //getch();
+    int a;
+    std::cin >> a;
     return 0;
 
     /* Animation codes

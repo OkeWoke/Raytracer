@@ -74,7 +74,7 @@ std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::
 }
 
 std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects)
-// pleas enote this is only for surface level objects, not meant for objects's bv, please cast objects bv to BoundVolume and call other method.
+// please note this is only for surface level objects, not meant for objects's bv, please cast objects bv to BoundVolume and call other method.
 {
     std::vector<std::shared_ptr<BoundVolume>> volumes;
     for (int i=0;i<objects.size();i++)

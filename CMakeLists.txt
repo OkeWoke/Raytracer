@@ -8,7 +8,7 @@ if(MSVC)
 include(${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake)
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/scripts/buildsystems/vcpkg.cmake)
 endif()
-
+include(CTest)
 add_subdirectory(thirdparty)
 add_subdirectory(modules)
 add_subdirectory(runners)

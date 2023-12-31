@@ -1,9 +1,9 @@
-# Software Path Tracer
+# Software Path Tracer [![Build & Test](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml/badge.svg)](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml)
 
 ![Example image of raytraced sphere](docs/example_pathtrace2.png)
 ![Example image of raytraced Mesh](docs/example_pathtrace3.png)
 
-Initially this was a messy learning project in C++ to make some pretty images.
+Initially this was a messy learning project in C++ to make some pretty images, but has since involved into a scope creep toy project.
 
 ## Features
 - Obj file reader for triangular meshes

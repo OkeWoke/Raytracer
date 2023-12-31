@@ -9,7 +9,7 @@
 #include "Sphere.h"
 #include "Plane.h"
 
-class BoundVolume : public GObject//accelerated structure unit. Contains 7 plane normals, computes 14 t values for intersections.
+class BoundVolume : public GObject //accelerated structure unit. Contains 7 plane normals, computes 14 t values for intersections.
 {
     public:
         BoundVolume(){};

@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Markup-w.h"
 
 Camera::Camera()
 {
