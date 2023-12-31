@@ -37,6 +37,7 @@ jobs:
           genhtml coverage.info --output-directory coverage
 
       - name: Upload coverage to Codecov
+        working-directory: ${{ github.workspace }}/build
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
