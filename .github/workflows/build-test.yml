@@ -17,14 +17,36 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build libpng-dev libpng++-dev
+          sudo apt-get install -y build-essential cmake ninja-build libpng-dev libpng++-dev lcov
 
       - name: Configure CMake
-        run: cmake -S . -B ${{ github.workspace }}/build -G Ninja
+        run: cmake -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS="--coverage" -B ${{ github.workspace }}/build -G Ninja
 
       - name: Build
         run: cmake --build ${{ github.workspace }}/build
 
+      - name: Initialize Coverage Data
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          lcov --directory modules --zerocounters
+          lcov --capture --initial --directory modules --output-file coverage.base
+
       - name: Test
         working-directory: ${{ github.workspace }}/build
         run: ctest
+
+      - name: Capture Coverage Data
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          lcov --capture --directory modules --output-file coverage.test
+          lcov --add-tracefile coverage.base --add-tracefile coverage.test --output-file coverage.total
+          lcov --remove coverage.total '/usr/*' "${{ github.workspace }}/build/*" --output-file coverage.info
+          genhtml coverage.info --output-directory coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: build/coverage.info
+          fail_ci_if_error: true
+          verbose: true
