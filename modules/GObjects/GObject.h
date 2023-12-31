@@ -18,6 +18,15 @@ class GObject
             //this->bv = std::move(obj.bv);
         };
 
+        bool is_light()
+        {
+            if(this->emission.r > 0 || this->emission.g > 0 || this->emission.b > 0)
+            {
+                return true;
+            }
+            return false;
+        };
+
         virtual ~GObject() {};
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};

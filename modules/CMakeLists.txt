@@ -41,5 +41,5 @@ add_subdirectory(Utility)
 add_subdirectory(GObjects)
 add_subdirectory(Samplers)
 add_subdirectory(RenderTools)
-add_subdirectory(Deserialize)
+add_subdirectory(Render)
 

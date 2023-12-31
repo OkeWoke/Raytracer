@@ -2,15 +2,6 @@
 #include <future>
 #include "math.h"
 //#define DEBUG_SINGLE_THREAD
-bool is_light(GObject* obj)
-{
-    if(obj->emission.r >0 || obj->emission.g > 0 || obj->emission.b > 0)
-    {
-        return true;
-    }
-    return false;
-}
-
 
 void cast_rays_multithread(const Scene& scene,
                            ImageArray& img,
@@ -305,7 +296,7 @@ Color trace_rays_iterative(const Vector& origin,
         }
         Vector hit_point = hit.src + hit.t*hit.ray_dir;
         double n_dot_ray = hit.n.dot(hit.ray_dir);
-        if(is_light(hit.obj) && n_dot_ray < 0)
+        if(hit.obj->is_light() && n_dot_ray < 0)
         {
             double divisor = 1;//max(1.0,hit.t*hit.t);
 

@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "imageArray.h"
 #include "Light.h"
+#include "RenderStructs.h"
 
 struct Hit
 {
@@ -18,24 +19,6 @@ struct Hit
     Color color;
 };
 
-struct Config
-{
-    int threads_to_use;
-    int max_reflections;
-    int spp;
-    std::string stretch;
-};
-
-struct Scene
-{
-    std::vector<std::shared_ptr<GObject>> objects;
-    std::vector<Light> lights;
-    std::vector<std::shared_ptr<GObject>> gLights; //GObjects that have emission.
-    Camera cam;
-    Config config;
-};
-
-bool is_light(GObject* obj);
 Hit intersect(const Vector& src, const Vector& ray_dir, const BoundVolumeHierarchy& bvh);
 void cast_rays_multithread(const Scene& scene,
                            ImageArray& img,
