@@ -1,4 +1,5 @@
 #include "Light.h"
+#include "Markup-w.h"
 
 Light::Light():
 position(Vector()),

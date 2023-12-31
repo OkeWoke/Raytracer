@@ -3,6 +3,7 @@
 
 #include "Triangle.h"
 #include "stats.h"
+#include "Markup-w.h"
 
 Triangle::Triangle(): GObject()//constructor no longer supported
 {

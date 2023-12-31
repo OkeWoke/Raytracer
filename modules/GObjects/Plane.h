@@ -4,7 +4,6 @@
 
 #include "Matrix.h"
 #include "GObject.h"
-#include "Markup-w.h"
 
 
 class Plane: public GObject
