@@ -1,4 +1,4 @@
-# Software Path Tracer [![Build & Test](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml/badge.svg)](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml)
+# Software Path Tracer [![Build & Test](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml/badge.svg)](https://github.com/OkeWoke/Raytracer/actions/workflows/build-test.yml) [![codecov](https://codecov.io/gh/OkeWoke/Raytracer/graph/badge.svg?token=6A3QCKGKKR)](https://codecov.io/gh/OkeWoke/Raytracer)
 
 ![Example image of raytraced sphere](docs/example_pathtrace2.png)
 ![Example image of raytraced Mesh](docs/example_pathtrace3.png)
