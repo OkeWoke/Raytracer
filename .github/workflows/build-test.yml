@@ -25,6 +25,12 @@ jobs:
       - name: Build
         run: cmake --build ${{ github.workspace }}/build
 
+      - name: Initialize Coverage Data
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          lcov --directory modules --zerocounters
+          lcov --capture --initial --directory modules --output-file coverage.base
+
       - name: Test
         working-directory: ${{ github.workspace }}/build
         run: ctest
@@ -32,8 +38,9 @@ jobs:
       - name: Capture Coverage Data
         working-directory: ${{ github.workspace }}/build
         run: |
-          lcov --capture --directory modules --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' "${{ github.workspace }}/build/*" --output-file coverage.info
+          lcov --capture --directory modules --output-file coverage.test
+          lcov --add-tracefile coverage.base --add-tracefile coverage.test --output-file coverage.total
+          lcov --remove coverage.total '/usr/*' "${{ github.workspace }}/build/*" --output-file coverage.info
           genhtml coverage.info --output-directory coverage
 
       - name: Upload coverage to Codecov
