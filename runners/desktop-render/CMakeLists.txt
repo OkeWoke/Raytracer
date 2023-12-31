@@ -6,16 +6,18 @@ add_executable(SoftwareTracer
                 render.h
                 ObjReader.cpp
                 ObjReader.h
-                deserialize.cpp
-                deserialize.h)
+             )
 
 target_link_libraries(SoftwareTracer
         PRIVATE
         thirdparty-pngpp
         thirdparty-CImg
         thirdparty-CMarkup
+        Utility
+        Stats
         Samplers
         GObjects
+        Deserialize
         RenderTools)
 
 target_compile_definitions(SoftwareTracer PRIVATE -DRootPath="${CMAKE_SOURCE_DIR}")
