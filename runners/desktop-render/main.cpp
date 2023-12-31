@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <time.h>
+#include <chrono>
 
 #include "Markup-w.h"
 #include "CImg-w.h"
