@@ -13,7 +13,6 @@ class Camera
         double N, H, V, aperture, focus_dist;
         Vector u,v,n,pos;
         Matrix mat;
-        static void deserialize(std::string sub, Camera& cam);
 
         void update_camera(Matrix& tmp);
 };

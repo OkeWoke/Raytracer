@@ -1,4 +1,4 @@
-<Config threads="23" max_reflections="10" samplesPP="200" stretch="gamma"/>
+<Config threads="23" max_reflections="5" samplesPP="10" stretch="gamma"/>
 
 <Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="50" aperture="0.01" focus_dist="200.5">
     <position x="0" y="-1" z="200"/><!-- Camera position -->
@@ -57,7 +57,7 @@
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
-    
+
     <color r="255" g="255" b="255"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
@@ -70,7 +70,7 @@
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="-90"/> <!-- roll -->
-    
+
     <color r="155" g="65" b="25"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
@@ -81,7 +81,7 @@
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="90"/> <!-- roll -->
-    
+
     <color r="30" g="155" b="50"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
@@ -92,7 +92,7 @@
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
-    
+
     <color r="200" g="200" b="200"/>
     <emission r="0" g="0" b="0"/>
 </Plane>
@@ -103,7 +103,7 @@
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->
-    
+
     <color r="255" g="255" b="255"/>
     <emission r="0" g="0" b="0"/>
 </Plane>

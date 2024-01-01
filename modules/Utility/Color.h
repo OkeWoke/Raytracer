@@ -13,7 +13,6 @@ class Color
         double g;
         double b;
 
-        static void deserialize(std::string sub, Color& color);
         double luminance();
 };
 

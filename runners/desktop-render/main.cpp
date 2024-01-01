@@ -36,8 +36,7 @@ int main()
     std::string rootPath = RootPath;
     std::string renderDest = rootPath + "/renders/";
 
-    Scene scene;
-    deserialize(rootPath + "/data/scenes/scene.xml", scene);
+    Scene scene = deserializeScene(rootPath + "/data/scenes/scene.xml");
 
     auto load_end = std::chrono::steady_clock::now();
     std::cout<<"Loading completed in: " << (load_end-load_start)/std::chrono::milliseconds(1)<< " (ms)" << std::endl;

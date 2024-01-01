@@ -11,6 +11,4 @@ class Light
 
         Vector position;
         Color color;
-
-        void deserialize(std::string strSubDoc);
 };

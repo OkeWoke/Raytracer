@@ -28,8 +28,6 @@ class Vector
         double y;
         double z;
 
-        static void deserialize(std::string sub, Vector& vec);
-
         Vector cross(const Vector& vec);
 };
 

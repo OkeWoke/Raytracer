@@ -144,12 +144,3 @@ std::string Vector::to_string() const
 	oss << "(" << this->x << ", " << this->y <<", " << this->z << ")";
 	return oss.str();
 }
-
-void Vector::deserialize(std::string sub, Vector& vec)
- {
-    CMarkup xml(sub);
-    xml.FindElem();
-    vec.x = std::stod(xml.GetAttrib("x"));
-    vec.y = std::stod(xml.GetAttrib("y"));
-    vec.z = std::stod(xml.GetAttrib("z"));
- }

@@ -12,6 +12,13 @@ Sphere::~Sphere()
 
 }
 
+//copy constructor
+Sphere::Sphere(const Sphere& s): GObject(s.color, s.position, s.shininess, s.reflectivity, s.emission, s.brdf)
+{
+    this->radius = s.radius;
+    this->bv = BoundVolume::compute_bound_volume(s);
+}
+
 Sphere::Sphere(Vector pos, double radius): GObject(position),
 radius(radius)
 {
@@ -67,28 +74,4 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 Vector Sphere::get_random_point(double val1, double val2)
 {
  return Vector(0,0,0);
-}
-
-
-void Sphere::deserialize(std::string strSubDoc)
-{
-    CMarkup xml(strSubDoc);
-
-    xml.FindElem();
-    radius = std::stod(xml.GetAttrib("radius"));
-    shininess = std::stod(xml.GetAttrib("shininess"));
-    reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    brdf = std::stod(xml.GetAttrib("brdf"));
-
-    xml.IntoElem();
-
-    xml.FindElem("position");
-    Vector::deserialize(xml.GetSubDoc(), position);
-
-    xml.FindElem("color");
-    Color::deserialize(xml.GetSubDoc(), color);
-
-    xml.FindElem("emission");
-    Color::deserialize(xml.GetSubDoc(), emission);
-    this->bv = BoundVolume::compute_bound_volume(this);
 }

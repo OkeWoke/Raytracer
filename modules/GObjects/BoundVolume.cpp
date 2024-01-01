@@ -51,7 +51,6 @@ std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::
 
         for (auto bv: volumes)
         {
-
             double d_min_tmp = bv->d_min_vals[i];
             double d_max_tmp = bv->d_max_vals[i];
 
@@ -79,12 +78,19 @@ std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(std::vector<std::
     std::vector<std::shared_ptr<BoundVolume>> volumes;
     for (int i=0;i<objects.size();i++)
     {
-        volumes.push_back(std::dynamic_pointer_cast<BoundVolume>( objects[i]->bv));
+        auto ptr = objects[i]->bv;
+        if (ptr == nullptr)
+        {
+            std::cout << "Warning: object " << i << " has no BV" << std::endl;
+        }else
+        {
+            volumes.push_back(std::dynamic_pointer_cast<BoundVolume>( objects[i]->bv));
+        }
     }
     return compute_bound_volume(volumes);
 }
 
-std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Sphere* sphere)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(const Sphere& sphere)
 //Compute a BV around a sphere
 {
     std::shared_ptr<BoundVolume> new_bv = std::make_shared<BoundVolume>();
@@ -92,21 +98,21 @@ std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Sphere* sphere)
 
     for(int i=0; i<7; i++)
     {
-        new_bv->d_min_vals[i] = (sphere->position - sphere->radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
-        new_bv->d_max_vals[i] = (sphere->position + sphere->radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+        new_bv->d_min_vals[i] = (sphere.position - sphere.radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
+        new_bv->d_max_vals[i] = (sphere.position + sphere.radius*BoundVolume::plane_normals[i]).dot((BoundVolume::plane_normals[i]));
     }
 
     return new_bv;
 }
 
-std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Plane* plane)
+std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(const Plane& plane)
 {
-    Vector h_offset = plane->u*plane->w;
-    Vector v_offset = plane->v*plane->l;
+    Vector h_offset = plane.u*plane.w;
+    Vector v_offset = plane.v*plane.l;
 
-    Vector v1 = plane->position + h_offset  + v_offset + plane->n*0.1;
+    Vector v1 = plane.position + h_offset  + v_offset + plane.n*0.1;
     Vector v2 = v1 - 2*v_offset;
-    Vector v3 = plane->position - h_offset - v_offset + plane->n*0.1;
+    Vector v3 = plane.position - h_offset - v_offset + plane.n*0.1;
     Vector v4 = v3 +2*v_offset;
 
     std::vector<Vector> vertices{v1, v2, v3, v4};
@@ -115,7 +121,7 @@ std::shared_ptr<BoundVolume> BoundVolume::compute_bound_volume(Plane* plane)
     for (Vector vec : vertices)
     {
         vertices_to_send.push_back(vec);
-        vertices_to_send.push_back(vec - 0.2*plane->n);
+        vertices_to_send.push_back(vec - 0.2*plane.n);
     }
 
    return compute_bound_volume(vertices_to_send);
