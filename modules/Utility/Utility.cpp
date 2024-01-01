@@ -56,8 +56,6 @@ namespace Utility {
         return normalise(transmitted_ray);
     }
 
-
-
     double schlick_fresnel(double cos_angle, double n_1, double n_2)
     // returns probabibility of reflection based on angle relative to normal. (0 to 90 degrees)
     {

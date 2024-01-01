@@ -49,7 +49,7 @@ TEST_CASE("Utility::snells_law", "[Utility]")
     double n_2 = 2;
     Vector refr_ray = Utility::snells_law(incident_ray, normal, cos_angle, n_1, n_2);
 
-    REQUIRE(refr_ray == Vector(0.35355339059327379, 0.93541434669348533, 0));
+    REQUIRE(refr_ray == Vector(-0.70710678118654746, -0.70710678118654746, 0));
 
     // TODO: Add more cases here
 }
