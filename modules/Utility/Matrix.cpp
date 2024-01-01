@@ -2,6 +2,7 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
 Matrix::Matrix() : Matrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
 

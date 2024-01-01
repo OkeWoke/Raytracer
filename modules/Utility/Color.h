@@ -21,4 +21,5 @@ Color operator*(const Color& LHS, const Color& RHS);
 Color operator*(const Color& LHS, double s);
 Color operator*(double s, const Color& RHS);
 Color operator/(const Color& LHS, double RHS);
+bool operator==(const Color& LHS, const Color& RHS);
 
