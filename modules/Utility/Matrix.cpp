@@ -2,6 +2,7 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+//#define DEBUG
 
 Matrix::Matrix() : Matrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
 {
@@ -36,6 +37,7 @@ a(a), b(b), c(c), d(d), e(e), f(f), g(g), h(h), i(i), j(j), k(k), l(l), m(m), n(
 Matrix::Matrix(double mat[4][4]): Matrix(mat[0][0], mat[0][1], mat[0][2], mat[0][3], mat[1][0], mat[1][1], mat[1][2], mat[1][3], mat[2][0], mat[2][1], mat[2][2], mat[2][3], mat[3][0], mat[3][1], mat[3][2], mat[3][3])
 {
 }
+
 
 Matrix Matrix::inverse()
 {
@@ -118,6 +120,7 @@ Matrix Matrix::inverse()
         }
     };
 
+#ifdef DEBUG
     auto mat_string = [this](double mat[4][4])
     {
         std::ostringstream oss;
@@ -127,12 +130,18 @@ Matrix Matrix::inverse()
         oss << mat[3][0] << " " << mat[3][1] << " " << mat[3][2] << " " << mat[3][3] << std::endl;
         return oss.str();
     };
+#endif
 
     for (int i=0; i<4; i++)
     {
         swap_largest_in_col(tmp, aug, i);
         scale_largest_row(tmp, aug,i);
         sub_rest_rows(tmp, aug, i);
+#ifdef DEBUG
+        std::cout << "Iteration: " << i << std::endl;
+        std::cout << mat_string(tmp) << std::endl;
+        std::cout << mat_string(aug) << std::endl;
+#endif
     }
 
     return Matrix(aug);
