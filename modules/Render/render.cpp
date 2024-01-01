@@ -294,6 +294,7 @@ Color trace_rays_iterative(const Vector& origin,
         {
             break;
         }
+
         Vector hit_point = hit.src + hit.t*hit.ray_dir;
         double n_dot_ray = hit.n.dot(hit.ray_dir);
         if(hit.obj->is_light() && n_dot_ray < 0)

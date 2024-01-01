@@ -26,7 +26,7 @@ class BoundVolume : public GObject //accelerated structure unit. Contains 7 plan
         static std::shared_ptr<BoundVolume> compute_bound_volume(std::vector<std::shared_ptr<BoundVolume>>& volumes);
         static std::shared_ptr<BoundVolume> compute_bound_volume(std::vector<std::shared_ptr<GObject>>& objects);
 
-        static std::shared_ptr<BoundVolume>  compute_bound_volume(Sphere* sphere);
-        static std::shared_ptr<BoundVolume> compute_bound_volume(Plane* plane);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(const Sphere& sphere);
+        static std::shared_ptr<BoundVolume> compute_bound_volume(const Plane& plane);
         Vector get_random_point(double val1, double val2);
 };

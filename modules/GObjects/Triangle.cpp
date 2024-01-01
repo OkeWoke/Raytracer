@@ -73,34 +73,7 @@ std::string Triangle::to_string()
 	return oss.str();
 }
 
-void Triangle::deserialize(std::string strSubDoc)//old method no longer working
-{
-    CMarkup xml(strSubDoc);
-
-    xml.FindElem();
-    shininess = std::stod(xml.GetAttrib("shininess"));
-    reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    xml.IntoElem();
-
-    xml.FindElem("v1");
-    Vector::deserialize(xml.GetSubDoc(), v[0]);
-
-    xml.FindElem("v2");
-    Vector::deserialize(xml.GetSubDoc(), v[1]);
-
-    xml.FindElem("v3");
-    Vector::deserialize(xml.GetSubDoc(), v[2]);
-
-    xml.FindElem("color");
-    Color::deserialize(xml.GetSubDoc(), color);
-
-    AB = v[1]-v[0];
-    AC = v[2]-v[0];
-    n = normalise(AB.cross(AC));
-}
-
 Vector Triangle::get_random_point(double val, double val2)
 {
     return Vector();
 }
-

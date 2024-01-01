@@ -13,9 +13,9 @@ class Sphere: public GObject
         ~Sphere();
         Sphere(Vector c, double radius);
         Sphere(Vector pos, double radius, Color c, double shininess, double reflectivity);
+        Sphere(const Sphere& s);
         intersection intersect(const Vector& src, const Vector& d);
 
-        void deserialize(std::string strSubDoc);
         double radius;
         Vector get_random_point(double val1, double val2);
 };

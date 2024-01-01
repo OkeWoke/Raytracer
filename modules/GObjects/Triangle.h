@@ -17,7 +17,6 @@ class Triangle: public GObject
         intersection intersect(const Vector& src, const Vector& d);
         std::string to_string();
         Vector v[3];
-        void deserialize(std::string strSubDoc);
         Vector get_random_point(double val1, double val2);
 
     private:

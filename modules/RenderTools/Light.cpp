@@ -13,17 +13,3 @@ color(c)
 {
 }
 
-void Light::deserialize(std::string strSubDoc)
-{
-    CMarkup xml(strSubDoc);
-
-    xml.FindElem();
-    xml.IntoElem();
-
-    xml.FindElem("position");
-    Vector::deserialize(xml.GetSubDoc(), position);
-
-    xml.FindElem("color");
-    Color::deserialize(xml.GetSubDoc(), color);
-}
-

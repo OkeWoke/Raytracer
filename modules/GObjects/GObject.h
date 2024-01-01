@@ -30,6 +30,7 @@ class GObject
         virtual ~GObject() {};
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
+        GObject(Color c, Vector pos, double shininess, double reflectivity, Color emission, int brdf):color(c), position(pos), shininess(shininess), reflectivity(reflectivity), emission(emission), brdf(brdf){};
 
         struct intersection
         {
