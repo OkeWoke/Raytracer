@@ -2,14 +2,15 @@
 #include "Vector.h"
 #include <vector>
 #include <math.h>
-
+#include <cassert>
 
 namespace Utility {
 
     //below function is taken from smallpaint
     // given v1, set v2 and v3 so they form an orthonormal system
     // (we assume v1 is already normalized)
-    void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3) {
+    void create_orthonormal_basis(const Vector& v1, Vector& v2, Vector& v3)
+    {
         if (std::abs(v1.x) > std::abs(v1.y)) {
             // project to the y = 0 plane and construct a normalized orthogonal vector in this plane
             double invLen = 1.f / sqrtf(v1.x * v1.x + v1.z * v1.z);
@@ -40,17 +41,23 @@ namespace Utility {
     }
 
     Vector snells_law(const Vector& incident_ray, const Vector& normal, double cos_angle, double n_1, double n_2)
-        //assume the two rays are normalised, thus dot product returns the cosine of them.
-        //takes cos_angle to avoid doing a redundant dot product.
     {
-        Vector ray_hor = incident_ray - cos_angle * normal;
-        double sin_theta_2 = ray_hor.abs() * n_1 / n_2;
-        Vector refr_ray = normalise(-1 * normal + normalise(ray_hor) * sin_theta_2);
-        return refr_ray;
+        assert(incident_ray.abs() > 0.99 && incident_ray.abs() < 1.01);
+        assert(normal.abs() > 0.99 && normal.abs() < 1.01);
+        // Compute the refractive index ratio
+        double n_ratio = n_1 / n_2;
+
+        // Compute the cosines of the transmitted ray angle using Snell's Law
+        double cos_transmitted_angle = std::sqrt(1.0 - n_ratio * n_ratio * (1.0 - cos_angle * cos_angle));
+
+        // Compute the transmitted ray direction vector
+        Vector transmitted_ray = n_ratio * incident_ray + (n_ratio * cos_angle - cos_transmitted_angle) * incident_ray;
+
+        return normalise(transmitted_ray);
     }
 
     double schlick_fresnel(double cos_angle, double n_1, double n_2)
-        //returns probabibility of reflection based on angle relative to normal. (0 to 90 degrees)
+    // returns probabibility of reflection based on angle relative to normal. (0 to 90 degrees)
     {
         double R_0 = (n_1 - n_2) / (n_1 + n_2);
         R_0 = R_0 * R_0;
@@ -60,6 +67,8 @@ namespace Utility {
     }
 
     Vector uniform_sphere(double u1, double u2)
+    // returns a point on a sphere using two random numbers u1 and u2 between 0 and 1.
+    // u1 used as the cosine of the polar angle, uniformly distributed.
     {
         const double r = sqrt(1.0 - u1 * u1);
         const double phi = 2 * M_PI * u2;
@@ -68,10 +77,9 @@ namespace Utility {
         return ray;
     }
 
-    Vector uniform_hemisphere(double u1, double u2, Vector& n) {
-        const double r = sqrt(1.0 - u1 * u1);
-        const double phi = 2 * M_PI * u2;
-        Vector ray = Vector(cos(phi) * r, sin(phi) * r, u1);
+    Vector uniform_hemisphere(double u1, double u2, Vector& n)
+    {
+        Vector ray = uniform_sphere(u1, u2);
         if (ray.dot(n) < 0)
         {
             return -1 * ray;
@@ -81,20 +89,17 @@ namespace Utility {
 
     Vector cosine_weighted_hemisphere(double u1, double u2, const Vector& n)
         // taken from http://www.rorydriscoll.com/2009/01/07/better-sampling/
-        //modified to ensure on the correct hemisphere
+        // modified to ensure on the correct hemisphere
     {
         const double r = sqrt(u1);
         const double theta = 2 * M_PI * u2;
 
         const double x = r * cos(theta);
         const double y = r * sin(theta);
-        const double z = 1 - x * x - y * y;
+        const double z = 1 - std::sqrt(std::max(0.0, 1- u1));
+        Vector trangent, bitangent;
+        create_orthonormal_basis(n, trangent, bitangent);
 
-        Vector ray = Vector(x, y, z);
-        if (ray.dot(n) < 0)
-        {
-            return -1 * ray;
-        }
-        return ray;
+        return x * trangent + y * bitangent + z * n;
     }
 }

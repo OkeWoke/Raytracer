@@ -128,7 +128,6 @@ Color deserializeColor(const std::string& sub)
     return color;
 }
 
-
 Sphere deserializeSphere(const std::string& strSubDoc)
 {
     Sphere sphere;

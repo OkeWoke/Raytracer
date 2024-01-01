@@ -44,3 +44,8 @@ Color operator/(const Color& LHS, double RHS)
 {
     return Color(LHS.r/RHS, LHS.g/RHS, LHS.b/RHS);
 }
+
+bool operator==(const Color& LHS, const Color& RHS)
+{
+    return (LHS.r == RHS.r && LHS.g == RHS.g && LHS.b == RHS.b);
+}

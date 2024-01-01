@@ -15,6 +15,8 @@ TEST_CASE("Vector Operations", "[Vector]")
 
     REQUIRE(a*5 == Vector(5, 10, 15));
 
+    REQUIRE(5*a == Vector(5, 10, 15));
+
     Vector c;
     REQUIRE(c.x == 0);
     REQUIRE(c.y == 0);
