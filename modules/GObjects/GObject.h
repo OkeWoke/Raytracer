@@ -7,12 +7,39 @@
 class GObject
 {
     public:
+        enum class BRDF
+        {
+            PHONG_DIFFUSE,
+            PHONG_GLOSSY,
+            MIRROR,
+        };
+
+        static BRDF brdf_from_string(const std::string& str)
+        {
+            if(str == "PHONG_DIFFUSE")
+            {
+                return BRDF::PHONG_DIFFUSE;
+            }
+            else if(str == "PHONG_GLOSSY")
+            {
+                return BRDF::PHONG_GLOSSY;
+            }
+            else if(str == "MIRROR")
+            {
+                return BRDF::MIRROR;
+            }
+            else
+            {
+                throw std::runtime_error("Invalid BRDF type");
+            }
+        };
+
         Color color;
         Vector position;
-        double shininess;
-        double reflectivity;
+        double shininess = 0;
+        double reflectivity = 0;
         Color emission;
-        int brdf;
+        BRDF brdf;
         GObject(){};
         GObject(const GObject& obj): color(obj.color), position(obj.position), shininess(obj.shininess), reflectivity(obj.reflectivity), emission(obj.emission), brdf(obj.brdf){
             //this->bv = std::move(obj.bv);
@@ -30,7 +57,7 @@ class GObject
         virtual ~GObject() {};
         GObject(Vector position): position(position){};
         GObject(Color c, Vector pos, double shininess, double reflectivity):color(c), position(pos), shininess(shininess), reflectivity(reflectivity){};
-        GObject(Color c, Vector pos, double shininess, double reflectivity, Color emission, int brdf):color(c), position(pos), shininess(shininess), reflectivity(reflectivity), emission(emission), brdf(brdf){};
+        GObject(Color c, Vector pos, double shininess, double reflectivity, Color emission, BRDF brdf):color(c), position(pos), shininess(shininess), reflectivity(reflectivity), emission(emission), brdf(brdf){};
 
         struct intersection
         {

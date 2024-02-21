@@ -18,7 +18,7 @@ class Plane: public GObject
               Color c,
               double shininess,
               double reflectivity,
-              int brdf,
+              BRDF brdf,
               Color emission);
         Plane(const Plane& p);
         intersection intersect(const Vector& src, const Vector& d);

@@ -9,9 +9,12 @@ MeshConfig deserializeMesh(std::basic_string<char> xmlStr)
     xml.FindElem();
 
     meshConfig.filename = xml.GetAttrib("filename");
-    meshConfig.shininess = std::stod(xml.GetAttrib("shininess"));
-    meshConfig.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    meshConfig.brdf = std::stod(xml.GetAttrib("brdf"));
+    meshConfig.brdf = GObject::brdf_from_string(xml.GetAttrib("brdf"));
+
+    if(meshConfig.brdf == GObject::BRDF::MIRROR)
+    {
+        meshConfig.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    }
     xml.IntoElem();
 
     xml.FindElem("position");
@@ -135,9 +138,12 @@ Sphere deserializeSphere(const std::string& strSubDoc)
 
     xml.FindElem();
     sphere.radius = std::stod(xml.GetAttrib("radius"));
-    sphere.shininess = std::stod(xml.GetAttrib("shininess"));
-    sphere.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    sphere.brdf = std::stod(xml.GetAttrib("brdf"));
+    sphere.brdf = GObject::brdf_from_string(xml.GetAttrib("brdf"));
+
+    if(sphere.brdf == GObject::BRDF::MIRROR)
+    {
+        sphere.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    }
 
     xml.IntoElem();
 
@@ -147,8 +153,10 @@ Sphere deserializeSphere(const std::string& strSubDoc)
     xml.FindElem("color");
     sphere.color = deserializeColor(xml.GetSubDoc());
 
-    xml.FindElem("emission");
-    sphere.emission = deserializeColor(xml.GetSubDoc());
+    if(xml.FindElem("emission"))
+    {
+        sphere.emission = deserializeColor(xml.GetSubDoc());
+    }
 
     return sphere;
 }
@@ -185,8 +193,6 @@ Camera deserializeCamera(const std::string& sub)
     cam.aperture = std::stod(xml.GetAttrib("aperture"));
     cam.focus_dist = std::stod(xml.GetAttrib("focus_dist"));
 
-    //cam.H = cam.H*cam.fov*cam.N;
-    //cam.V = cam.V*cam.fov*cam.N;
     xml.IntoElem();
 
     xml.FindElem("position");
@@ -219,17 +225,16 @@ Plane deserializePlane(const std::string& strSubDoc)
     xml.FindElem();
     plane.w = std::stod(xml.GetAttrib("w"));
     plane.l = std::stod(xml.GetAttrib("l"));
-    plane.shininess = std::stod(xml.GetAttrib("shininess"));
-    plane.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    plane.brdf = std::stod(xml.GetAttrib("brdf"));
-    xml.IntoElem();
+    plane.brdf = GObject::brdf_from_string(xml.GetAttrib("brdf"));
 
-    //xml.FindElem("normal");
-    //Vector::deserialize(xml.GetSubDoc(), n);
+    if(plane.brdf == GObject::BRDF::MIRROR)
+    {
+        plane.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    }
+    xml.IntoElem();
 
     xml.FindElem("position");
     plane.position = deserializeVector(xml.GetSubDoc());
-    //mat = mat * Matrix::translate(position);
 
     double tmp[4][4] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
     plane.n = Vector(0,1,0);
@@ -253,9 +258,10 @@ Plane deserializePlane(const std::string& strSubDoc)
     xml.FindElem("color");
     plane.color = deserializeColor(xml.GetSubDoc());
 
-    xml.FindElem("emission");
-    plane.emission = deserializeColor(xml.GetSubDoc());
-
+    if(xml.FindElem("emission"))
+    {
+        plane.emission = deserializeColor(xml.GetSubDoc());
+    }
     return plane;
 }
 
