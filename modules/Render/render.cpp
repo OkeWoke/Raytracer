@@ -44,7 +44,9 @@ void cast_rays_multithread(const Scene& scene,
                         x_offset = R * cos(angle);
                         y_offset = R * sin(angle);
 
-                        Vector ray_dir = -scene.cam.N*scene.cam.n + scene.cam.H*(((double)2*(x_index+x_offset)/(scene.cam.H_RES-1)) -1)*scene.cam.u + scene.cam.V*(((double)2*(y_index+y_offset)/(scene.cam.V_RES-1)) -1)*scene.cam.v;
+                        Vector ray_dir = -scene.cam.N*scene.cam.n +  // N Direction
+                                          scene.cam.H*(((double)2*(x_index+x_offset)/(scene.cam.H_RES-1)) -1)*scene.cam.u + // U Direction
+                                          scene.cam.V*(((double)2*(y_index+y_offset)/(scene.cam.V_RES-1)) -1)*scene.cam.v; // V Direction
                         Vector ray_norm = normalise(ray_dir);
                         ray_dir = ray_norm*scene.cam.focus_dist/(-1*ray_norm.dot(scene.cam.n)); //this division ensures we get a planar focal plane, as opposed to spherical.
                         double aperture_radius = scene.cam.aperture* sqrt(sampler1.next());

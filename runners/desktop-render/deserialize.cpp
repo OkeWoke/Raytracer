@@ -204,9 +204,9 @@ Camera deserializeCamera(const std::string& sub)
     tmp = tmp * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
 
     tmp = tmp * Matrix::translate(cam.pos);
-    cam.n = Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]);
-    cam.u = Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]);
-    cam.v = Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]);
+    cam.n = normalise(Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]));
+    cam.u = normalise(Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]));
+    cam.v = normalise(Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]));
 
     return cam;
 }
