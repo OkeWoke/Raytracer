@@ -9,14 +9,7 @@ add_executable(SoftwareTracer
 
 target_link_libraries(SoftwareTracer
         PRIVATE
-        thirdparty-pngpp
         thirdparty-CImg
-        thirdparty-CMarkup
-        Utility
-        Stats
-        Samplers
-        GObjects
-        RenderTools
         Render)
 
 target_compile_definitions(SoftwareTracer PRIVATE -DRootPath="${CMAKE_SOURCE_DIR}")

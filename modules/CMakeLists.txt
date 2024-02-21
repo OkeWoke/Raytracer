@@ -13,7 +13,7 @@ macro(render_module name)
     if(extra_args)
         foreach(arg IN LISTS extra_args)
             message("Linking: ${arg}")
-            target_link_libraries(${PROJECT_NAME} PRIVATE ${arg})
+            target_link_libraries(${PROJECT_NAME} PUBLIC ${arg}) # Currently PUBLIC to avoid duplicate libs. Not the best solution.
         endforeach()
     endif()
 
@@ -26,7 +26,7 @@ macro(render_module name)
         if(extra_args)
             foreach(arg IN LISTS extra_args)
                 message("Linking Test: ${arg}")
-                target_link_libraries(${PROJECT_TEST_NAME} PRIVATE ${arg})
+                target_link_libraries(${PROJECT_TEST_NAME} PUBLIC ${arg}) # Currently PUBLIC to avoid duplicate libs. Not the best solution.
             endforeach()
         endif()
         catch_discover_tests(${PROJECT_TEST_NAME})
