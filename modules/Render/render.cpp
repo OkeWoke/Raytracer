@@ -80,9 +80,9 @@ Hit intersect(const Vector& src, const Vector& ray_dir, const BoundVolumeHierarc
     hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
     hit.obj = nullptr;
-
-    GObject::intersection inter = bvh.intersect(src+0.0001*hit.ray_dir, hit.ray_dir, 0);
-    if(inter.t > 0.0001 && (hit.obj == nullptr || (inter.t) < hit.t))//if hit is viisible and new hit is closer than previous
+    double epsilon = 0.0001;
+    GObject::intersection inter = bvh.intersect(src+epsilon*hit.ray_dir, hit.ray_dir, 0); // epsilon offset to avoid collision with self
+    if(inter.t > epsilon && (hit.obj == nullptr || (inter.t) < hit.t)) //if hit is visible and new hit is closer than previous
     {
         //yes the below is pretty shit, why do two so simillar structs exist....
         hit.t = inter.t;// ray_dir.abs();
