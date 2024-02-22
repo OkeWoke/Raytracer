@@ -44,7 +44,7 @@ GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
 {
     intersection bv_inter = ((BoundVolume*)this->bv.get())->intersect(src, d);
     //return bv_inter;
-    if(bv_inter.obj_ref != nullptr)
+    if(!bv_inter.obj_ref.expired())
     {
         intersection inter = GObject::intersection();
         double tmp = d.dot(n);
@@ -55,7 +55,7 @@ GObject::intersection Plane::intersect(const Vector& src, const Vector& d)
             if((hit_point-position).abs() < w)
             {
                 inter.t = tmp_t;
-                inter.obj_ref = this;
+                inter.obj_ref = shared_from_this();
                 inter.n = n;
             }
 

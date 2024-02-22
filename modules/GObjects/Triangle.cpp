@@ -53,7 +53,7 @@ GObject::intersection Triangle::intersect(const Vector& src, const Vector& d)
             }
 
             inter.t = t;
-            inter.obj_ref = this;
+            inter.obj_ref = shared_from_this();
             Vector tc =  ((bary_v*vt[0] + bary_w*vt[1] + bary_u*vt[2]));
             double t_x = fmod(tc.x,1);
             double t_y = fmod(tc.y, 1);

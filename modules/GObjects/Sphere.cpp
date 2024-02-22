@@ -32,7 +32,7 @@ radius(radius)
 GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
 {
     intersection bv_inter = ((BoundVolume*)this->bv.get())->intersect(src, d);
-    if(bv_inter.obj_ref != nullptr)
+    if(!bv_inter.obj_ref.expired())
     {
         intersection inter = intersection();
 
@@ -62,7 +62,7 @@ GObject::intersection Sphere::intersect(const Vector& src, const Vector& d)
             {
                 inter.t = t_2;
             }
-            inter.obj_ref = this;
+            inter.obj_ref = shared_from_this();
             inter.n = normalise(src+inter.t*d-position);
         }
         return inter;

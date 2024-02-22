@@ -162,7 +162,7 @@ GObject::intersection BoundVolume::intersect(const Vector& src, const Vector& d)
 
     inter.t = largest_t_near;
     inter.n = this->plane_normals[plane_index];
-    inter.obj_ref = (GObject*)this;
+    inter.obj_ref = shared_from_this();
 
     return inter;
 }

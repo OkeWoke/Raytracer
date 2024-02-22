@@ -192,7 +192,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
     }
 #endif
     GObject::intersection best_inter = GObject::intersection();
-    if(bv_inter.obj_ref != nullptr)
+    if(!bv_inter.obj_ref.expired())
     //we have an intersection...
     {
         double min_t = std::numeric_limits<double>::max();
@@ -202,7 +202,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
             for(int i=0; i<objects.size();i++)
             {
                 GObject::intersection tmp = objects[i]->intersect(src, d);
-                if(tmp.obj_ref != nullptr)
+                if(!tmp.obj_ref.expired())
                 //there was a object intersection...
                 {
                     if(tmp.t<min_t && tmp.t > 0)
@@ -211,7 +211,6 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
                         best_inter = tmp;
                     }
                 }
-
             }
         }
         else
@@ -221,7 +220,7 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
                 if (children[i] != nullptr)
                 {
                     GObject::intersection tmp = children[i]->intersect(src, d, depth+1);
-                    if(tmp.obj_ref != nullptr)
+                    if(!tmp.obj_ref.expired())
                     {
                         if (tmp.t < min_t)
                         {

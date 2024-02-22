@@ -79,18 +79,18 @@ Hit intersect(const Vector& src, const Vector& ray_dir, const BoundVolumeHierarc
     hit.src = src;
     hit.ray_dir= normalise(ray_dir);
     hit.t=-1;
-    hit.obj = nullptr;
+
     double epsilon = 0.0001;
     GObject::intersection inter = bvh.intersect(src+epsilon*hit.ray_dir, hit.ray_dir, 0); // epsilon offset to avoid collision with self
-    if(inter.t > epsilon && (hit.obj == nullptr || (inter.t) < hit.t)) //if hit is visible and new hit is closer than previous
+    if(inter.t > epsilon && (hit.obj.expired() || (inter.t) < hit.t)) //if hit is visible and new hit is closer than previous
     {
-        //yes the below is pretty shit, why do two so simillar structs exist....
+        //yes the below is pretty shit, why do two so similar structs exist....
         hit.t = inter.t;// ray_dir.abs();
         hit.obj = inter.obj_ref;
 
         if (inter.color.r == -1)
         {
-            hit.color = inter.obj_ref->color;
+            hit.color = inter.obj_ref.lock()->color;
         }else
         {
             hit.color = inter.color;
@@ -298,7 +298,7 @@ Color trace_rays_iterative(const Vector& origin,
 
         Hit hit = intersect(o, d, bvh); //see if current ray intersects something or not.
 
-        if(hit.obj == nullptr || hit.t == -1)
+        if(hit.obj.expired() || hit.t == -1)
             //nothing was hit;
         {
             break;
@@ -306,16 +306,16 @@ Color trace_rays_iterative(const Vector& origin,
 
         Vector hit_point = hit.src + hit.t*hit.ray_dir;
         double n_dot_ray = hit.n.dot(hit.ray_dir);
-        if(hit.obj->is_light() && n_dot_ray < 0)
+        if(hit.obj.lock()->is_light() && n_dot_ray < 0)
         {
             double divisor = 1;//max(1.0,hit.t*hit.t);
 
             if(!ignore_direct)
             {
-                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+                c = c + -1*weight*n_dot_ray*hit.obj.lock()->emission/(divisor *255.0);
             }else
             {
-                c = c + -1*weight*n_dot_ray*hit.obj->emission/(divisor *255.0);
+                c = c + -1*weight*n_dot_ray*hit.obj.lock()->emission/(divisor *255.0);
             }
             break;
         }
@@ -347,7 +347,7 @@ Color trace_rays_iterative(const Vector& origin,
         //auto survive_prob = 0.90;
         // if (ha1->next() > survive_prob) break;
         o = hit_point;
-        if(hit.obj->brdf==GObject::BRDF::MIRROR)
+        if(hit.obj.lock()->brdf==GObject::BRDF::MIRROR)
         {
             ignore_direct = false;
         }else
@@ -356,12 +356,12 @@ Color trace_rays_iterative(const Vector& origin,
         }
         //ignore_direct = !mat.is_specular;
         Vector new_ray_dir;
-        if(hit.obj->brdf==GObject::BRDF::PHONG_DIFFUSE)
+        if(hit.obj.lock()->brdf==GObject::BRDF::PHONG_DIFFUSE)
             //diffuse
         {
             new_ray_dir = Utility::uniform_hemisphere(ha1.next(), ha2.next(), hit.n);
         }
-        else if(hit.obj->brdf==GObject::BRDF::MIRROR)
+        else if(hit.obj.lock()->brdf==GObject::BRDF::MIRROR)
         {
             new_ray_dir = normalise(hit.ray_dir - hit.n * 2  *n_dot_ray);
         }

@@ -4,7 +4,7 @@
 #include "Color.h"
 #include <memory>
 
-class GObject
+class GObject : public std::enable_shared_from_this<GObject>
 {
     public:
         enum class BRDF
@@ -61,11 +61,11 @@ class GObject
 
         struct intersection
         {
-            GObject* obj_ref;
+            std::weak_ptr<GObject> obj_ref;
             double t;
             Vector n;
             Color color;
-            intersection():obj_ref(nullptr), t(-1),color(Color(-1,-1,-1))
+            intersection(): t(-1),color(Color(-1,-1,-1))
             {
             };
 

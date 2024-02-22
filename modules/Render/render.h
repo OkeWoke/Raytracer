@@ -15,7 +15,7 @@ struct Hit
     Vector ray_dir;
     Vector n;
     double t;
-    GObject* obj;
+    std::weak_ptr<GObject> obj;
     Color color;
 };
 
