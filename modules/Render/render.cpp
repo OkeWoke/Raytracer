@@ -120,7 +120,7 @@ Color trace_rays_iterative(const Vector& origin,
         if(hit.obj_ref->is_light()) // hit front of light
         {
             double divisor = 1;//max(1.0,hit.t*hit.t);
-            c = c + -1*weight*n_dot_ray*hit.obj_ref->emission/(divisor *255.0);
+            c = c + weight*hit.obj_ref->emission/(divisor *255.0);
             break;
         }
 

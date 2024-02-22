@@ -1,7 +1,7 @@
 <Config threads="23" max_reflections="5" samplesPP="10" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="60" aperture="0.01" focus_dist="200.5">
-    <position x="0" y="-1" z="200"/><!-- Camera position -->
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3" aperture="0.01" focus_dist="10.5">
+    <position x="0" y="-1" z="15"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
@@ -10,25 +10,26 @@
 
 
 <Mesh filename="skull_tri.obj" brdf="PHONG_DIFFUSE">
-    <position x="0.5" y="-1.15" z="2"/>
-    <x_rot angle="-5"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="155"/>  <!-- pan -->
-    <z_rot angle="180"/> <!-- roll -->
-    <scale factor=".01"/> <!-- This scales the model up by factor -->
-    <color r="200" g="5" b="5"/>
-    <texture filename ="space.png"/>
+<position x="0.5" y="-1.15" z="2"/>
+<x_rot angle="-5"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="155"/>  <!-- pan -->
+<z_rot angle="180"/> <!-- roll -->
+<scale factor=".01"/> <!-- This scales the model up by factor -->
+<color r="200" g="5" b="5"/>
+<texture filename ="space.png"/>
 </Mesh>
 
 <Sphere radius = "0.2" brdf="MIRROR" reflectivity = "1.0">
-    <position x="-0.2" y="-2.3" z="2"/>
-    <color r="200" g="200" b="200"/>
+<position x="-0.2" y="-2.3" z="2"/>
+<color r="200" g="200" b="200"/>
 </Sphere>
 
 
 <Sphere radius = "0.6" brdf="PHONG_DIFFUSE">
-    <position x="-0.9" y="-1.8" z="2"/>
-    <color r="255" g="255" b="255"/>
+<position x="-0.9" y="-1.8" z="2"/>
+<color r="255" g="255" b="255"/>
 </Sphere>
+
 
 
 <!-- top emissive plane area light-->
@@ -44,15 +45,13 @@
 
 <!-- back Plane -->
 <Plane w="15" l="15" brdf="PHONG_DIFFUSE">
-    <position x="0" y="0" z="-10"/>
+    <position x="0" y="0" z="-1"/>
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
 
     <color r="255" g="255" b="255"/>
 </Plane>
-
-
 
 <!-- left Plane -->
 <Plane w="55" l="55" brdf="PHONG_DIFFUSE">
