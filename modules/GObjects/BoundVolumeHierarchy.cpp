@@ -152,7 +152,8 @@ std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
             for (int i =0; i<objects.size();i++)
             {
                 if (objects[i]->bv == nullptr)
-                    //the objects we have no bv therefore must be mesh triangles that have been inserted?
+                    // the objects we have no bv therefore must be mesh triangles that have been inserted?
+                    // a bit of a hacky assumption...
                 {
                     std::vector<Vector> vertices;
 
