@@ -41,9 +41,7 @@ class GObject
         Color emission;
         BRDF brdf;
         GObject(){};
-        GObject(const GObject& obj): color(obj.color), position(obj.position), shininess(obj.shininess), reflectivity(obj.reflectivity), emission(obj.emission), brdf(obj.brdf){
-            //this->bv = std::move(obj.bv);
-        };
+        GObject(const GObject& obj): color(obj.color), position(obj.position), shininess(obj.shininess), reflectivity(obj.reflectivity), emission(obj.emission), brdf(obj.brdf){};
 
         bool is_light()
         {
