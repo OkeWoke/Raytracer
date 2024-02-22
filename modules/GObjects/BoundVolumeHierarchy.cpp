@@ -14,7 +14,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(std::vector<std::shared_ptr<GObject>>
 
     for (auto obj: objects)
     {
-        this->insert_object((GObject*)obj.get(),0);
+        this->insert_object(obj,0);
     }
     (void) this->build_BVH();
 }
@@ -46,7 +46,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 {
     this->center=center;
     this->diameter = diameter;
-    for (int i=0;i<8;i++)
+    for (int i=0;i<NUM_CHILDREN;i++)
     {
         this->children[i] = nullptr;
     }
@@ -55,7 +55,7 @@ BoundVolumeHierarchy::BoundVolumeHierarchy(Vector& diameter, Vector& center)
 
 
 
-void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
+void BoundVolumeHierarchy::insert_object(std::shared_ptr<GObject> tri, int depth)
 {
     //base case
     if (depth >= MAX_DEPTH || (objects.size() == 0 && is_leaf))
@@ -126,7 +126,7 @@ void BoundVolumeHierarchy::insert_object(GObject* tri, int depth)
 std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
 {
     std::vector<std::shared_ptr<BoundVolume>> child_volumes;
-    for (int i=0;i<8;i++)
+    for (int i=0;i<NUM_CHILDREN;i++)
     {
         if (children[i]!= nullptr)
         {
@@ -148,27 +148,27 @@ std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
             this->bv = nullptr;
         }else
         {
-            if (objects[0]->bv == nullptr)
-            //the objects we have no bv therefore must be triangles that have been inserted?
+            std::vector<std::shared_ptr<BoundVolume>> volumes;
+            for (int i =0; i<objects.size();i++)
             {
-                std::vector<Vector> vertices;
-                for (int i =0; i<objects.size();i++)
+                if (objects[i]->bv == nullptr)
+                    //the objects we have no bv therefore must be mesh triangles that have been inserted?
                 {
-                    Triangle* tri_pointer = (Triangle*)objects[i];
+                    std::vector<Vector> vertices;
+
+                    std::shared_ptr<Triangle> tri_pointer = std::reinterpret_pointer_cast<Triangle>(objects[i]);
                     vertices.push_back(tri_pointer->v[0]);
                     vertices.push_back(tri_pointer->v[1]);
                     vertices.push_back(tri_pointer->v[2]);
+
+                    volumes.push_back(BoundVolume::compute_bound_volume(vertices));
                 }
-                this->bv = BoundVolume::compute_bound_volume(vertices);
-            }else
-            {
-                std::vector<std::shared_ptr<BoundVolume>> volumes;
-                for(int i=0; i<objects.size();i++)
+                else
                 {
                     volumes.push_back(std::dynamic_pointer_cast<BoundVolume>(objects[i]->bv));
                 }
-                this->bv = BoundVolume::compute_bound_volume(volumes);
             }
+            this->bv = BoundVolume::compute_bound_volume(volumes);
         }
     }else
     //We have child bounded volumes, create bvh around this
@@ -183,13 +183,14 @@ std::shared_ptr<BoundVolume> BoundVolumeHierarchy::build_BVH()
 GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const Vector& d, int depth) const
 //potential speed up is by making another intersect function that just returns bool instead of intersection obj.
 {
-    GObject::intersection bv_inter = GObject::intersection();
+    GObject::intersection bv_inter = bv->intersect(src,d);
 
-    bv_inter = bv->intersect(src,d);
+#ifdef DEBUG_BVH
     if (depth >= 2)
     {
-        //return bv_inter;
+        return bv_inter;
     }
+#endif
     GObject::intersection best_inter = GObject::intersection();
     if(bv_inter.obj_ref != nullptr)
     //we have an intersection...
@@ -212,10 +213,10 @@ GObject::intersection BoundVolumeHierarchy::intersect(const Vector& src, const V
                 }
 
             }
-
-        }else
+        }
+        else
         {
-            for (int i=0;i<8;i++)
+            for (int i=0;i<NUM_CHILDREN;i++)
             {
                 if (children[i] != nullptr)
                 {
