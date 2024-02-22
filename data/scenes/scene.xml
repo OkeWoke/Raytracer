@@ -1,6 +1,6 @@
 <Config threads="23" max_reflections="5" samplesPP="10" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="50" aperture="0.01" focus_dist="200.5">
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="60" aperture="0.01" focus_dist="200.5">
     <position x="0" y="-1" z="200"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
@@ -10,37 +10,30 @@
 
 
 <Mesh filename="skull_tri.obj" brdf="PHONG_DIFFUSE">
-    <position x="0" y="-4" z="0"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/>  <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
+    <position x="0.5" y="-1.15" z="2"/>
+    <x_rot angle="-5"/> <!-- Tilt  + is down, - is up -->
+    <y_rot angle="155"/>  <!-- pan -->
+    <z_rot angle="180"/> <!-- roll -->
     <scale factor=".01"/> <!-- This scales the model up by factor -->
     <color r="200" g="5" b="5"/>
     <texture filename ="space.png"/>
 </Mesh>
 
-
-<Sphere radius = "1.5" brdf="PHONG_DIFFUSE">
-    <position x="-0.2" y="-1" z="-70"/>
-    <color r="0" g="0" b="200"/>
-    <emission r="0" g="0" b="0"/>
-</Sphere>
-
 <Sphere radius = "0.2" brdf="MIRROR" reflectivity = "1.0">
-    <position x="0.9" y="-1.8" z="15"/>
+    <position x="-0.2" y="-2.3" z="2"/>
     <color r="200" g="200" b="200"/>
 </Sphere>
 
 
 <Sphere radius = "0.6" brdf="PHONG_DIFFUSE">
-    <position x="-1.2" y="-1.8" z="0.5"/>
-    <color r="255" g="0" b="200"/>
+    <position x="-0.9" y="-1.8" z="2"/>
+    <color r="255" g="255" b="255"/>
 </Sphere>
 
 
 <!-- top emissive plane area light-->
 <Plane w="150" l="150" brdf="PHONG_DIFFUSE">
-    <position x="0" y="0.99" z="2"/>
+    <position x="0" y="0.3" z="2"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->
@@ -51,7 +44,7 @@
 
 <!-- back Plane -->
 <Plane w="15" l="15" brdf="PHONG_DIFFUSE">
-    <position x="0" y="0" z="-125"/>
+    <position x="0" y="0" z="-10"/>
     <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
@@ -63,7 +56,7 @@
 
 <!-- left Plane -->
 <Plane w="55" l="55" brdf="PHONG_DIFFUSE">
-    <position x="-2" y="0" z="0"/>
+    <position x="-1.5" y="0" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="-90"/> <!-- roll -->
@@ -73,7 +66,7 @@
 
 <!-- Right Plane -->
 <Plane w="50" l="50" brdf="PHONG_DIFFUSE">
-    <position x="2" y="0" z="0"/>
+    <position x="1.5" y="0" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="90"/> <!-- roll -->
@@ -82,8 +75,8 @@
 </Plane>
 
 <!-- bottom Plane -->
-<Plane w="33" l="33" brdf="PHONG_DIFFUSE">
-    <position x="0" y="-3" z="0"/>
+<Plane w="50" l="50" brdf="PHONG_DIFFUSE">
+    <position x="0" y="-2.5" z="0"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->

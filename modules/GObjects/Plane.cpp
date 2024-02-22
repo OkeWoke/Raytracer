@@ -5,10 +5,9 @@
 
 Plane::Plane(): GObject()
 {
-
 }
 
-//copy constructor
+// copy constructor
 Plane::Plane(const Plane& p): GObject(p.color, p.position, p.shininess, p.reflectivity, p.emission, p.brdf)
 {
     this->n = p.n;

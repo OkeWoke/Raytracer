@@ -19,7 +19,8 @@ MeshConfig deserializeMesh(std::basic_string<char> xmlStr)
 
     xml.FindElem("position");
     meshConfig.position = deserializeVector(xml.GetSubDoc());
-    meshConfig.mat = meshConfig.mat * Matrix::translate(meshConfig.position);
+
+    meshConfig.mat = Matrix::translate(meshConfig.position);
 
     xml.FindElem("x_rot");
     meshConfig.mat = meshConfig.mat * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
