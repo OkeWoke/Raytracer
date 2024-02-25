@@ -1,13 +1,12 @@
-<Config threads="23" max_reflections="5" samplesPP="10" stretch="gamma"/>
+<Config threads="12" max_reflections="4" samplesPP="30" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3" aperture="0.01" focus_dist="10.5">
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="3" aperture="0.001" focus_dist="13.5">
     <position x="0" y="-1" z="15"/><!-- Camera position -->
 
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="0"/> <!-- roll -->
 </Camera>
-
 
 <Mesh filename="skull_tri.obj" brdf="PHONG_DIFFUSE">
 <position x="0.5" y="-1.15" z="2"/>
@@ -33,14 +32,23 @@
 
 
 <!-- top emissive plane area light-->
-<Plane w="150" l="150" brdf="PHONG_DIFFUSE">
-    <position x="0" y="0.3" z="2"/>
+<Plane w="1" l="1" brdf="PHONG_DIFFUSE">
+    <position x="0" y="0.29" z="4"/>
     <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
     <y_rot angle="0"/> <!-- pan -->
     <z_rot angle="180"/> <!-- roll -->
     
     <color r="1" g="1" b="1"/>
     <emission r="100000" g="100000" b="100000"/>
+</Plane>
+
+        <!-- top  plane -->
+<Plane w="150" l="150" brdf="PHONG_DIFFUSE">
+<position x="0" y="0.3" z="2"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="180"/> <!-- roll -->
+<color r="255" g="255" b="255"/>
 </Plane>
 
 <!-- back Plane -->

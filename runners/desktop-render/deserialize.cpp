@@ -198,23 +198,18 @@ Camera deserializeCamera(const std::string& sub)
 
     xml.FindElem("position");
     cam.pos = deserializeVector(xml.GetSubDoc());
-
+    cam.mat = Matrix::translate(cam.pos);
     xml.FindElem("x_rot");
-
-    Matrix tmp = cam.mat; //make sure its a carbon copy, not a reference.
-    tmp = tmp * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
+    
+    cam.mat = cam.mat * Matrix::rot_x(std::stod(xml.GetAttrib("angle")));
 
     xml.FindElem("y_rot");
-    tmp = tmp * Matrix::rot_y(std::stod(xml.GetAttrib("angle")));
+    cam.mat = cam.mat * Matrix::rot_y(std::stod(xml.GetAttrib("angle")));
 
     xml.FindElem("z_rot");
-    tmp = tmp * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
+    cam.mat = cam.mat * Matrix::rot_z(std::stod(xml.GetAttrib("angle")));
 
-    tmp = tmp * Matrix::translate(cam.pos);
-    cam.n = normalise(Vector(tmp.ar[2][0], tmp.ar[2][1], tmp.ar[2][2]));
-    cam.u = normalise(Vector(tmp.ar[1][0], tmp.ar[1][1], tmp.ar[1][2]));
-    cam.v = normalise(Vector(tmp.ar[0][0], tmp.ar[0][1], tmp.ar[0][2]));
-
+    cam.update_camera(cam.mat);
     return cam;
 }
 

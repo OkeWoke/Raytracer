@@ -2,7 +2,7 @@
 #include <future>
 #include "math.h"
 //#define DEBUG_SINGLE_THREAD
-#define DEBUG_BACK_OF_SURFACE
+//#define DEBUG_BACK_OF_SURFACE
 
 void cast_rays_multithread(const Scene& scene,
                            ImageArray& img,
@@ -69,6 +69,11 @@ void cast_rays_multithread(const Scene& scene,
 #ifndef DEBUG_SINGLE_THREAD
         }));
 #endif
+    }
+
+    for (auto& future : future_vector)
+    {
+        future.wait(); // This will block until the associated task is finished
     }
 }
 
