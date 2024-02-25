@@ -19,7 +19,7 @@ struct MeshConfig
     std::string filename;
     double shininess;
     double reflectivity;
-    double brdf;
+    GObject::BRDF brdf;
     Vector position;
     Matrix mat;
     Color color;

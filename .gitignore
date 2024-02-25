@@ -8,3 +8,5 @@ cmake-build-release/
 .DS_Store
 .idea/
 renders/
+CMakeFiles/
+_deps/

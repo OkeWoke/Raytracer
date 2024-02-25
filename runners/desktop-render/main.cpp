@@ -2,32 +2,66 @@
 #include <sstream>
 #include <iomanip>
 #include <string>
-#include <functional>
 #include <time.h>
-#include <chrono>
+#include <thread>
+#include <atomic>
 
-#include "Markup-w.h"
 #include "CImg-w.h"
 #include "pngpp-w.hpp"
 
 #include "deserialize.h"
 #include "render.h"
-#include "Camera.h"
-#include "Light.h"
+
 #include "BoundVolumeHierarchy.h"
 #include "HaltonSampler.h"
 #include "RandomSampler.h"
-#include "Sphere.h"
-#include "GObject.h"
-#include "Plane.h"
-#include "Mesh.h"
+
 #include "stats.h"
-#include "ObjReader.h"
 #include "imageArray.h"
 
 extern Stats stats;
 
 void draw(ImageArray& img, const std::string& filename, const std::string& stretch);
+
+void modify_scene_from_key_input(unsigned int key, Scene& scene)
+{
+    auto mod_mat = scene.cam.mat;
+    if (key == 119) // W key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.n * -0.5);
+    } else if (key == 115) // S key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.n * 0.5);
+    } else if (key == 97) // A key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.u * -0.5);
+    } else if (key == 100) // D key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.u * 0.5);
+    } else if (key == 113) // Q key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.v * 0.5);
+    } else if (key == 101) // E key
+    {
+        mod_mat = mod_mat * Matrix::translate(scene.cam.v * -0.5);
+    } //case for arrow keys
+    else if (key == 65362) // UP key
+    {
+        scene.cam.N += 2;
+    } else if (key == 65364) // DOWN key
+    {
+        scene.cam.N -= 2;
+    } else if (key == 65361) // LEFT key
+    {
+        mod_mat = mod_mat * Matrix::rot_y(0.15);
+    } else if (key == 65363) // RIGHT key
+    {
+        mod_mat = mod_mat * Matrix::rot_y(-0.15);
+    }
+
+    scene.config.max_reflections = 1;
+    scene.cam.update_camera(mod_mat);
+}
 
 int main()
 {
@@ -58,10 +92,43 @@ int main()
 
     /////////////////////////////////////// CAST & DISPLAY  CODE /////////////////////////////
     auto cast_start = std::chrono::steady_clock::now();
+    std::atomic<unsigned int> key = 0;
+    std::thread inputHandler([&display, &key]()
+    {
+        while (!display.is_closed())
+        {
+            display.wait(); // Wait for an event
+            auto tmp = display.key(); // Get the pressed key
+            if (tmp != 0)
+            {
+                key = tmp;
+            }
+
+            if (display.is_keyESC())
+            {
+                break;
+            }
+        }
+    });
+
     int s;
     double exponent = 1/4.0;
+
+    const int originalReflectCount = scene.config.max_reflections;
     for(s=0;s<scene.config.spp; s++)
     {
+        if (key != 0)
+        {
+            std::cout << "key changed" << std::endl;
+            img.clearArray();
+            s = 0;
+            modify_scene_from_key_input(key, scene);
+            key = 0;
+        }
+        else
+        {
+            scene.config.max_reflections = originalReflectCount;
+        }
         cast_rays_multithread(scene,
                               img,
                               sampler1,
@@ -80,7 +147,10 @@ int main()
         {
             break;
         }
+
     }
+
+
 
     auto cast_end = std::chrono::steady_clock::now();
 
@@ -91,8 +161,12 @@ int main()
     std::cout << "Number of Triangle Intersections: " <<std::setw(orw-11) << stats.numRayTrianglesIsect.load() << std::endl;
     std::cout << "Percentage of sucesful triangle tests: " << std::setw(orw-12) << 100*(float) stats.numRayTrianglesIsect.load()/stats.numRayTrianglesTests.load()<< "%" << std::endl;
     std::cout << "----------------------------------------------------------\n\n\n\n"<<std::endl;
-    std::cout << "Waiting for modification of scene.xml or close window to save" << std::endl;
+    std::cout << "Waiting for window close to save" << std::endl;
 
+    if(inputHandler.joinable())
+    {
+        inputHandler.join();
+    }
     //Sample scaling, do not touch this as this ensures each image has same relative brightness regardless of no. samples.
     for (int i = 0; i < img.PIXEL_COUNT; ++i)
     {
@@ -114,8 +188,6 @@ int main()
     std::cout << "Image Save completed in: "<< std::setw(orw-7) <<(save_end - save_start)/std::chrono::milliseconds(1)<< " (ms)"<<std::endl;
     std::cout << "----------------------------------------\n\n\n\n" << std::endl;
 
-    int a;
-    std::cin >> a;
     return 0;
 
     /* Animation codes

@@ -1,96 +1,102 @@
-<Config threads="23" max_reflections="11" samplesPP="10" stretch="gamma"/>
+<Config threads="23" max_reflections="5" samplesPP="10" stretch="gamma"/>
 
-<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="2.2" aperture=".05" focus_dist="16">
-    <position x="0" y="0" z="19"/><!-- Camera position -->
+<Camera w="0.5" h="0.5" H_Res="800" V_Res="800" fl="50" aperture="0.01" focus_dist="200.5">
+<position x="0" y="-1" z="200"/><!-- Camera position -->
 
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="0"/> <!-- roll -->
 </Camera>
 
 
-<Mesh filename="Models/andypants-nurse.obj" shininess="11" reflectivity="0" brdf = "0">
-    <position x="1.5" y="-3.8" z="3"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-
-    <y_rot angle="-25"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
-    <scale factor="0.8"/> <!-- This scales the model up by factor -->
-    <color r="155" g="155" b="155"/>
-    <texture filename ="Models/space.png"/>
-   
+<Mesh filename="skull_tri.obj" brdf="PHONG_DIFFUSE">
+<position x="0" y="-4" z="0"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/>  <!-- pan -->
+<z_rot angle="0"/> <!-- roll -->
+<scale factor=".01"/> <!-- This scales the model up by factor -->
+<color r="200" g="5" b="5"/>
+<texture filename ="space.png"/>
 </Mesh>
 
-<Sphere radius = "1" shininess = "200" reflectivity = "0" brdf= "0">
-    <position x="-1" y="-2" z="4"/>
-    <color r="255" g="50" b="55"/>
-    <emission r="0" g="0" b="0"/>
+
+<Sphere radius = "1.5" brdf="PHONG_DIFFUSE">
+<position x="-0.2" y="-1" z="-70"/>
+<color r="0" g="0" b="200"/>
+<emission r="0" g="0" b="0"/>
 </Sphere>
 
-<!-- top emissive plane area light-->
-<Plane w="15" l="15" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="2.6" z="4"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="180"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="300000" g="300000" b="300000"/>
+<Sphere radius = "0.2" brdf="MIRROR" reflectivity = "1.0">
+<position x="0.9" y="-1.8" z="15"/>
+<color r="200" g="200" b="200"/>
+</Sphere>
+
+
+<Sphere radius = "0.6" brdf="PHONG_DIFFUSE">
+<position x="-1.2" y="-1.8" z="0.5"/>
+<color r="255" g="0" b="200"/>
+</Sphere>
+
+
+        <!-- top emissive plane area light-->
+<Plane w="150" l="150" brdf="PHONG_DIFFUSE">
+<position x="0" y="0.99" z="2"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="180"/> <!-- roll -->
+
+<color r="1" g="1" b="1"/>
+<emission r="100000" g="100000" b="100000"/>
 </Plane>
 
-<!-- back Plane -->
-<Plane w="5" l="5" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="0" z="0"/>
-    <x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="0" g="0" b="0"/>
+        <!-- back Plane -->
+<Plane w="15" l="15" brdf="PHONG_DIFFUSE">
+<position x="0" y="0" z="-125"/>
+<x_rot angle="90"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="0"/> <!-- roll -->
+
+<color r="255" g="255" b="255"/>
 </Plane>
 
 
 
-<!-- left Plane -->
-<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="-3" y="0" z="0"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="-90"/> <!-- roll -->
-    
-    <color r="155" g="65" b="25"/>
-    <emission r="0" g="0" b="0"/>
+        <!-- left Plane -->
+<Plane w="55" l="55" brdf="PHONG_DIFFUSE">
+<position x="-2" y="0" z="0"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="-90"/> <!-- roll -->
+
+<color r="155" g="65" b="25"/>
 </Plane>
 
-<!-- Right Plane -->
-<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="3" y="0" z="0"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="90"/> <!-- roll -->
-    
-    <color r="30" g="155" b="50"/>
-    <emission r="0" g="0" b="0"/>
+        <!-- Right Plane -->
+<Plane w="50" l="50" brdf="PHONG_DIFFUSE">
+<position x="2" y="0" z="0"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="90"/> <!-- roll -->
+
+<color r="30" g="155" b="50"/>
 </Plane>
 
-<!-- bottom Plane -->
-<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="-3" z="0"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="0"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="0" g="0" b="0"/>
+        <!-- bottom Plane -->
+<Plane w="33" l="33" brdf="PHONG_DIFFUSE">
+<position x="0" y="-3" z="0"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="0"/> <!-- roll -->
+
+<color r="200" g="200" b="200"/>
 </Plane>
 
-<!-- top plane -->
-<Plane w="8" l="8" shininess="50" reflectivity="0.9" brdf = "0">
-    <position x="0" y="3" z="0"/>
-    <x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
-    <y_rot angle="0"/> <!-- pan -->
-    <z_rot angle="180"/> <!-- roll -->
-    
-    <color r="120" g="120" b="222"/>
-    <emission r="0" g="0" b="0"/>
+        <!-- top plane -->
+<Plane w="8" l="8" brdf="PHONG_DIFFUSE">
+<position x="0" y="1" z="0"/>
+<x_rot angle="0"/> <!-- Tilt  + is down, - is up -->
+<y_rot angle="0"/> <!-- pan -->
+<z_rot angle="180"/> <!-- roll -->
+
+<color r="255" g="255" b="255"/>
 </Plane>

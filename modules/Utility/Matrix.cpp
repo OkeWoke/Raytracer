@@ -192,7 +192,7 @@ Matrix Matrix::rot_z(double theta)
 
 Matrix Matrix::scale(double factor)
 {
-    return Matrix(factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor);
+    return Matrix(factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, factor, 0, 0, 0, 0, 1);
 }
 
 Vector Matrix::mult_vec(Vector lhs, double w) const

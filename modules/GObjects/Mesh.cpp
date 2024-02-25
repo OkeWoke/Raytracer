@@ -9,7 +9,7 @@ Mesh::Mesh(std::vector<Vector>& vertices, std::vector<std::shared_ptr<Triangle>>
         tri->brdf = config.brdf;
         tri->reflectivity = config.reflectivity;
 
-        bvh.insert_object(tri.get(),0);
+        bvh.insert_object(tri,0);
     }
 
     this->color = config.color;
