@@ -134,8 +134,27 @@ Color trace_rays_iterative(const Vector& origin,
         switch(hit.obj_ref->brdf)
         {
             case GObject::BRDF::PHONG_DIFFUSE:
+                // Indirect lighting
                 d = Utility::uniform_hemisphere(ha1.next(), ha2.next(), hit.n); // should be normal
                 weight = weight* hit.color*hit.n.dot(d)/(255.0);
+                // perform NEE (Next Event Estimation)
+                for (auto& light : gLights)
+                {
+                    Vector light_dir = light->position - o;
+                    double light_dist = light_dir.abs();
+                    light_dir = normalise(light_dir);
+                    double n_dot_l = hit.n.dot(light_dir);
+                    if (n_dot_l > 0)
+                    {
+                        GObject::intersection shadow_hit = bvh.intersect(o + epsilon*light_dir, light_dir, 0);
+                        if (shadow_hit.obj_ref == light.get() && shadow_hit.t > light_dist -0.1) // not sure if we need this epsilon
+                        {
+                            double light_area = 4*M_PI*light_dist*light_dist;
+                            c = c + weight*hit.color*light->emission* n_dot_l / light_area;
+                        }
+                    }
+                }
+
                 break;
             case GObject::BRDF::MIRROR:
                 d = normalise(d - hit.n * 2  *n_dot_ray);

@@ -59,7 +59,7 @@ void modify_scene_from_key_input(unsigned int key, Scene& scene)
         mod_mat = mod_mat * Matrix::rot_y(-0.15);
     }
 
-    scene.config.max_reflections = 1;
+    scene.config.max_reflections = 0;
     scene.cam.update_camera(mod_mat);
 }
 
