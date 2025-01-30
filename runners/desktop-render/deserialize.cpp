@@ -1,6 +1,17 @@
 #include "deserialize.h"
 #include "ObjReader.h"
 
+void brdfSettingLoad(GObject& obj, CMarkup& xml)
+{
+    if(obj.brdf == GObject::BRDF::MIRROR)
+    {
+        obj.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    } else if(obj.brdf == GObject::BRDF::PHONG_GLOSSY)
+    {
+        obj.shininess = std::stod(xml.GetAttrib("shininess"));
+    }
+}
+
 MeshConfig deserializeMesh(std::basic_string<char> xmlStr)
 {
     MeshConfig meshConfig;
@@ -14,6 +25,9 @@ MeshConfig deserializeMesh(std::basic_string<char> xmlStr)
     if(meshConfig.brdf == GObject::BRDF::MIRROR)
     {
         meshConfig.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
+    }else if(meshConfig.brdf == GObject::BRDF::PHONG_GLOSSY)
+    {
+        meshConfig.shininess = std::stod(xml.GetAttrib("shininess"));
     }
     xml.IntoElem();
 
@@ -141,10 +155,7 @@ Sphere deserializeSphere(const std::string& strSubDoc)
     sphere.radius = std::stod(xml.GetAttrib("radius"));
     sphere.brdf = GObject::brdf_from_string(xml.GetAttrib("brdf"));
 
-    if(sphere.brdf == GObject::BRDF::MIRROR)
-    {
-        sphere.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    }
+    brdfSettingLoad(sphere, xml);
 
     xml.IntoElem();
 
@@ -223,10 +234,7 @@ Plane deserializePlane(const std::string& strSubDoc)
     plane.l = std::stod(xml.GetAttrib("l"));
     plane.brdf = GObject::brdf_from_string(xml.GetAttrib("brdf"));
 
-    if(plane.brdf == GObject::BRDF::MIRROR)
-    {
-        plane.reflectivity = std::stod(xml.GetAttrib("reflectivity"));
-    }
+    brdfSettingLoad(plane, xml);
     xml.IntoElem();
 
     xml.FindElem("position");

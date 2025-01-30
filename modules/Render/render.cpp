@@ -77,6 +77,64 @@ void cast_rays_multithread(const Scene& scene,
     }
 }
 
+Color PhongSpecular(const Vector& N,
+                    const Vector& L,
+                    const Vector& viewVec,
+                    double shininess,
+                    const Color& lightIntensity,
+                    const Color& specularColor)
+{
+    // Calculate the reflection of L around N
+    Vector R = 2.0f * N.dot(L) * N - L;
+    R = normalise(R); // Make sure R is normalized
+
+    // Calculate the specular contribution
+    double specFactor = std::pow(std::max(R.dot(viewVec), 0.0), shininess);
+    return specFactor * lightIntensity * specularColor;
+}
+
+Color DirectLightComponent(const std::vector<std::shared_ptr<GObject>>& gLights,
+                           const Vector& o,
+                           const Vector& normal,
+                           const BoundVolumeHierarchy& bvh,
+                           const double epsilon,
+                           const GObject::intersection& hit,
+                           const Color& weight,
+                           const Vector& camOrigin,
+                           const Sampler& ha1,
+                           const Sampler& ha2,
+                           const bool addSpecular=false)
+                           // Computes Direct lighting component (if not blocked) for all lights in the scene.
+{
+    Color c = Color(0,0,0);
+    for (auto& light : gLights)
+    {
+        Vector light_dir = light->get_random_point(ha1.next(), ha2.next()) - o;
+        double light_dist = light_dir.abs();
+        light_dir = normalise(light_dir);
+        double n_dot_l = hit.n.dot(light_dir);
+        if (n_dot_l > 0)
+        {
+            GObject::intersection shadow_hit = bvh.intersect(o + epsilon*light_dir, light_dir, 0);
+            if (shadow_hit.obj_ref == light.get() && shadow_hit.t > light_dist -0.1) // not sure if we need this epsilon
+            {
+                double light_area = 4*M_PI*light_dist*light_dist;
+                c = c + weight*hit.color*light->emission* n_dot_l / light_area;
+
+                if(addSpecular)
+                {
+                    Vector viewVec = normalise(camOrigin - o);
+                    c = c + PhongSpecular(hit.n, light_dir, viewVec, hit.obj_ref->shininess, light->emission, Color(1 , 1 , 1));
+                }
+            }
+        }
+    }
+
+    return  c;
+}
+
+
+
 Color trace_rays_iterative(const Vector& origin,
                            const Vector& ray_dir,
                            const BoundVolumeHierarchy& bvh,
@@ -130,31 +188,17 @@ Color trace_rays_iterative(const Vector& origin,
         }
 
         o = src + hit.t * d; // new Origin point. Located at the hit or bounce point.
-
+        bool useSpec = false;
         switch(hit.obj_ref->brdf)
         {
+            case GObject::BRDF::PHONG_GLOSSY:
+                useSpec = true;
             case GObject::BRDF::PHONG_DIFFUSE:
                 // Indirect lighting
                 d = Utility::uniform_hemisphere(ha1.next(), ha2.next(), hit.n); // should be normal
                 weight = weight* hit.color*hit.n.dot(d)/(255.0);
                 // perform NEE (Next Event Estimation)
-                for (auto& light : gLights)
-                {
-                    Vector light_dir = light->position - o;
-                    double light_dist = light_dir.abs();
-                    light_dir = normalise(light_dir);
-                    double n_dot_l = hit.n.dot(light_dir);
-                    if (n_dot_l > 0)
-                    {
-                        GObject::intersection shadow_hit = bvh.intersect(o + epsilon*light_dir, light_dir, 0);
-                        if (shadow_hit.obj_ref == light.get() && shadow_hit.t > light_dist -0.1) // not sure if we need this epsilon
-                        {
-                            double light_area = 4*M_PI*light_dist*light_dist;
-                            c = c + weight*hit.color*light->emission* n_dot_l / light_area;
-                        }
-                    }
-                }
-
+                c = c + DirectLightComponent(gLights, o, hit.n, bvh, epsilon, hit, weight, origin, ha1, ha2,useSpec);
                 break;
             case GObject::BRDF::MIRROR:
                 d = normalise(d - hit.n * 2  *n_dot_ray);

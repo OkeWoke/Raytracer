@@ -8,7 +8,7 @@
     <z_rot angle="0"/> <!-- roll -->
 </Camera>
 
-<Mesh filename="skull_tri.obj" brdf="PHONG_DIFFUSE">
+<Mesh filename="skull_tri.obj" brdf="PHONG_GLOSSY" shininess = "255">
 <position x="0.5" y="-1.15" z="2"/>
 <x_rot angle="-5"/> <!-- Tilt  + is down, - is up -->
 <y_rot angle="155"/>  <!-- pan -->
@@ -24,7 +24,7 @@
 </Sphere>
 
 
-<Sphere radius = "0.6" brdf="PHONG_DIFFUSE">
+<Sphere radius = "0.6" brdf="PHONG_GLOSSY" shininess = "2550">
 <position x="-0.9" y="-1.8" z="2"/>
 <color r="255" g="255" b="255"/>
 </Sphere>
@@ -39,7 +39,7 @@
     <z_rot angle="180"/> <!-- roll -->
     
     <color r="1" g="1" b="1"/>
-    <emission r="100000" g="100000" b="100000"/>
+    <emission r="2550" g="2550" b="2550"/>
 </Plane>
 
         <!-- top  plane -->
